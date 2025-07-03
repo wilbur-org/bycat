@@ -86,25 +86,3 @@ where
         }
     }
 }
-
-// impl<T, E> ServerLike for Server<T, E>
-// where
-//     T: Servable<E>,
-//     E: Clone,
-// {
-//     fn serve<L, F>(self, listener: L, kill: F) -> Self::Future<L, F>
-//     where
-//         L: Listener,
-//         F: Future<Output = ()> + Send,
-//     {
-//         self.serve(listener, kill).await
-//     }
-// }
-
-pub trait ServerLike {
-    type Future<L, F>: Future<Output = ()>;
-    fn serve<L, F>(self, listener: L, kill: F) -> Self::Future<L, F>
-    where
-        L: Listener,
-        F: Future<Output = ()> + Send;
-}

@@ -76,7 +76,6 @@ async fn handle_accept_error(e: io::Error) {
     // > will be logged at the `error` level, since it is still a big deal,
     // > and then the listener will sleep for 1 second.
     //
-    // hyper allowed customizing this but axum does not.
     tracing::error!("accept error: {e}");
     tokio::time::sleep(Duration::from_secs(1)).await;
 }
