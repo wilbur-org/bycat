@@ -1,0 +1,18 @@
+[package]
+name = "bycat-container"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+send = ["heather/send"]
+
+[dependencies]
+bycat-error = { path = "../bycat-error" }
+heather = { workspace = true, features = ["alloc"] }
+futures-core = { version = "0.3", default-features = false, features = [
+    "alloc",
+] }
+
+[dev-dependencies]
+bycat = { path = "../bycat", features = ["alloc"] }
+futures = { version = "0.3" }
