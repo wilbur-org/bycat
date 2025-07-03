@@ -1,6 +1,6 @@
 [workspace]
 
-members = ["bycat", "bycat-error", "bycat-container", "bycat-trigger"]
+members = ["bycat", "bycat-error", "bycat-container", "bycat-trigger", "bycat-http"]
 
 resolver = "3"
 

@@ -1,0 +1,23 @@
+[package]
+name = "bycat-http"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+server = [
+  "tokio",
+  "hyper",
+  "hyper/server",
+  "hyper-util",
+  "hyper-util/server-graceful",
+]
+client = []
+
+[dependencies]
+tokio = { version = "1", features = ["sync", "net", "macros"], optional = true }
+tracing = { version = "0.1" }
+http = "1"
+hyper = { version = "1", features = ["http1"], optional = true }
+hyper-util = { version = "0.1", features = ["http1"], optional = true }
+
+pin-project-lite = { version = "0.2" }
