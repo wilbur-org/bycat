@@ -1,6 +1,10 @@
 use crate::futures::*;
 use core::future::Future;
 
+pub trait TupleFuture {
+    type Future: Future;
+}
+
 impl<T1> From<(T1,)> for BycatFuture<T1>
 where
     T1: Future,
@@ -241,4 +245,157 @@ where
             fut1, fut2, fut3, fut4, fut5, fut6, fut7, fut8, fut9, fut10, fut11, fut12,
         )
     }
+}
+
+impl<T1> TupleFuture for (T1,)
+where
+    T1: Future,
+{
+    type Future = BycatFuture<T1>;
+}
+
+impl<T1, T2> TupleFuture for (T1, T2)
+where
+    T1: Future,
+    T2: Future,
+{
+    type Future = BycatFuture2<T1, T2>;
+}
+
+impl<T1, T2, T3> TupleFuture for (T1, T2, T3)
+where
+    T1: Future,
+    T2: Future,
+    T3: Future,
+{
+    type Future = BycatFuture3<T1, T2, T3>;
+}
+
+impl<T1, T2, T3, T4> TupleFuture for (T1, T2, T3, T4)
+where
+    T1: Future,
+    T2: Future,
+    T3: Future,
+    T4: Future,
+{
+    type Future = BycatFuture4<T1, T2, T3, T4>;
+}
+
+impl<T1, T2, T3, T4, T5> TupleFuture for (T1, T2, T3, T4, T5)
+where
+    T1: Future,
+    T2: Future,
+    T3: Future,
+    T4: Future,
+    T5: Future,
+{
+    type Future = BycatFuture5<T1, T2, T3, T4, T5>;
+}
+
+impl<T1, T2, T3, T4, T5, T6> TupleFuture for (T1, T2, T3, T4, T5, T6)
+where
+    T1: Future,
+    T2: Future,
+    T3: Future,
+    T4: Future,
+    T5: Future,
+    T6: Future,
+{
+    type Future = BycatFuture6<T1, T2, T3, T4, T5, T6>;
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7> TupleFuture for (T1, T2, T3, T4, T5, T6, T7)
+where
+    T1: Future,
+    T2: Future,
+    T3: Future,
+    T4: Future,
+    T5: Future,
+    T6: Future,
+    T7: Future,
+{
+    type Future = BycatFuture7<T1, T2, T3, T4, T5, T6, T7>;
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7, T8> TupleFuture for (T1, T2, T3, T4, T5, T6, T7, T8)
+where
+    T1: Future,
+    T2: Future,
+    T3: Future,
+    T4: Future,
+    T5: Future,
+    T6: Future,
+    T7: Future,
+    T8: Future,
+{
+    type Future = BycatFuture8<T1, T2, T3, T4, T5, T6, T7, T8>;
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7, T8, T9> TupleFuture for (T1, T2, T3, T4, T5, T6, T7, T8, T9)
+where
+    T1: Future,
+    T2: Future,
+    T3: Future,
+    T4: Future,
+    T5: Future,
+    T6: Future,
+    T7: Future,
+    T8: Future,
+    T9: Future,
+{
+    type Future = BycatFuture9<T1, T2, T3, T4, T5, T6, T7, T8, T9>;
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> TupleFuture
+    for (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10)
+where
+    T1: Future,
+    T2: Future,
+    T3: Future,
+    T4: Future,
+    T5: Future,
+    T6: Future,
+    T7: Future,
+    T8: Future,
+    T9: Future,
+    T10: Future,
+{
+    type Future = BycatFuture10<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>;
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> TupleFuture
+    for (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11)
+where
+    T1: Future,
+    T2: Future,
+    T3: Future,
+    T4: Future,
+    T5: Future,
+    T6: Future,
+    T7: Future,
+    T8: Future,
+    T9: Future,
+    T10: Future,
+    T11: Future,
+{
+    type Future = BycatFuture11<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>;
+}
+
+impl<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> TupleFuture
+    for (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12)
+where
+    T1: Future,
+    T2: Future,
+    T3: Future,
+    T4: Future,
+    T5: Future,
+    T6: Future,
+    T7: Future,
+    T8: Future,
+    T9: Future,
+    T10: Future,
+    T11: Future,
+    T12: Future,
+{
+    type Future = BycatFuture12<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>;
 }
