@@ -155,3 +155,43 @@ where
         }
     }
 }
+
+pub trait FutureResultExt: Future {
+    fn into_result(self) -> ResultFuture<Self>
+    where
+        Self: Sized,
+        Self::Output: IntoResult,
+    {
+        ResultFuture::new(self)
+    }
+}
+
+impl<T> FutureResultExt for T where T: Future {}
+
+pin_project! {
+  pub struct ResultFuture<T> {
+      #[pin]
+      future: T
+  }
+}
+
+impl<T> ResultFuture<T> {
+    pub fn new(future: T) -> ResultFuture<T> {
+        ResultFuture { future }
+    }
+}
+
+impl<T> Future for ResultFuture<T>
+where
+    T: Future,
+    T::Output: IntoResult,
+{
+    type Output = Result<<T::Output as IntoResult>::Output, <T::Output as IntoResult>::Error>;
+
+    fn poll(
+        self: core::pin::Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> Poll<Self::Output> {
+        Poll::Ready(ready!(self.project().future.poll(cx)).into_result())
+    }
+}
