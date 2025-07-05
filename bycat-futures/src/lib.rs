@@ -6,3 +6,6 @@ mod result;
 pub mod stream;
 
 pub use self::result::*;
+
+#[cfg(test)]
+mod tests;
