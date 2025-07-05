@@ -1,0 +1,13 @@
+[package]
+name = "bycat-futures"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bycat = { path = "../bycat" }
+pin-project-lite = { version = "0.2" }
+futures-core = { version = "0.3", default-features = false }
+either = { workspace = true }
+
+[dev-dependencies]
+futures = { version = "0.3" }

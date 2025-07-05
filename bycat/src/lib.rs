@@ -11,7 +11,6 @@ mod middleware;
 mod middleware_fn;
 pub mod pipe;
 pub mod split;
-pub mod stream;
 pub mod then;
 #[cfg(feature = "tower")]
 mod tower;

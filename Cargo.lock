@@ -69,6 +69,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bycat-futures"
+version = "0.1.0"
+dependencies = [
+ "bycat",
+ "either",
+ "futures",
+ "futures-core",
+ "pin-project-lite",
+]
+
+[[package]]
 name = "bycat-http"
 version = "0.1.0"
 dependencies = [
