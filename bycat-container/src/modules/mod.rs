@@ -54,3 +54,9 @@ impl<'a, T: Backend> Builder<'a, T> {
         Ok(())
     }
 }
+
+impl<'a, T: Backend> From<Builder<'a, T>> for Vec<BoxInit<'a, T>> {
+    fn from(value: Builder<'a, T>) -> Self {
+        value.init
+    }
+}
