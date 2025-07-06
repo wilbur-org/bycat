@@ -4,7 +4,7 @@ use hyper::server::conn::http1::Builder;
 use hyper_util::rt::TokioIo;
 use tokio::net::TcpListener;
 
-use crate::{Connection, listener::Listener, shutdown::Shutdown};
+use super::{Connection, listener::Listener, shutdown::Shutdown};
 
 pub trait Socket: hyper::rt::Read + hyper::rt::Write {}
 

@@ -1,4 +1,4 @@
-use crate::{Shutdown, Socket};
+use super::{Shutdown, Socket};
 use http::{Request, Response};
 use hyper::{
     body::{Body, Incoming},
