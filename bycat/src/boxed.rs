@@ -17,7 +17,7 @@ pub trait DynWork<C, B>: HSendSync {
 pub fn box_work<'c, C, B, T>(handler: T) -> BoxWork<'c, C, B, T::Output, T::Error>
 where
     T: Work<C, B> + HSendSync + 'c,
-    B: HSend + 'c,
+    B: HSend + 'static,
     C: HSendSync + 'c,
     for<'a> T::Future<'a>: HSend,
 {
