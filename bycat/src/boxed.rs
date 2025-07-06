@@ -37,7 +37,7 @@ where
     T: Work<C, B> + HSendSync,
     C: HSendSync,
     B: HSend,
-    for<'a> T::Future<'a>: HSend,
+    for<'b> T::Future<'b>: HSend,
 {
     type Error = T::Error;
     type Output = T::Output;
