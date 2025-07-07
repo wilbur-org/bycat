@@ -33,6 +33,12 @@ impl Shutdown {
         }
     }
 
+    pub fn wait(&self) -> WaitFuture {
+        WaitFuture {
+            future: self.event.listen(),
+        }
+    }
+
     pub async fn shutdown(&self) {
         self.event.notify(usize::MAX);
     }
@@ -74,6 +80,22 @@ where
         this.conn.poll(cx)
     }
 }
+
+pin_project! {
+    pub struct WaitFuture {
+        #[pin]
+        future: EventListener
+    }
+}
+
+impl Future for WaitFuture {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.project().future.poll(cx)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
