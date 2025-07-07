@@ -44,7 +44,6 @@ version = "0.1.0"
 dependencies = [
  "either",
  "futures-core",
- "heather",
  "pin-project-lite",
  "tokio",
  "tower",
@@ -92,10 +91,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "bycat-trigger"
+name = "bycat-service"
 version = "0.1.0"
 dependencies = [
  "bycat-container",
+ "bycat-error",
+ "event-listener",
+ "futures",
+ "pin-project-lite",
 ]
 
 [[package]]
@@ -111,10 +114,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9555578bc9e57714c812a1f84e4fc5b4d21fcb063490c624de019f7464c91268"
 
 [[package]]
+name = "concurrent-queue"
+version = "2.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ca0197aee26d1ae37445ee532fefce43251d24cc7c166799f4d46817f1d3973"
+dependencies = [
+ "crossbeam-utils",
+]
+
+[[package]]
+name = "crossbeam-utils"
+version = "0.8.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
+
+[[package]]
 name = "either"
 version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
+
+[[package]]
+name = "event-listener"
+version = "5.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3492acde4c3fc54c845eaab3eed8bd00c7a7d881f78bfc801e43a93dec1331ae"
+dependencies = [
+ "concurrent-queue",
+ "pin-project-lite",
+]
 
 [[package]]
 name = "fnv"

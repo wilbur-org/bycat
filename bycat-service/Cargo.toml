@@ -1,0 +1,11 @@
+[package]
+name = "bycat-service"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bycat-container = { path = "../bycat-container" }
+bycat-error = { path = "../bycat-error" }
+event-listener = { version = "5.4", default-features = false }
+futures = { version = "0.3", default-features = false, features = ["alloc"] }
+pin-project-lite = { version = "0.2" }

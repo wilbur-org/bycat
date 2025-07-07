@@ -10,7 +10,7 @@ impl Future for TestFuture {
     type Output = i32;
 
     fn poll(
-        mut self: core::pin::Pin<&mut Self>,
+        self: core::pin::Pin<&mut Self>,
         _cx: &mut core::task::Context<'_>,
     ) -> core::task::Poll<Self::Output> {
         core::task::Poll::Ready(self.value)

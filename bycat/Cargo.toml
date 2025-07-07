@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-alloc = ["heather"]
+alloc = []
 tower = ["dep:tower"]
 
 [dependencies]
@@ -12,9 +12,9 @@ futures-core = { version = "0.3", default-features = false }
 pin-project-lite = { version = "0.2" }
 either = { version = "1", default-features = false }
 
-heather = { git = "https://github.com/kildevaeld/heather", default-features = false, features = [
-  "alloc",
-], optional = true }
+# heather = { git = "https://github.com/kildevaeld/heather", default-features = false, features = [
+#   "alloc",
+# ], optional = true }
 
 tower = { version = "0.5", default-features = false, features = [
   "util",
