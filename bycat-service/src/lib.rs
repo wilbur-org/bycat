@@ -8,30 +8,14 @@ mod shutdown;
 
 pub use self::{builder::*, service::*, shutdown::*};
 
-// use bycat_container::modules::BuildContext;
+pub trait ServiceFactory<C> {
+    type Error;
+    type Service;
+    type Options;
+    type Future<'b>: Future<Output = Result<Self::Service, Self::Error>>
+    where
+        Self: 'b,
+        C: 'b;
 
-// pub trait HostFactory<'a, C>
-// where
-//     C: BuildContext<'a>,
-// {
-//     type Error;
-//     type Input;
-//     type Host: Host<C::Context>;
-//     type Future<'b>: Future<Output = Result<Self::Host, Self::Error>>
-//     where
-//         Self: 'b,
-//         C: 'b;
-
-//     fn prepare_context(&mut self, ctx: &mut C) -> Result<(), Self::Error>;
-
-//     fn create<'b>(&'b self, ctx: &'b mut C) -> Self::Future<'b>;
-// }
-
-// pub trait Host<C> {
-//     type Options;
-//     type Future: Future<Output = Result<(), Self::Error>>;
-//     type Error;
-//     fn run<T>(self, ctx: C, options: Self::Options, shutdown: T) -> Self::Future
-//     where
-//         T: Future<Output = ()> + Send + 'static;
-// }
+    fn create<'b>(&'b self, ctx: C, options: Self::Options) -> Self::Future<'b>;
+}

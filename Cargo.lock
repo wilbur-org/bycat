@@ -94,8 +94,6 @@ dependencies = [
 name = "bycat-service"
 version = "0.1.0"
 dependencies = [
- "bycat-container",
- "bycat-error",
  "event-listener",
  "futures",
  "pin-project-lite",
