@@ -21,7 +21,7 @@ impl Extensions {
     ///
     /// # Example
     /// ```
-    /// let mut extensions = wilbur_container::Extensions::default();
+    /// let mut extensions = bycat_container::Extensions::default();
     /// extensions.insert(42u32);
     /// assert_eq!(extensions.get::<u32>(), Some(&42));
     /// ```
@@ -40,7 +40,7 @@ impl Extensions {
     ///
     /// # Example
     /// ```
-    /// let mut extensions = wilbur_container::Extensions::default();
+    /// let mut extensions = bycat_container::Extensions::default();
     /// extensions.insert(42u32);
     /// assert_eq!(extensions.get::<u32>(), Some(&42));
     /// assert_eq!(extensions.get::<i32>(), None);
@@ -58,7 +58,7 @@ impl Extensions {
     ///
     /// # Example
     /// ```
-    /// let mut extensions = wilbur_container::Extensions::default();
+    /// let mut extensions = bycat_container::Extensions::default();
     /// extensions.insert(42u32);
     /// if let Some(value) = extensions.get_mut::<u32>() {
     ///     *value = 100;
@@ -78,7 +78,7 @@ impl Extensions {
     ///
     /// # Example
     /// ```
-    /// let mut extensions = wilbur_container::Extensions::default();
+    /// let mut extensions = bycat_container::Extensions::default();
     /// extensions.insert(42u32);
     /// assert_eq!(extensions.remove::<u32>(), Some(42));
     /// assert!(extensions.get::<u32>().is_none());
@@ -97,7 +97,7 @@ impl Extensions {
     ///
     /// # Example
     /// ```
-    /// let mut extensions = wilbur_container::Extensions::default();
+    /// let mut extensions = bycat_container::Extensions::default();
     /// extensions.insert(42u32);
     /// extensions.insert("hello");
     /// assert_eq!(extensions.len(), 2);
@@ -113,7 +113,7 @@ impl Extensions {
     ///
     /// # Example
     /// ```
-    /// let extensions = wilbur_container::Extensions::default();
+    /// let extensions = bycat_container::Extensions::default();
     /// assert!(extensions.is_empty());
     /// ```
     pub fn is_empty(&self) -> bool {
