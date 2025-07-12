@@ -1,4 +1,9 @@
-use std::{marker::PhantomData, mem::transmute, sync::Arc, task::ready};
+use std::{
+    marker::PhantomData,
+    mem::transmute,
+    sync::Arc,
+    task::{Poll, ready},
+};
 
 use bycat::Work;
 use bycat_error::Error;
@@ -83,6 +88,7 @@ where
     T: CacheStore,
     O: Cached,
 {
+    Start,
     CheckCache {
         #[pin]
         future: T::GetFuture<'a>,
@@ -102,6 +108,8 @@ where
     #[pin]
     state: GetState<'a, T, O>,
     key: Arc<Vec<u8>>,
+    value: Option<Vec<u8>>,
+    cache: &'a T,
 }
 
 impl<'a, T: 'a, O> Future for GetFuture<'a, T, O>
@@ -119,8 +127,27 @@ where
             let mut this = self.as_mut().project();
 
             match this.state.as_mut().project() {
-                GetStateProj::CheckCache { future } => todo!(),
-                GetStateProj::Decode { future } => todo!(),
+                GetStateProj::Start => {
+                    let future = this.cache.get(&this.key);
+                    this.state.set(GetState::CheckCache {
+                        future: unsafe { transmute::<_, T::GetFuture<'a>>(future) },
+                    });
+                }
+                GetStateProj::CheckCache { future } => {
+                    let ret = match ready!(future.poll(cx)) {
+                        Ok(ret) => ret,
+                        Err(err) => return Poll::Ready(Err(err)),
+                    };
+
+                    *this.value = Some(ret);
+
+                    let future = O::from_cached(this.value.as_ref().unwrap());
+
+                    this.state.set(GetState::Decode {
+                        future: unsafe { transmute(future) },
+                    });
+                }
+                GetStateProj::Decode { future } => return future.poll(cx),
             }
         }
     }
@@ -224,77 +251,3 @@ where
         todo!()
     }
 }
-
-// pin_project! {
-//     #[project = StateProj]
-//     enum State<'a, T: 'a, W: 'a, C: 'a, I>
-//     where
-//         T: CacheStore,
-//         W: Work<C, I>,
-//     {
-//         Start,
-//         CheckCache {
-//             #[pin]
-//             future: T::GetFuture<'a>
-//         },
-//         FromCache {
-
-//         },
-//         Work {
-//             #[pin]
-//             future: W::Future<'a>
-//         },
-//         SetCache {
-//             #[pin]
-//             future: T::SetFuture<'a>
-//         },
-//     }
-
-// }
-
-// pin_project! {
-//     pub struct CacheWorkFuture<'a, T: 'a, W: 'a, C: 'a, I>
-//     where
-//         T: CacheStore,
-//         W: Work<C, I>,
-//     {
-//         #[pin]
-//         state: State<'a, T, W, C, I>,
-//         ctx: &'a C,
-//         req: Option<I>,
-//         ret: Option<W::Output>,
-//         cache: &'a T,
-//         key: Vec<u8>
-//     }
-// }
-
-// impl<'a, T: 'a, W: 'a, C: 'a, I> Future for CacheWorkFuture<'a, T, W, C, I>
-// where
-//     T: CacheStore,
-//     W: Work<C, I>,
-//     I: CacheKey,
-// {
-//     type Output = Result<W::Output, Error>;
-
-//     fn poll(
-//         mut self: std::pin::Pin<&mut Self>,
-//         cx: &mut std::task::Context<'_>,
-//     ) -> std::task::Poll<Self::Output> {
-//         loop {
-//             let mut this = self.as_mut().project();
-//             match this.state.as_mut().project() {
-//                 StateProj::Start => {
-//                     let future = this.cache.get(&this.key);
-//                     this.state.set(State::CheckCache {
-//                         future: unsafe { transmute(future) },
-//                     });
-//                 }
-//                 StateProj::CheckCache { future } => match ready!(future.poll(cx)) {
-//                     Ok(ret) => {}
-//                 },
-//                 StateProj::Work { future } => todo!(),
-//                 StateProj::SetCache { future } => todo!(),
-//             }
-//         }
-//     }
-// }
