@@ -1,0 +1,9 @@
+[package]
+name = "bycat-cache"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bycat = { path = "../bycat" }
+bycat-error = { path = "../bycat-error" }
+pin-project = { version = "*" }
