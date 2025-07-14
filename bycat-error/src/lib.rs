@@ -1,6 +1,6 @@
 #![no_std]
 
-use core::fmt;
+use core::{convert::Infallible, fmt};
 
 use alloc::{borrow::Cow, boxed::Box, collections::btree_map::BTreeMap};
 
@@ -58,6 +58,12 @@ impl core::error::Error for Error {
 
 impl From<BoxError> for Error {
     fn from(value: BoxError) -> Self {
+        Error::new(value)
+    }
+}
+
+impl From<Infallible> for Error {
+    fn from(value: Infallible) -> Self {
         Error::new(value)
     }
 }
