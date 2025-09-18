@@ -1,0 +1,26 @@
+[package]
+name = "bycat-img"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+
+[dependencies]
+bycat = { path = "../bycat" }
+bycat-package = { path = "../bycat-package" }
+bycat-error = { path = "../bycat-error" }
+
+heather = { workspace = true }
+
+image = { version = "0.25", default-features = false, features = [
+    "jpeg",
+    "png",
+    "webp",
+] }
+mime = { workspace = true }
+relative-path = { workspace = true }
+futures = { version = "0.3", default-features = false, features = ["alloc"] }
+tokio = { version = "1", features = ["rt"] }
+bytes = { workspace = true, default-features = false }
+pin-project-lite = { version = "0.2" }
+webp = { version = "0.3" }

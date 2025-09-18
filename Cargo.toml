@@ -6,7 +6,12 @@ members = [
     "bycat-container",
     "bycat-service",
     "bycat-http",
-    "bycat-futures", "bycat-cache",
+    "bycat-futures",
+    "bycat-cache",
+    "bycat-package",
+    "bycat-source",
+    "bycat-fs",
+    "bycat-img",
 ]
 
 resolver = "3"
