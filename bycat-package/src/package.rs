@@ -77,41 +77,48 @@ impl Clone for Meta {
 }
 
 #[derive(Clone)]
+pub struct Parts {
+    pub name: RelativePathBuf,
+    pub mime: Mime,
+    pub meta: Meta,
+}
+
+#[derive(Clone)]
 pub struct Package<B> {
-    pub(crate) name: RelativePathBuf,
-    pub(crate) mime: Mime,
-    pub(crate) content: B,
-    pub(crate) meta: Meta,
+    pub content: B,
+    pub parts: Parts,
 }
 
 impl<B> Package<B> {
     pub fn new(name: impl Into<RelativePathBuf>, mime: Mime, body: B) -> Package<B> {
         Package {
-            name: name.into(),
-            mime,
             content: body.into(),
-            meta: Default::default(),
+            parts: Parts {
+                name: name.into(),
+                mime,
+                meta: Default::default(),
+            },
         }
     }
 
     pub fn path(&self) -> &RelativePath {
-        &self.name
+        &self.parts.name
     }
 
     pub fn path_mut(&mut self) -> &mut RelativePathBuf {
-        &mut self.name
+        &mut self.parts.name
     }
 
     pub fn set_path(&mut self, name: impl Into<RelativePathBuf>) {
-        self.name = name.into();
+        self.parts.name = name.into();
     }
 
     pub fn name(&self) -> &str {
-        self.name.file_name().unwrap()
+        self.parts.name.file_name().unwrap()
     }
 
     pub fn mime(&self) -> &Mime {
-        &self.mime
+        &self.parts.mime
     }
 
     pub fn content(&self) -> &B {
@@ -134,19 +141,17 @@ impl<B> Package<B> {
     }
 
     pub fn meta(&self) -> &Meta {
-        &self.meta
+        &self.parts.meta
     }
 
     pub fn meta_mut(&mut self) -> &mut Meta {
-        &mut self.meta
+        &mut self.parts.meta
     }
 
     pub fn map_content<T>(self, content: T) -> Package<T> {
         Package {
-            name: self.name,
-            mime: self.mime,
             content,
-            meta: self.meta,
+            parts: self.parts,
         }
     }
 
@@ -156,10 +161,8 @@ impl<B> Package<B> {
         U: Future<Output = C>,
     {
         Package {
-            name: self.name,
-            mime: self.mime,
             content: content(self.content).await,
-            meta: self.meta,
+            parts: self.parts,
         }
     }
 
@@ -168,10 +171,8 @@ impl<B> Package<B> {
         F: FnOnce(B) -> U,
     {
         Package {
-            name: self.name,
-            mime: self.mime,
             content: content(self.content),
-            meta: self.meta,
+            parts: self.parts,
         }
     }
 
@@ -181,11 +182,17 @@ impl<B> Package<B> {
         U: Future<Output = Result<C, E>>,
     {
         Ok(Package {
-            name: self.name,
-            mime: self.mime,
             content: content(self.content).await?,
-            meta: self.meta,
+            parts: self.parts,
         })
+    }
+
+    pub fn into_parts(self) -> (Parts, B) {
+        (self.parts, self.content)
+    }
+
+    pub fn from_parts(parts: Parts, content: B) -> Package<B> {
+        Package { content, parts }
     }
 }
 
