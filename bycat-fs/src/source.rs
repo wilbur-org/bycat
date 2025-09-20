@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     Body,
-    resolver::{FileResolver, IntoResolverStream},
+    resolver::{FileResolver, IntoResolverStream, ResolvedPath},
 };
 use bycat::Matcher;
 use bycat_error::Error;
@@ -32,7 +32,7 @@ impl FsSource {
         }
     }
 
-    pub fn pattern<T: Matcher<RelativePathBuf> + Send + Sync + 'static>(self, pattern: T) -> Self {
+    pub fn pattern<T: Matcher<ResolvedPath> + Send + Sync + 'static>(self, pattern: T) -> Self {
         Self {
             root: self.root.pattern(pattern),
         }
