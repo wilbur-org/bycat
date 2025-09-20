@@ -44,5 +44,7 @@ impl SettingsFactory {
     }
 }
 
+pub struct LoadFuture {}
+
 #[derive(Default)]
 pub struct Settings {}
