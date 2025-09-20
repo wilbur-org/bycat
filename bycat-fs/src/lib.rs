@@ -6,6 +6,6 @@ mod resolver;
 mod source;
 mod work;
 
-pub use self::{body::Body, dest::*, source::FsSource, work::*};
+pub use self::{body::Body, dest::*, resolver::*, source::*, work::*};
 
 pub use mime::{self, Mime};
