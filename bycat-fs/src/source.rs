@@ -1,12 +1,18 @@
-use std::path::PathBuf;
+use std::{
+    path::PathBuf,
+    task::{Poll, ready},
+};
 
-use crate::{Body, resolver::FileResolver};
+use crate::{
+    Body,
+    resolver::{FileResolver, IntoResolverStream},
+};
 use bycat::Matcher;
 use bycat_error::Error;
 use bycat_package::Package;
 use bycat_source::Source;
-use futures::{TryStreamExt, pin_mut};
-use heather::{HBoxStream, HSend};
+use futures::Stream;
+use pin_project_lite::pin_project;
 use relative_path::RelativePathBuf;
 
 pub struct FsSource {
@@ -33,34 +39,51 @@ impl FsSource {
     }
 }
 
-impl<C> Source<C> for FsSource
-where
-    C: HSend,
-{
+impl<C> Source<C> for FsSource {
     type Item = Package<Body>;
 
     type Error = Error;
 
     type Stream<'a>
-        = HBoxStream<'a, Result<Self::Item, Error>>
+        = FsSourceStream
     where
         Self: 'a,
         C: 'a;
 
     fn create_stream<'a>(self, _ctx: &'a C) -> Self::Stream<'a> {
-        Box::pin(async_stream::try_stream! {
-            let root = self.root.root().to_path_buf();
+        FsSourceStream {
+            stream: self.root.into_find(),
+        }
+    }
+}
 
-            let stream = self.root.find();
-            pin_mut!(stream);
+pin_project! {
 
-            while let Some(next) = stream.try_next().await.map_err(Error::new)? {
-                let full_path = next.to_logical_path(&root);
-                let mime = mime_guess::from_path(&full_path).first_or_octet_stream();
+pub struct FsSourceStream {
+    #[pin]
+    stream: IntoResolverStream,
+}
+}
 
-                yield Package::new(next, mime, Body::Path(full_path));
+impl Stream for FsSourceStream {
+    type Item = Result<Package<Body>, Error>;
+    fn poll_next(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        let next = match ready!(self.project().stream.poll_next(cx)) {
+            Some(Ok(ret)) => ret,
+            Some(Err(err)) => return Poll::Ready(Some(Err(Error::new(err)))),
+            None => return Poll::Ready(None),
+        };
 
-            }
-        })
+        let full_path = next.full_path();
+        let mime = mime_guess::from_path(&full_path).first_or_octet_stream();
+
+        Poll::Ready(Some(Ok(Package::new(
+            next.path().clone(),
+            mime,
+            Body::Path(full_path),
+        ))))
     }
 }

@@ -227,7 +227,6 @@ dependencies = [
  "either",
  "fast-glob",
  "futures",
- "heather",
  "mime",
  "mime_guess",
  "pathdiff",

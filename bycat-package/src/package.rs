@@ -163,6 +163,18 @@ impl<B> Package<B> {
         }
     }
 
+    pub fn map_sync<F, U>(self, content: F) -> Package<U>
+    where
+        F: FnOnce(B) -> U,
+    {
+        Package {
+            name: self.name,
+            mime: self.mime,
+            content: content(self.content),
+            meta: self.meta,
+        }
+    }
+
     pub async fn try_map<F, U, C, E>(self, content: F) -> Result<Package<C>, E>
     where
         F: FnOnce(B) -> U,

@@ -1,10 +1,13 @@
 use bycat::Work;
-use bycat_error::{BoxError, Error};
-use bycat_package::{IntoPackage, Package};
+use bycat_error::Error;
+use bycat_package::Package;
 use futures::future::BoxFuture;
-use heather::{HBoxFuture, HSend};
 use mime::Mime;
-use std::path::PathBuf;
+use pin_project_lite::pin_project;
+use std::{
+    path::{Path, PathBuf},
+    task::{Poll, ready},
+};
 use tokio::io::AsyncWriteExt;
 
 use crate::Body;
@@ -22,7 +25,7 @@ impl FsDest {
 
 impl<C, T> Work<C, Package<T>> for FsDest
 where
-    T: Into<Body> + HSend,
+    T: Into<Body>,
     for<'a> T: 'a,
 {
     type Output = Package<Body>;
@@ -30,25 +33,85 @@ where
     type Error = Error;
 
     type Future<'a>
-        = HBoxFuture<'a, Result<Package<Body>, Error>>
+        = FsDestFuture<'a>
     where
         C: 'a;
 
     fn call<'a>(&'a self, _ctx: &'a C, req: Package<T>) -> Self::Future<'a> {
-        let path = self.path.clone();
-        Box::pin(async move {
-            let mut package = req.map(|body| async move { body.into() }).await;
+        let package = req.map_sync(|m| m.into());
 
-            if !tokio::fs::try_exists(&path).await.map_err(Error::new)? {
-                tokio::fs::create_dir_all(&path).await.map_err(Error::new)?
+        FsDestFuture {
+            state: FsDestFutureState::Ensure {
+                future: Box::pin(async move {
+                    if !tokio::fs::try_exists(&self.path)
+                        .await
+                        .map_err(Error::new)?
+                    {
+                        tokio::fs::create_dir_all(&self.path)
+                            .await
+                            .map_err(Error::new)?
+                    }
+
+                    Ok(package)
+                }),
+            },
+            root: &self.path,
+        }
+    }
+}
+
+pin_project! {
+    #[project = StateProj]
+    enum FsDestFutureState<'a> {
+        Ensure {
+            #[pin]
+            future: BoxFuture<'a, Result<Package<Body>, Error>>,
+        },
+        Write {
+            #[pin]
+            future: BoxFuture<'a, Result<Package<Body>, Error>>,
+        },
+    }
+
+}
+
+pin_project! {
+    pub struct FsDestFuture<'a> {
+        #[pin]
+        state: FsDestFutureState<'a>,
+        root: &'a Path,
+    }
+}
+
+impl<'a> Future for FsDestFuture<'a> {
+    type Output = Result<Package<Body>, Error>;
+
+    fn poll(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        loop {
+            let mut this = self.as_mut().project();
+
+            match this.state.as_mut().project() {
+                StateProj::Ensure { future } => {
+                    let mut ret = match ready!(future.poll(cx)) {
+                        Ok(ret) => ret,
+                        Err(err) => return Poll::Ready(Err(err)),
+                    };
+
+                    let file_path = ret.path().to_logical_path(this.root);
+
+                    let future = Box::pin(async move {
+                        ret.content_mut().write_to(&file_path).await?;
+                        Ok(ret)
+                    });
+
+                    this.state.set(FsDestFutureState::Write { future });
+                }
+                StateProj::Write { future } => return future.poll(cx),
             }
-
-            let file_path = package.path().to_logical_path(&path);
-
-            package.content_mut().write_to(&file_path).await?;
-
-            Ok(package)
-        })
+        }
     }
 }
 
