@@ -1,7 +1,11 @@
-use alloc::boxed::Box;
+use core::task::{ready, Poll};
+
 use bycat::Work;
-use futures::{pin_mut, stream::FuturesUnordered, StreamExt};
-use heather::{HBoxStream, HSend, HSendSync};
+use futures::{
+    stream::{Fuse, FuturesUnordered},
+    Stream, StreamExt,
+};
+use pin_project_lite::pin_project;
 
 use crate::Source;
 
@@ -18,56 +22,79 @@ impl<S, T> Concurrent<S, T> {
 
 impl<S, T, C> Source<C> for Concurrent<S, T>
 where
-    S: Source<C> + HSend,
-    S::Item: HSend,
-    S::Error: HSend,
-    for<'a> S::Stream<'a>: HSend,
-    T: Work<C, S::Item> + HSend,
-    T::Output: HSend,
-    T::Error: Into<S::Error> + HSend,
-    for<'a> T::Future<'a>: HSend,
-    C: HSendSync,
-    for<'a> S: 'a,
-    for<'a> T: 'a,
-    for<'a> C: 'a,
+    S: Source<C>,
+
+    T: Work<C, S::Item>,
+    T::Error: Into<S::Error>,
 {
     type Error = S::Error;
     type Item = T::Output;
 
     type Stream<'a>
-        = HBoxStream<'a, Result<Self::Item, Self::Error>>
+        = ConcurrentStream<'a, C, S, T>
     where
         S: 'a,
         T: 'a,
         C: 'a;
 
     fn create_stream<'a>(self, ctx: &'a C) -> Self::Stream<'a> {
-        let stream = async_stream::stream! {
+        ConcurrentStream {
+            stream: self.source.create_stream(ctx).fuse(),
+            work: self.work,
+            futures: FuturesUnordered::new(),
+            context: ctx,
+        }
+    }
+}
 
-          let  stream = self.source.create_stream(ctx);
-          pin_mut!(stream);
+pin_project! {
+  pub struct ConcurrentStream<'a, C: 'a, S: Source<C>, T: Work<C, S::Item>>
+  where
+    T: 'a,
+    S: 'a
+   {
+    #[pin]
+    stream: Fuse<S::Stream<'a>>,
+    work: T,
+    #[pin]
+    futures: FuturesUnordered<T::Future<'a>>,
+    context: &'a C
+}
+}
 
-          let mut futures = FuturesUnordered::new();
+impl<'a, C: 'a, S: Source<C> + 'a, T: Work<C, S::Item> + 'a> Stream
+    for ConcurrentStream<'a, C, S, T>
+where
+    T::Error: Into<S::Error>,
+{
+    type Item = Result<T::Output, S::Error>;
 
-          while let Some(next) = stream.next().await {
-            match next {
-              Ok(ret) => futures.push(self.work.call(ctx, ret)),
-              Err(err) => {
-                yield Err(err)
-              }
+    fn poll_next(
+        mut self: core::pin::Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Option<Self::Item>> {
+        loop {
+            let mut this = self.as_mut().project();
+
+            let done = match this.stream.poll_next(cx) {
+                Poll::Ready(Some(Ok(ret))) => {
+                    let future = this.work.call(&this.context, ret);
+                    this.futures
+                        .as_mut()
+                        .push(unsafe { core::mem::transmute::<_, T::Future<'a>>(future) });
+                    false
+                }
+                Poll::Ready(Some(Err(err))) => return Poll::Ready(Some(Err(err))),
+                Poll::Ready(None) => true,
+                Poll::Pending => false,
+            };
+
+            if done && this.futures.as_mut().is_empty() {
+                return Poll::Ready(None);
             }
 
-            if let Some(next) = futures.next().await {
-              yield next.map_err(Into::into)
-            }
-          }
-
-          while let Some(next) = futures.next().await {
-            yield next.map_err(Into::into);
-          }
-
-        };
-
-        Box::pin(stream)
+            let ret = ready!(this.futures.as_mut().poll_next(cx));
+            return Poll::Ready(ret.map(|m| m.map_err(Into::into)));
+        }
     }
 }

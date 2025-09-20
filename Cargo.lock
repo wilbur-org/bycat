@@ -313,14 +313,12 @@ dependencies = [
 name = "bycat-source"
 version = "0.1.0"
 dependencies = [
- "async-stream",
  "bycat",
  "bycat-error",
  "bycat-futures",
  "either",
  "flume",
  "futures",
- "heather",
  "pin-project-lite",
  "tokio",
 ]
