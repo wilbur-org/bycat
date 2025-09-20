@@ -1,0 +1,9 @@
+[package]
+name = "bycat-cli"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bycat = { path = "../bycat" }
+bycat-container = { path = "../bycat-container", features = [] }
+directories = { version = "6" }
