@@ -196,7 +196,15 @@ impl Stream for ReadDirStream {
                                 path: path,
                             };
 
-                            return Poll::Ready(Some(Ok(path)));
+                            if this.patterns.is_empty() {
+                                return Poll::Ready(Some(Ok(path)));
+                            }
+
+                            for pattern in &*this.patterns {
+                                if pattern.is_match(&path) {
+                                    return Poll::Ready(Some(Ok(path)));
+                                }
+                            }
                         }
                         Some(Err(err)) => return Poll::Ready(Some(Err(Error::new(err)))),
                         None => return Poll::Ready(None),

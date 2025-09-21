@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-tracing = ["dep:tracing-subscriber"]
 
 [dependencies]
 bycat = { path = "../bycat" }
@@ -22,10 +21,10 @@ futures = { version = "0.3" }
 relative-path = { workspace = true }
 
 tracing = { version = "0.1" }
-tracing-subscriber = { version = "0.3", optional = true }
 
 tokio = { version = "1", features = ["signal"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
 bycat-error = { path = "../bycat-error" }
+tracing-subscriber = { version = "0.3" }

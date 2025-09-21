@@ -11,7 +11,7 @@ use futures::{Stream, future::BoxFuture};
 pub use async_walkdir::Error as WalkDirError;
 use bycat::Matcher;
 use pin_project_lite::pin_project;
-use relative_path::RelativePathBuf;
+use relative_path::{RelativePath, RelativePathBuf};
 
 use crate::Body;
 
@@ -21,6 +21,10 @@ pub struct ResolvedPath {
 }
 
 impl ResolvedPath {
+    pub fn new(root: PathBuf, path: RelativePathBuf) -> ResolvedPath {
+        ResolvedPath { root, path }
+    }
+
     pub fn path(&self) -> &RelativePathBuf {
         &self.path
     }
@@ -31,6 +35,12 @@ impl ResolvedPath {
 
     pub fn full_path(&self) -> PathBuf {
         self.path.to_logical_path(&self.root)
+    }
+}
+
+impl AsRef<RelativePath> for ResolvedPath {
+    fn as_ref(&self) -> &RelativePath {
+        &self.path
     }
 }
 
@@ -55,7 +65,7 @@ impl IntoPackage<Body> for ResolvedPath {
             if meta.is_dir() {
                 return Err(bycat_error::Error::new(std::io::Error::new(
                     std::io::ErrorKind::IsADirectory,
-                    "Package cannot be a directory",
+                    format!("Package cannot be a directory: {:?}", full_path),
                 )));
             }
 

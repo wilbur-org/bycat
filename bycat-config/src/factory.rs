@@ -6,6 +6,7 @@ use bycat_source::{Pipeline, PipelineStream, Serial, Source, SourceExt, StreamSo
 use futures::Stream;
 use pin_project_lite::pin_project;
 use toback::Toback;
+use tracing::debug;
 
 use crate::{
     config::Config,
@@ -71,10 +72,12 @@ impl Future for LoadConfigFuture {
 
             match ready!(this.stream.poll_next(cx)) {
                 Some(Ok(ret)) => {
-                    let (_, content) = ret.into_parts();
+                    let (parts, content) = ret.into_parts();
+                    debug!(path = ?parts.name, "File loaded");
                     this.output.as_mut().unwrap().extend(content);
                 }
-                Some(Err(_err)) => {
+                Some(Err(err)) => {
+                    tracing::error!(error = %err, "File failed to load");
                     // TODO: What todo about errors?
                     continue;
                 }

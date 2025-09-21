@@ -3,6 +3,10 @@ name = "bycat-config"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+toml = ["toback/toml"]
+yaml = ["toback/yaml"]
+
 [dependencies]
 bycat-fs = { path = "../bycat-fs" }
 bycat-source = { path = "../bycat-source", features = ["alloc", "std"] }
@@ -22,3 +26,4 @@ toback = { git = "https://github.com/kildevaeld/toback-rs", features = [
 ] }
 
 pin-project-lite = "0.2"
+tracing = { version = "0.1" }

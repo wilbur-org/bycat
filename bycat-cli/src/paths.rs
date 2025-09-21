@@ -1,11 +1,12 @@
 use std::path::{Path, PathBuf};
 
-use bycat::Matcher;
+use bycat::{Matcher, Work};
 use bycat_error::Error;
-use bycat_fs::{Body, FileResolver, IntoResolverStream, ResolvedPath, WalkDir, WalkDirStream};
-use bycat_package::Package;
+use bycat_fs::{Body, FsDest, ReadDir, ReadDirStream, ResolvedPath, WalkDir, WalkDirStream};
+use bycat_package::{IntoPackage, Package};
 use bycat_source::Source;
 use directories::{BaseDirs, ProjectDirs};
+use relative_path::RelativePath;
 
 #[derive(Clone, Debug)]
 pub struct Paths {
@@ -58,8 +59,21 @@ impl<'a> Dir<'a> {
         resolver.create_stream(&())
     }
 
-    pub async fn write(&self, mut file: Package<Body>) -> Result<(), Error> {
-        let path = file.path().to_logical_path(self.path);
-        file.content_mut().write_to(&path).await.map_err(Error::new)
+    pub fn list(&self, path: impl AsRef<RelativePath>) -> ReadDirStream {
+        let resolver = ReadDir::new(path.as_ref().to_logical_path(self.path));
+        resolver.create_stream(&())
+    }
+
+    pub async fn read(&self, path: impl AsRef<RelativePath>) -> Result<Package<Body>, Error> {
+        let path = ResolvedPath::new(
+            self.path.to_path_buf(),
+            path.as_ref().to_relative_path_buf(),
+        );
+        path.into_package().await
+    }
+
+    pub async fn write(&self, file: Package<Body>) -> Result<(), Error> {
+        FsDest::new(self.path).call(&(), file).await?;
+        Ok(())
     }
 }
