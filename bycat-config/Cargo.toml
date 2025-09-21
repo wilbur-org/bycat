@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 bycat-fs = { path = "../bycat-fs" }
 bycat-source = { path = "../bycat-source", features = ["alloc", "std"] }
-bycat-package = { path = "../bycat-package" }
+bycat-package = { path = "../bycat-package", features = ["serde"] }
 bycat-error = { path = "../bycat-error" }
 
 serde = { version = "1", features = ["derive"] }
