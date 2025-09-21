@@ -1,0 +1,30 @@
+[package]
+name = "bycat-cli"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+
+[dependencies]
+bycat = { path = "../bycat" }
+bycat-fs = { path = "../bycat-fs" }
+bycat-service = { path = "../bycat-service" }
+bycat-package = { path = "../bycat-package" }
+bycat-source = { path = "../bycat-source" }
+bycat-error = { path = "../bycat-error" }
+bycat-config = { path = "../bycat-config" }
+
+bycat-container = { path = "../bycat-container", features = [] }
+directories = { version = "6" }
+pin-project-lite = "0.2"
+futures = { version = "0.3" }
+relative-path = { workspace = true }
+
+tracing = { version = "0.1" }
+
+tokio = { version = "1", features = ["signal"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+bycat-error = { path = "../bycat-error" }
+tracing-subscriber = { version = "0.3" }

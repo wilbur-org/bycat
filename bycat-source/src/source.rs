@@ -1,4 +1,3 @@
-#[cfg(feature = "alloc")]
 use crate::cloned::AsyncCloned;
 use crate::{concurrent::Concurrent, Pipeline, SourceUnit};
 use bycat::{pipe::And, then::Then, Work};
@@ -118,7 +117,6 @@ pub trait SourceExt<C>: Source<C> {
         }
     }
 
-    #[cfg(feature = "alloc")]
     fn cloned<T1, T2>(self, work1: T1, work2: T2) -> AsyncCloned<Self, T1, T2>
     where
         Self: Sized,
@@ -381,7 +379,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn create_stream<'a>(self, ctx: &'a C) -> Self::Stream<'a> {
+    fn create_stream<'a>(self, _ctx: &'a C) -> Self::Stream<'a> {
         StreamSourceStream { stream: self.0 }
     }
 }

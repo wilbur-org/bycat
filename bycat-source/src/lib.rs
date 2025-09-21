@@ -7,29 +7,27 @@ extern crate alloc;
 extern crate std;
 
 mod and;
-#[cfg(feature = "alloc")]
-mod cloned;
-// mod error;
 #[cfg(feature = "channel")]
 pub mod channel;
-#[cfg(feature = "alloc")]
+mod cloned;
 mod concurrent;
 mod pipeline;
+#[cfg(feature = "alloc")]
+mod serial;
 mod source;
 mod then;
 mod unit;
-// mod wrap;
 
 pub use bycat::{work_fn, NoopWork, Work};
 
 pub use self::{
-    // cloned::*,
-    // error::Result,
-    // error::*,
-    pipeline::Pipeline,
+    pipeline::{Pipeline, PipelineStream},
     source::*,
     unit::*,
 };
+
+#[cfg(feature = "alloc")]
+pub use self::serial::*;
 
 pub mod prelude {
     pub use super::{SourceExt, UnitExt};

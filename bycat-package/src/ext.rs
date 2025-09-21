@@ -1,19 +1,14 @@
-use core::marker::PhantomData;
-
-use bycat::Work;
+use bycat::{Work, pipe::And};
 
 use crate::{IntoPackage, into_package::IntoPackageWork};
 
 pub trait WorkExt<C, T>: Work<C, T> {
-    fn into_package<B>(self) -> IntoPackageWork<Self, C, B>
+    fn into_package<B>(self) -> And<Self, IntoPackageWork<C, B>>
     where
         Self: Sized,
         Self::Output: IntoPackage<B>,
     {
-        IntoPackageWork {
-            worker: self,
-            ctx: PhantomData,
-        }
+        And::new(self, IntoPackageWork::new())
     }
 }
 

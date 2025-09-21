@@ -1,8 +1,12 @@
 use alloc::boxed::Box;
 use async_trait::async_trait;
 use bytes::{BufMut, Bytes, BytesMut};
-use core::convert::Infallible;
+use core::{
+    convert::Infallible,
+    task::{Poll, ready},
+};
 use futures::{TryStream, TryStreamExt};
+use pin_project_lite::pin_project;
 
 #[async_trait]
 pub trait Content {
@@ -63,6 +67,48 @@ where
                 self.state = StreamContentState::Bytes(bytes.clone());
                 Ok(bytes)
             }
+        }
+    }
+}
+
+pin_project! {
+pub struct CollectBytes<S> {
+    #[pin]
+    stream: S,
+    buffer: Option<BytesMut>,
+}
+
+}
+
+impl<S> CollectBytes<S> {
+    pub fn new(stream: S) -> CollectBytes<S> {
+        CollectBytes {
+            stream,
+            buffer: Some(BytesMut::new()),
+        }
+    }
+}
+
+impl<S> Future for CollectBytes<S>
+where
+    S: TryStream<Ok = Bytes>,
+{
+    type Output = Result<Bytes, S::Error>;
+
+    fn poll(
+        mut self: core::pin::Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Self::Output> {
+        loop {
+            let this = self.as_mut().project();
+
+            let ret = match ready!(this.stream.try_poll_next(cx)) {
+                Some(Ok(ret)) => ret,
+                Some(Err(err)) => return Poll::Ready(Err(err)),
+                None => return Poll::Ready(Ok(this.buffer.take().unwrap().freeze())),
+            };
+
+            this.buffer.as_mut().unwrap().put(ret);
         }
     }
 }

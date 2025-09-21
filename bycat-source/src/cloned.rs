@@ -4,10 +4,8 @@ use core::{
 };
 
 use crate::{Source, Work};
-use alloc::boxed::Box;
-use async_stream::try_stream;
-use futures::{future::TryJoin, Stream, TryFuture, TryStreamExt};
-use heather::{HBoxStream, HSend, HSendSync};
+use futures::{Stream, TryFuture};
+
 use pin_project_lite::pin_project;
 
 #[derive(Debug, Clone, Copy)]
@@ -26,49 +24,6 @@ impl<S, T1, T2> AsyncCloned<S, T1, T2> {
         }
     }
 }
-
-// impl<S, T1, T2, C> Source<C> for AsyncCloned<S, T1, T2>
-// where
-//     S: Source<C> + HSend,
-//     for<'a> S: 'a,
-//     S::Error: HSend,
-//     for<'a> S::Stream<'a>: HSend,
-//     S::Item: Clone + HSend,
-//     T1::Output: HSend,
-//     T1: Work<C, S::Item> + Clone + HSend,
-//     for<'a> T1: 'a,
-//     T1::Error: Into<S::Error> + HSend,
-//     for<'a> T1::Future<'a>: HSend,
-//     T2: Work<C, S::Item, Output = T1::Output> + Clone + HSend,
-//     for<'a> T2: 'a,
-//     T2::Error: Into<S::Error> + HSend,
-//     for<'a> T2::Future<'a>: HSend,
-//     for<'a> C: HSendSync + 'a,
-// {
-//     type Item = T1::Output;
-//     type Error = S::Error;
-//     type Stream<'a>
-//         = HBoxStream<'a, Result<Self::Item, Self::Error>>
-//     where
-//         S: 'a,
-//         C: 'a,
-//         T1: 'a,
-//         T2: 'a;
-
-//     fn create_stream<'a>(self, ctx: &'a C) -> Self::Stream<'a> {
-//         Box::pin(try_stream! {
-//             let stream = self.source.create_stream(ctx);
-//             futures::pin_mut!(stream);
-
-//             while let Some(item) = stream.try_next().await? {
-
-//                 yield self.work1.call(ctx, item.clone()).await?;
-//                 yield self.work2.call(ctx, item).await?;
-
-//             }
-//         })
-//     }
-// }
 
 impl<S, T1, T2, C> Source<C> for AsyncCloned<S, T1, T2>
 where
@@ -104,7 +59,7 @@ pin_project! {
 #[project = CloneProj]
 enum CloneState<T1: TryFuture, T2: TryFuture<Error = T1::Error>> {
     Next,
-    Work { #[pin] future: TryJoin<T1, T2> },
+    Work { #[pin] future: PairStream<T1, T2> },
 }
 
 }
@@ -151,19 +106,86 @@ where
                         let future2 = this.work2.call(*this.context, ret);
                         this.state.set(CloneState::Work {
                             future: unsafe {
-                                core::mem::transmute(futures::future::try_join(future1, future2))
+                                core::mem::transmute(PairStream {
+                                    future1: PairState::Working { future: future1 },
+                                    future2: PairState::Working { future: future2 },
+                                })
                             },
                         });
                     }
                     Some(Err(err)) => return Poll::Ready(Some(Err(err))),
                     None => return Poll::Ready(None),
                 },
-                CloneProj::Work { future } => {
-                    //
-                    match ready!(future.poll(cx)) {
-                        Ok(ret) => {}
-                        Err(err) => {}
+                CloneProj::Work { future } => match ready!(future.poll_next(cx)) {
+                    Some(ret) => return Poll::Ready(Some(ret.map_err(Into::into))),
+                    None => {
+                        this.state.set(CloneState::Next);
                     }
+                },
+            }
+        }
+    }
+}
+
+pin_project! {
+#[project = PairProj]
+enum PairState<T1> {
+    Working { #[pin] future: T1 },
+    Done,
+}
+}
+
+pin_project! {
+struct PairStream<T1, T2> {
+    #[pin]
+    future1: PairState<T1>,
+    #[pin]
+    future2: PairState<T2>,
+}
+
+}
+
+impl<T1, T2> Stream for PairStream<T1, T2>
+where
+    T1: Future,
+    T2: Future<Output = T1::Output>,
+{
+    type Item = T1::Output;
+
+    fn poll_next(
+        mut self: core::pin::Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> Poll<Option<Self::Item>> {
+        loop {
+            let mut this = self.as_mut().project();
+
+            match (
+                this.future1.as_mut().project(),
+                this.future2.as_mut().project(),
+            ) {
+                (PairProj::Done, PairProj::Done) => return Poll::Ready(None),
+                (PairProj::Done, PairProj::Working { future }) => {
+                    let ret = ready!(future.poll(cx));
+                    this.future2.set(PairState::Done);
+                    return Poll::Ready(Some(ret));
+                }
+                (PairProj::Working { future }, PairProj::Done) => {
+                    let ret = ready!(future.poll(cx));
+                    this.future1.set(PairState::Done);
+                    return Poll::Ready(Some(ret));
+                }
+                (PairProj::Working { future: future1 }, PairProj::Working { future: future2 }) => {
+                    match future1.poll(cx) {
+                        Poll::Pending => {}
+                        Poll::Ready(ret) => {
+                            this.future1.set(PairState::Done);
+                            return Poll::Ready(Some(ret));
+                        }
+                    }
+
+                    let ret = ready!(future2.poll(cx));
+                    this.future2.set(PairState::Done);
+                    return Poll::Ready(Some(ret));
                 }
             }
         }

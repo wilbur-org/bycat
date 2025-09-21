@@ -4,20 +4,27 @@ use std::{
 };
 
 use async_walkdir::WalkDir;
+use bycat_package::{IntoPackage, Package, WithPath};
 use bycat_source::Source;
-use futures::Stream;
+use futures::{Stream, future::BoxFuture};
 
 pub use async_walkdir::Error as WalkDirError;
 use bycat::Matcher;
 use pin_project_lite::pin_project;
-use relative_path::RelativePathBuf;
+use relative_path::{RelativePath, RelativePathBuf};
+
+use crate::Body;
 
 pub struct ResolvedPath {
-    root: PathBuf,
-    path: RelativePathBuf,
+    pub(crate) root: PathBuf,
+    pub(crate) path: RelativePathBuf,
 }
 
 impl ResolvedPath {
+    pub fn new(root: PathBuf, path: RelativePathBuf) -> ResolvedPath {
+        ResolvedPath { root, path }
+    }
+
     pub fn path(&self) -> &RelativePathBuf {
         &self.path
     }
@@ -31,8 +38,46 @@ impl ResolvedPath {
     }
 }
 
+impl AsRef<RelativePath> for ResolvedPath {
+    fn as_ref(&self) -> &RelativePath {
+        &self.path
+    }
+}
+
+impl WithPath for ResolvedPath {
+    fn path(&self) -> &relative_path::RelativePath {
+        &self.path
+    }
+}
+
+impl IntoPackage<Body> for ResolvedPath {
+    type Future = BoxFuture<'static, Result<Package<Body>, Self::Error>>;
+
+    type Error = bycat_error::Error;
+
+    fn into_package(self) -> Self::Future {
+        Box::pin(async move {
+            let full_path = self.path.to_logical_path(&self.root);
+
+            let meta = tokio::fs::metadata(&full_path)
+                .await
+                .map_err(bycat_error::Error::new)?;
+            if meta.is_dir() {
+                return Err(bycat_error::Error::new(std::io::Error::new(
+                    std::io::ErrorKind::IsADirectory,
+                    format!("Package cannot be a directory: {:?}", full_path),
+                )));
+            }
+
+            let mime = mime_guess::from_path(&full_path).first_or_octet_stream();
+
+            Ok(Package::new(self.path, mime, Body::Path(full_path)))
+        })
+    }
+}
+
 pub struct FileResolver {
-    patterns: Vec<Box<dyn Matcher<RelativePathBuf> + Send + Sync>>,
+    patterns: Vec<Box<dyn Matcher<ResolvedPath> + Send + Sync>>,
     root: PathBuf,
 }
 
@@ -46,10 +91,7 @@ impl FileResolver {
 }
 
 impl FileResolver {
-    pub fn pattern<M: Matcher<RelativePathBuf> + Send + Sync + 'static>(
-        mut self,
-        pattern: M,
-    ) -> Self {
+    pub fn pattern<M: Matcher<ResolvedPath> + Send + Sync + 'static>(mut self, pattern: M) -> Self {
         self.patterns.push(Box::new(pattern));
         self
     }
@@ -57,41 +99,6 @@ impl FileResolver {
     pub fn root(&self) -> &Path {
         &self.root
     }
-
-    // pub fn find(&self) -> impl Stream<Item = Result<RelativePathBuf, WalkDirError>> {
-    //     async_stream::try_stream! {
-
-    //         let mut stream = WalkDir::new(&self.root);
-
-    //         'main_loop:
-    //         while let Some(next) = stream.try_next().await? {
-    //             // Get relative path
-    //             let path = match pathdiff::diff_paths(next.path(), &self.root) {
-    //                 Some(path) => path,
-    //                 None => {
-    //                     continue 'main_loop;
-    //                 }
-    //             };
-
-    //             let Ok(path) = RelativePathBuf::from_path(path) else {
-    //                 continue
-    //             };
-
-    //             if self.patterns.is_empty() {
-    //                 yield path;
-    //             } else {
-    //                 for pattern in &self.patterns {
-    //                     if pattern.is_match(&path) {
-    //                         yield path;
-    //                         continue 'main_loop;
-    //                     }
-    //                 }
-    //             }
-
-    //         }
-
-    //     }
-    // }
 
     pub fn find<'a>(&'a self) -> ResolverStream<'a> {
         ResolverStream {
@@ -166,7 +173,7 @@ impl<'a> Stream for ResolverStream<'a> {
                 return Poll::Ready(Some(Ok(path)));
             } else {
                 for pattern in &this.resolver.patterns {
-                    if pattern.is_match(&path.path) {
+                    if pattern.is_match(&path) {
                         return Poll::Ready(Some(Ok(path)));
                     }
                 }
@@ -217,7 +224,7 @@ impl Stream for IntoResolverStream {
                 return Poll::Ready(Some(Ok(path)));
             } else {
                 for pattern in &this.resolver.patterns {
-                    if pattern.is_match(&path.path) {
+                    if pattern.is_match(&path) {
                         return Poll::Ready(Some(Ok(path)));
                     }
                 }

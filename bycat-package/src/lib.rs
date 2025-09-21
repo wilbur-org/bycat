@@ -15,7 +15,7 @@ pub use self::serialize::*;
 
 pub use self::{
     content::*,
-    into_package::{IntoPackageWork, IntoPackageWorkFuture},
+    into_package::IntoPackageWork,
     matcher::*,
     package::{IntoPackage, Meta, Package},
 };
