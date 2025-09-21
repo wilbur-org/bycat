@@ -39,26 +39,6 @@ pub trait DynInit<B: Backend>: Send + Sync {
 
 pub type BoxInit<'a, C> = Box<dyn DynInit<C> + 'a>;
 
-// impl<'module, C> Init<C> for BoxInit<'module, C>
-// where
-//     C: Backend,
-// {
-//     type Future<'a>
-//         = HBoxFuture<'a, Result<(), Error>>
-//     where
-//         Self: 'a;
-
-//     fn init<'ctx, 'a>(
-//         &'a self,
-//         ctx: &'a mut <C as Backend>::InitContext<'ctx>,
-//     ) -> Self::Future<'a> {
-//         Box::new(async move {
-//             <Self as DynInit<C>>::build(self, ctx).await?;
-//             Ok(())
-//         })
-//     }
-// }
-
 pub struct InitBox<T>(T);
 
 impl<T> InitBox<T> {

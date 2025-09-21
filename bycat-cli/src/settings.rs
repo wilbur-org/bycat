@@ -7,12 +7,12 @@ use futures::StreamExt;
 use crate::{Paths, paths::Dir};
 
 pub struct ConfigBuilder<'a> {
-    local: Option<&'a str>,
-    pattern: Option<&'a str>,
+    pub local: Option<&'a str>,
+    pub pattern: Option<&'a str>,
 }
 
 impl<'a> ConfigBuilder<'a> {
-    pub fn build(self, config_dir: &Path) -> SettingsFactory {
+    pub fn build(self) -> SettingsFactory {
         SettingsFactory {
             local: self.local.map(|m| m.to_string()),
             pattern: self.pattern.map(|m| m.to_string()),

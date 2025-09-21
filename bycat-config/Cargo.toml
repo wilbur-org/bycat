@@ -1,0 +1,24 @@
+[package]
+name = "bycat-config"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bycat-fs = { path = "../bycat-fs" }
+bycat-source = { path = "../bycat-source", features = ["alloc", "std"] }
+bycat-package = { path = "../bycat-package" }
+bycat-error = { path = "../bycat-error" }
+
+serde = { version = "1", features = ["derive"] }
+vaerdi = { git = "https://github.com/kildevaeld/vaerdi-rs", features = [
+    "serde",
+    "std",
+] }
+futures = { version = "0.3" }
+
+tinytemplate = { version = "1" }
+toback = { git = "https://github.com/kildevaeld/toback-rs", features = [
+    "send",
+] }
+
+pin-project-lite = "0.2"

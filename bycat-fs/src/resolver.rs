@@ -16,8 +16,8 @@ use relative_path::RelativePathBuf;
 use crate::Body;
 
 pub struct ResolvedPath {
-    root: PathBuf,
-    path: RelativePathBuf,
+    pub(crate) root: PathBuf,
+    pub(crate) path: RelativePathBuf,
 }
 
 impl ResolvedPath {
@@ -43,18 +43,20 @@ impl WithPath for ResolvedPath {
 impl IntoPackage<Body> for ResolvedPath {
     type Future = BoxFuture<'static, Result<Package<Body>, Self::Error>>;
 
-    type Error = std::io::Error;
+    type Error = bycat_error::Error;
 
     fn into_package(self) -> Self::Future {
         Box::pin(async move {
             let full_path = self.path.to_logical_path(&self.root);
 
-            let meta = tokio::fs::metadata(&full_path).await?;
+            let meta = tokio::fs::metadata(&full_path)
+                .await
+                .map_err(bycat_error::Error::new)?;
             if meta.is_dir() {
-                return Err(std::io::Error::new(
+                return Err(bycat_error::Error::new(std::io::Error::new(
                     std::io::ErrorKind::IsADirectory,
                     "Package cannot be a directory",
-                ));
+                )));
             }
 
             let mime = mime_guess::from_path(&full_path).first_or_octet_stream();

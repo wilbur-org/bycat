@@ -12,6 +12,7 @@ bycat = { path = "../bycat" }
 bycat-error = { path = "../bycat-error" }
 
 tokio = { version = "1", features = ["fs", "io-util"] }
+tokio-stream = { version = "0.1", features = ["fs"] }
 async-walkdir = { version = "2" }
 fast-glob = { version = "0.4" }
 async-stream = { version = "0.3" }

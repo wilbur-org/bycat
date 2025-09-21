@@ -1,7 +1,8 @@
 use std::path::{Path, PathBuf};
 
 use bycat::Matcher;
-use bycat_fs::{Body, FileResolver, FsSource, FsSourceStream, IntoResolverStream, ResolvedPath};
+use bycat_error::Error;
+use bycat_fs::{Body, FileResolver, IntoResolverStream, ResolvedPath, WalkDir, WalkDirStream};
 use bycat_package::Package;
 use bycat_source::Source;
 use directories::{BaseDirs, ProjectDirs};
@@ -45,20 +46,20 @@ impl Paths {
 
 #[derive(Debug)]
 pub struct Dir<'a> {
-    path: &'a Path,
+    pub(crate) path: &'a Path,
 }
 
 impl<'a> Dir<'a> {
     pub fn find<T: Matcher<ResolvedPath> + Send + Sync + 'static>(
         &self,
         matcher: T,
-    ) -> FsSourceStream {
-        let resolver = FsSource::new(self.path.to_path_buf()).pattern(matcher);
+    ) -> WalkDirStream {
+        let resolver = WalkDir::new(self.path.to_path_buf()).pattern(matcher);
         resolver.create_stream(&())
     }
 
-    pub async fn write(&self, mut file: Package<Body>) {
+    pub async fn write(&self, mut file: Package<Body>) -> Result<(), Error> {
         let path = file.path().to_logical_path(self.path);
-        file.content_mut().write_to(&path).await;
+        file.content_mut().write_to(&path).await.map_err(Error::new)
     }
 }

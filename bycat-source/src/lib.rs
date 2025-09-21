@@ -12,13 +12,22 @@ pub mod channel;
 mod cloned;
 mod concurrent;
 mod pipeline;
+#[cfg(feature = "alloc")]
+mod serial;
 mod source;
 mod then;
 mod unit;
 
 pub use bycat::{work_fn, NoopWork, Work};
 
-pub use self::{pipeline::Pipeline, source::*, unit::*};
+pub use self::{
+    pipeline::{Pipeline, PipelineStream},
+    source::*,
+    unit::*,
+};
+
+#[cfg(feature = "alloc")]
+pub use self::serial::*;
 
 pub mod prelude {
     pub use super::{SourceExt, UnitExt};
