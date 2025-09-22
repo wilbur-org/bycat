@@ -398,6 +398,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bycat-value"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "ryu",
+ "serde",
+]
+
+[[package]]
 name = "bytemuck"
 version = "1.23.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

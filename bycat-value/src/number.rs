@@ -99,8 +99,14 @@ impl fmt::Display for Number {
             Number::U32(i) => write!(f, "{}", i),
             Number::I64(i) => write!(f, "{}", i),
             Number::U64(i) => write!(f, "{}", i),
+            #[cfg(not(feature = "ryu"))]
             Number::F32(n) => write!(f, "{}", n),
+            #[cfg(feature = "ryu")]
+            Number::F32(n) => write!(f, "{}", ryu::Buffer::new().format(n)),
+            #[cfg(not(feature = "ryu"))]
             Number::F64(n) => write!(f, "{}", n),
+            #[cfg(feature = "ryu")]
+            Number::F64(n) => write!(f, "{}", ryu::Buffer::new().format(n)),
         }
     }
 }

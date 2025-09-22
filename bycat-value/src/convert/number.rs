@@ -1,4 +1,4 @@
-use crate::number::Number;
+use crate::{number::Number, value::Value};
 use alloc::boxed::Box;
 use alloc::string::ToString;
 use core::convert::Infallible;
@@ -45,35 +45,9 @@ macro_rules! from_impl {
             }
         }
 
-        impl TryFrom<Number> for $from {
-            type Error = TryFromNumberError;
-            fn try_from(number: Number) -> Result<$from, Self::Error> {
-                use Number::*;
-                let ret = match number {
-                    U8(v) => v.try_into()?,
-                    I8(v) => v.try_into()?,
-                    U16(v) => v.try_into()?,
-                    I16(v) => v.try_into()?,
-                    U32(v) => v.try_into()?,
-                    I32(v) => v.try_into()?,
-                    U64(v) => v.try_into()?,
-                    I64(v) => v.try_into()?,
-                    _ => {
-                        return Err(TryFromNumberError {
-                            source: "cannot convert from float".into(),
-                        });
-                    }
-                };
-
-                Ok(ret)
-            }
-        }
-    };
-
-    (float $from: ty, $map: ident) => {
-        impl From<$from> for Number {
-            fn from(from: $from) -> Number {
-                Number::$map(from)
+        impl From<$from> for Value {
+            fn from(from: $from) -> Value {
+                Value::Number(Number::$map(from))
             }
         }
 
@@ -98,6 +72,19 @@ macro_rules! from_impl {
                 };
 
                 Ok(ret)
+            }
+        }
+
+        impl TryFrom<Value> for $from {
+            type Error = TryFromNumberError;
+
+            fn try_from(number: Value) -> Result<$from, Self::Error> {
+                match number {
+                    Value::Number(number) => number.try_into(),
+                    _ => Err(TryFromNumberError {
+                        source: "Value is not a number".into(),
+                    }),
+                }
             }
         }
     };
@@ -115,6 +102,12 @@ from_impl!(u64, U64);
 impl From<f32> for Number {
     fn from(from: f32) -> Number {
         Number::F32(from)
+    }
+}
+
+impl From<f32> for Value {
+    fn from(value: f32) -> Self {
+        Value::Number(Number::F32(value))
     }
 }
 
@@ -149,15 +142,28 @@ impl TryFrom<Number> for f32 {
     }
 }
 
+impl TryFrom<Value> for f32 {
+    type Error = TryFromNumberError;
+
+    fn try_from(number: Value) -> Result<f32, Self::Error> {
+        match number {
+            Value::Number(number) => number.try_into(),
+            _ => Err(TryFromNumberError {
+                source: "Value is not a number".into(),
+            }),
+        }
+    }
+}
+
 impl From<f64> for Number {
     fn from(from: f64) -> Number {
         Number::F64(from)
     }
 }
 
-impl From<usize> for Number {
-    fn from(value: usize) -> Self {
-        Number::U64(value as _)
+impl From<f64> for Value {
+    fn from(value: f64) -> Self {
+        Value::Number(Number::F64(value))
     }
 }
 
@@ -182,5 +188,30 @@ impl TryFrom<Number> for f64 {
         };
 
         Ok(ret)
+    }
+}
+
+impl TryFrom<Value> for f64 {
+    type Error = TryFromNumberError;
+
+    fn try_from(number: Value) -> Result<f64, Self::Error> {
+        match number {
+            Value::Number(number) => number.try_into(),
+            _ => Err(TryFromNumberError {
+                source: "Value is not a number".into(),
+            }),
+        }
+    }
+}
+
+impl From<usize> for Number {
+    fn from(value: usize) -> Self {
+        Number::U64(value as _)
+    }
+}
+
+impl From<usize> for Value {
+    fn from(value: usize) -> Self {
+        Value::Number(Number::U64(value as _))
     }
 }
