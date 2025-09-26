@@ -18,11 +18,16 @@ use core::fmt::{self, Write};
 pub struct DateTime {
     date: Date,
     time: Time,
+    time_zone: TimeZone,
 }
 
 impl DateTime {
     pub fn new(date: Date, time: Time) -> DateTime {
-        DateTime { date, time }
+        DateTime {
+            date,
+            time,
+            time_zone: TimeZone::UTC,
+        }
     }
 
     pub fn date(&self) -> Date {
@@ -200,6 +205,10 @@ impl TimeZone {
         let hour = mins / 60;
         (hour, min, sec)
     }
+}
+
+impl TimeZone {
+    pub const UTC: TimeZone = TimeZone { offset: 0 };
 }
 
 impl fmt::Debug for TimeZone {
