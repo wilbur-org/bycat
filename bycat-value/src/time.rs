@@ -51,6 +51,7 @@ impl fmt::Display for DateTime {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
 pub struct Date {
     repr: u32,
 }
@@ -106,6 +107,7 @@ impl fmt::Display for Date {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
 pub struct Time {
     pub secs: u32,
     pub frac: u32,
@@ -179,6 +181,40 @@ impl fmt::Debug for Time {
 }
 
 impl fmt::Display for Time {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        <Self as fmt::Debug>::fmt(&self, f)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
+pub struct TimeZone {
+    offset: i32,
+}
+
+impl TimeZone {
+    pub(crate) fn hms(&self) -> (u32, u32, u32) {
+        let sec = self.secs % 60;
+        let mins = self.secs / 60;
+        let min = mins % 60;
+        let hour = mins / 60;
+        (hour, min, sec)
+    }
+}
+
+impl fmt::Debug for TimeZone {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (hour, min, sec) = self.hms();
+
+        use core::fmt::Write;
+        write_hundreds(f, hour as u8)?;
+        f.write_char(':')?;
+        write_hundreds(f, min as u8)?;
+        Ok(())
+    }
+}
+
+impl fmt::Display for TimeZone {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         <Self as fmt::Debug>::fmt(&self, f)
     }
