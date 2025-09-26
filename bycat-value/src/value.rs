@@ -13,7 +13,7 @@ pub enum Value {
     String(String),
     Bytes(Bytes),
     List(List),
-    Map(Map<String, Value>),
+    Map(Map),
     Number(Number),
     DateTime(DateTime),
     Date(Date),

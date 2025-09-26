@@ -2,6 +2,7 @@ mod dest;
 // mod into_package;
 // mod package;
 mod body;
+mod fs;
 mod resolver;
 mod source;
 mod work;
