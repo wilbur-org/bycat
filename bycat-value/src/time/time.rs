@@ -15,6 +15,7 @@ use core::fmt::{self, Write};
 // }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(C)]
 pub struct DateTime {
     date: Date,
     time: Time,
@@ -56,13 +57,13 @@ impl fmt::Display for DateTime {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(transparent)]
+#[repr(C)]
 pub struct Date {
     repr: u32,
 }
 
 impl Date {
-    pub fn new(day: u8, month: u8, year: i16) -> Date {
+    pub fn new(year: i16, month: u8, day: u8) -> Date {
         if day > 31 || day < 1 || month > 12 || month < 1 {
             panic!("Date")
         }
@@ -112,7 +113,7 @@ impl fmt::Display for Date {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(transparent)]
+#[repr(C)]
 pub struct Time {
     pub secs: u32,
     pub frac: u32,
@@ -192,15 +193,15 @@ impl fmt::Display for Time {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[repr(transparent)]
+#[repr(C)]
 pub struct TimeZone {
     offset: i32,
 }
 
 impl TimeZone {
-    pub(crate) fn hms(&self) -> (u32, u32, u32) {
-        let sec = self.secs % 60;
-        let mins = self.secs / 60;
+    pub(crate) fn hms(&self) -> (i32, i32, i32) {
+        let sec = self.offset % 60;
+        let mins = self.offset / 60;
         let min = mins % 60;
         let hour = mins / 60;
         (hour, min, sec)
@@ -209,6 +210,10 @@ impl TimeZone {
 
 impl TimeZone {
     pub const UTC: TimeZone = TimeZone { offset: 0 };
+
+    pub fn from_secs(offset: i32) -> TimeZone {
+        TimeZone { offset }
+    }
 }
 
 impl fmt::Debug for TimeZone {

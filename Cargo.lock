@@ -404,6 +404,8 @@ dependencies = [
  "chrono",
  "ryu",
  "serde",
+ "udled2",
+ "udled2-tokenizers",
 ]
 
 [[package]]
@@ -2331,6 +2333,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da8f61945861d20245844f18f05fd66e473ae107bfa2b487a61e13d1c0f4ff29"
 dependencies = [
  "udled",
+]
+
+[[package]]
+name = "udled2"
+version = "0.1.0"
+source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#9d2a67969215658703739f2ed668c61f86e589e6"
+
+[[package]]
+name = "udled2-tokenizers"
+version = "0.1.0"
+source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#9d2a67969215658703739f2ed668c61f86e589e6"
+dependencies = [
+ "udled2",
 ]
 
 [[package]]
