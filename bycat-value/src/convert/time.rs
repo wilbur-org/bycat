@@ -1,7 +1,9 @@
+use chrono::Offset;
 #[cfg(feature = "chrono")]
 use chrono::{Datelike, Timelike};
 
 use crate::Value;
+use crate::time::TimeZone;
 use crate::{Date, DateTime, Time};
 
 impl From<Date> for Value {
@@ -96,7 +98,9 @@ impl From<chrono::NaiveTime> for Value {
 #[cfg(feature = "chrono")]
 impl From<chrono::NaiveDateTime> for DateTime {
     fn from(value: chrono::NaiveDateTime) -> Self {
-        DateTime::new(value.date().into(), value.time().into())
+        use crate::time::TimeZone;
+
+        DateTime::new(value.date().into(), value.time().into(), TimeZone::UTC)
     }
 }
 
@@ -106,6 +110,42 @@ impl From<chrono::NaiveDateTime> for Value {
         Value::DateTime(value.into())
     }
 }
+
+#[cfg(feature = "chrono")]
+impl<T> From<chrono::DateTime<T>> for DateTime
+where
+    T: chrono::TimeZone,
+{
+    fn from(value: chrono::DateTime<T>) -> Self {
+        let offset = value.offset().fix();
+        let date = value.date_naive();
+        let time = value.time();
+        DateTime::new(date.into(), time.into(), offset.into())
+    }
+}
+
+#[cfg(feature = "chrono")]
+impl<T> From<chrono::DateTime<T>> for Value
+where
+    T: chrono::TimeZone,
+{
+    fn from(value: chrono::DateTime<T>) -> Self {
+        Value::DateTime(value.into())
+    }
+}
+
+#[cfg(feature = "chrono")]
+impl From<chrono::FixedOffset> for TimeZone {
+    fn from(value: chrono::FixedOffset) -> Self {
+        TimeZone::from_secs(value.local_minus_utc())
+    }
+}
+
+// impl TryFrom<DateTime> for chrono::DateTime<chrono::FixedOffset> {
+//     type Error = &'static str;
+
+//     fn try_from(value: DateTime) -> Result<Self, Self::Error> {}
+// }
 
 // #[cfg(feature = "chrono")]
 // impl TryFrom<Date> for chrono::NaiveDate {

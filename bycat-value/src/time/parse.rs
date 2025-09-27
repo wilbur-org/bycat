@@ -52,7 +52,7 @@ where
 
         let (hour, _, min, _, secs) = reader.parse((&parser, ':', &parser, ':', &parser))?;
 
-        let nano = if reader.peek(',') {
+        let nano = if reader.peek('.') {
             reader.eat('.')?;
             let nano = reader.parse(Integer)?;
             nano.value as u32
@@ -71,7 +71,7 @@ where
     fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled2::Error> {
         reader.eat((TWO_DIGITS, ':', TWO_DIGITS, ':', TWO_DIGITS))?;
 
-        if reader.peek(',') {
+        if reader.peek('.') {
             reader.eat('.')?;
             reader.eat(Integer)?;
         }
@@ -152,7 +152,7 @@ where
         let (date, _, time, time_zone) =
             reader.parse((DateParser, 'T'.or(' '), TimeParser, TimeZoneParser))?;
 
-        Ok(DateTime::new(date, time))
+        Ok(DateTime::new(date, time, time_zone))
     }
 
     fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled2::Error> {
@@ -169,7 +169,7 @@ where
 impl FromStr for Time {
     type Err = udled2::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Input::new(s.as_bytes()).parse(TimeParser)
+        Input::new(s.as_bytes()).parse((TimeParser, EOF).map_ok(|m| m.0))
     }
 }
 
@@ -183,6 +183,6 @@ impl FromStr for Date {
 impl FromStr for DateTime {
     type Err = udled2::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Input::new(s.as_bytes()).parse(DateTimeParser)
+        Input::new(s.as_bytes()).parse((DateTimeParser, EOF).map_ok(|m| m.0))
     }
 }

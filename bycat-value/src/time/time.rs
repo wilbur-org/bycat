@@ -23,11 +23,11 @@ pub struct DateTime {
 }
 
 impl DateTime {
-    pub fn new(date: Date, time: Time) -> DateTime {
+    pub fn new(date: Date, time: Time, time_zone: TimeZone) -> DateTime {
         DateTime {
             date,
             time,
-            time_zone: TimeZone::UTC,
+            time_zone,
         }
     }
 
@@ -38,13 +38,19 @@ impl DateTime {
     pub fn time(&self) -> Time {
         self.time
     }
+
+    pub fn time_zone(&self) -> TimeZone {
+        self.time_zone
+    }
 }
 
 impl fmt::Debug for DateTime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.date.fmt(f)?;
         f.write_char('T')?;
-        self.time.fmt(f)
+        self.time.fmt(f)?;
+        self.time_zone.fmt(f)?;
+        Ok(())
     }
 }
 
@@ -52,7 +58,9 @@ impl fmt::Display for DateTime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.date.fmt(f)?;
         f.write_char(' ')?;
-        self.time.fmt(f)
+        self.time.fmt(f)?;
+        self.time_zone.fmt(f)?;
+        Ok(())
     }
 }
 
@@ -199,12 +207,14 @@ pub struct TimeZone {
 }
 
 impl TimeZone {
-    pub(crate) fn hms(&self) -> (i32, i32, i32) {
-        let sec = self.offset % 60;
-        let mins = self.offset / 60;
+    pub(crate) fn hms(&self) -> (i32, i32, char) {
+        let mins = self.offset.abs() / 60;
         let min = mins % 60;
         let hour = mins / 60;
-        (hour, min, sec)
+
+        let sign = if self.offset < 0 { '-' } else { '+' };
+
+        (hour, min, sign)
     }
 }
 
@@ -218,12 +228,18 @@ impl TimeZone {
 
 impl fmt::Debug for TimeZone {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let (hour, min, sec) = self.hms();
+        if self.offset == 0 {
+            f.write_char('Z')?;
+        } else {
+            let (hour, min, sign) = self.hms();
 
-        use core::fmt::Write;
-        write_hundreds(f, hour as u8)?;
-        f.write_char(':')?;
-        write_hundreds(f, min as u8)?;
+            use core::fmt::Write;
+            f.write_char(sign)?;
+            write_hundreds(f, hour as u8)?;
+            f.write_char(':')?;
+            write_hundreds(f, min as u8)?;
+        }
+
         Ok(())
     }
 }
