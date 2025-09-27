@@ -1,6 +1,6 @@
 use core::str::FromStr;
 
-use udled2::{AsChar, Buffer, Digit, Input, Reader, Test, Tokenizer, TokenizerExt, or};
+use udled2::{AsChar, Buffer, Digit, EOF, Input, Reader, Test, Tokenizer, TokenizerExt, or};
 use udled2_tokenizers::Integer;
 
 use crate::{Date, DateTime, Time, time::TimeZone};
@@ -176,7 +176,7 @@ impl FromStr for Time {
 impl FromStr for Date {
     type Err = udled2::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Input::new(s.as_bytes()).parse(DateParser)
+        Input::new(s.as_bytes()).parse((DateParser, EOF).map_ok(|m| m.0))
     }
 }
 
