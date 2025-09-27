@@ -12,4 +12,10 @@ pub trait HasSerializer {
     type Serializer: serde::ser::Serializer<Ok = Self> + Default;
 }
 
-pub use self::{error::SerializerError, serializer::to_value};
+use crate::Value;
+
+pub use self::error::SerializerError;
+
+pub fn to_value<T: serde::ser::Serialize>(value: T) -> Result<Value, SerializerError> {
+    value.serialize(self::serializer::Serializer)
+}

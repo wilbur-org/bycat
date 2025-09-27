@@ -10,10 +10,9 @@ impl serde::ser::Serialize for Value {
             Value::List(ref v) => v.serialize(s),
             Value::Map(ref v) => v.serialize(s),
             Value::Bytes(ref v) => s.serialize_bytes(v.as_ref()),
-            // Value::Time(ref m) => m.serialize(s),
-            // Value::Date(ref m) => m.serialize(s),
-            // Value::DateTime(ref m) => m.serialize(s),
-            _ => todo!(),
+            Value::Time(ref m) => m.serialize(s),
+            Value::Date(ref m) => m.serialize(s),
+            Value::DateTime(ref m) => m.serialize(s),
         }
     }
 }

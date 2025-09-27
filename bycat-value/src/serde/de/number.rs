@@ -127,6 +127,17 @@ where
     }
 }
 
+impl<'de, E> de::IntoDeserializer<'de, E> for Number
+where
+    E: de::Error,
+{
+    type Deserializer = NumberDeserializer<E>;
+
+    fn into_deserializer(self) -> Self::Deserializer {
+        NumberDeserializer::new(self)
+    }
+}
+
 impl<'de> de::Deserializer<'de> for Number {
     type Error = DeserializerError;
 

@@ -1,4 +1,4 @@
-use crate::{Map, String, Value};
+use crate::{Map, String, Value, serde::SerializerError};
 
 use alloc::{
     string::{String as StdString, ToString},
@@ -8,32 +8,28 @@ use alloc::{
 use core::fmt;
 use serde::ser;
 
-#[derive(Debug)]
-pub enum SerializerError {
-    Custom(StdString),
-}
+// #[derive(Debug)]
+// pub enum SerializerError {
+//     Custom(StdString),
+// }
 
-impl fmt::Display for SerializerError {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            SerializerError::Custom(ref s) => fmt.write_str(s),
-        }
-    }
-}
+// impl fmt::Display for SerializerError {
+//     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+//         match *self {
+//             SerializerError::Custom(ref s) => fmt.write_str(s),
+//         }
+//     }
+// }
 
-impl core::error::Error for SerializerError {}
+// impl core::error::Error for SerializerError {}
 
-impl ser::Error for SerializerError {
-    fn custom<T: fmt::Display>(msg: T) -> SerializerError {
-        SerializerError::Custom(msg.to_string())
-    }
-}
+// impl ser::Error for SerializerError {
+//     fn custom<T: fmt::Display>(msg: T) -> SerializerError {
+//         SerializerError::Custom(msg.to_string())
+//     }
+// }
 
-pub fn to_value<T: ser::Serialize>(value: T) -> Result<Value, SerializerError> {
-    value.serialize(Serializer)
-}
-
-struct Serializer;
+pub struct Serializer;
 
 impl ser::Serializer for Serializer {
     type Ok = Value;
@@ -223,7 +219,7 @@ impl ser::Serializer for Serializer {
     }
 }
 
-struct SerializeSeq(Vec<Value>);
+pub struct SerializeSeq(Vec<Value>);
 
 impl ser::SerializeSeq for SerializeSeq {
     type Ok = Value;
@@ -243,7 +239,7 @@ impl ser::SerializeSeq for SerializeSeq {
     }
 }
 
-struct SerializeTuple(Vec<Value>);
+pub struct SerializeTuple(Vec<Value>);
 
 impl ser::SerializeTuple for SerializeTuple {
     type Ok = Value;
@@ -263,7 +259,7 @@ impl ser::SerializeTuple for SerializeTuple {
     }
 }
 
-struct SerializeTupleStruct(Vec<Value>);
+pub struct SerializeTupleStruct(Vec<Value>);
 
 impl ser::SerializeTupleStruct for SerializeTupleStruct {
     type Ok = Value;
@@ -283,7 +279,7 @@ impl ser::SerializeTupleStruct for SerializeTupleStruct {
     }
 }
 
-struct SerializeTupleVariant(StdString, Vec<Value>);
+pub struct SerializeTupleVariant(StdString, Vec<Value>);
 
 impl ser::SerializeTupleVariant for SerializeTupleVariant {
     type Ok = Value;
@@ -305,7 +301,7 @@ impl ser::SerializeTupleVariant for SerializeTupleVariant {
     }
 }
 
-struct SerializeMap {
+pub struct SerializeMap {
     map: Map<String, Value>,
     key: Option<String>,
 }
@@ -344,7 +340,7 @@ impl ser::SerializeMap for SerializeMap {
     }
 }
 
-struct SerializeStruct(Map);
+pub struct SerializeStruct(Map);
 
 impl ser::SerializeStruct for SerializeStruct {
     type Ok = Value;
@@ -369,7 +365,7 @@ impl ser::SerializeStruct for SerializeStruct {
     }
 }
 
-struct SerializeStructVariant(String, Map);
+pub struct SerializeStructVariant(String, Map);
 
 impl ser::SerializeStructVariant for SerializeStructVariant {
     type Ok = Value;

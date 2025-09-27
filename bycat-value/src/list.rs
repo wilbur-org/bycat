@@ -56,3 +56,18 @@ impl From<Vec<Value>> for List {
         }
     }
 }
+
+impl From<List> for Vec<Value> {
+    fn from(value: List) -> Self {
+        Arc::try_unwrap(value.items).unwrap_or_else(|err| (*err).clone())
+    }
+}
+
+impl IntoIterator for List {
+    type Item = Value;
+    type IntoIter = alloc::vec::IntoIter<Value>;
+    fn into_iter(self) -> Self::IntoIter {
+        let entries: Vec<Value> = self.into();
+        entries.into_iter()
+    }
+}

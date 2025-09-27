@@ -27,4 +27,4 @@ pub use self::{
 };
 
 #[cfg(feature = "serde")]
-pub use self::serde::to_value;
+pub use self::serde::{from_value, to_value};
