@@ -5,7 +5,7 @@ use serde::{de, forward_to_deserialize_any};
 
 use super::error::DeserializerError;
 
-pub(crate) fn unexpected(value: &Number) -> serde::de::Unexpected {
+pub(crate) fn unexpected(value: &Number) -> serde::de::Unexpected<'_> {
     match *value {
         Number::U8(n) => serde::de::Unexpected::Unsigned(n as u64),
         Number::U16(n) => serde::de::Unexpected::Unsigned(n as u64),

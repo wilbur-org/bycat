@@ -12,12 +12,9 @@ bycat-fs = { path = "../bycat-fs" }
 bycat-source = { path = "../bycat-source", features = ["alloc", "std"] }
 bycat-package = { path = "../bycat-package", features = ["serde"] }
 bycat-error = { path = "../bycat-error" }
-
+bycat-value = { path = "../bycat-value", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
-vaerdi = { git = "https://github.com/kildevaeld/vaerdi-rs", features = [
-    "serde",
-    "std",
-] }
+
 futures = { version = "0.3" }
 
 tinytemplate = { version = "1" }

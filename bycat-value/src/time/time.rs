@@ -14,7 +14,7 @@ use core::fmt::{self, Write};
 //     }
 // }
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(C)]
 pub struct DateTime {
     date: Date,
@@ -207,7 +207,7 @@ pub struct TimeZone {
 }
 
 impl TimeZone {
-    pub(crate) fn hms(&self) -> (i32, i32, char) {
+    pub(crate) const fn hms(&self) -> (i32, i32, char) {
         let mins = self.offset.abs() / 60;
         let min = mins % 60;
         let hour = mins / 60;
@@ -221,8 +221,12 @@ impl TimeZone {
 impl TimeZone {
     pub const UTC: TimeZone = TimeZone { offset: 0 };
 
-    pub fn from_secs(offset: i32) -> TimeZone {
+    pub const fn from_secs(offset: i32) -> TimeZone {
         TimeZone { offset }
+    }
+
+    pub const fn offset(&self) -> i32 {
+        self.offset
     }
 }
 

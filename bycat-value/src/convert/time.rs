@@ -1,8 +1,10 @@
+#[cfg(feature = "chrono")]
 use chrono::Offset;
 #[cfg(feature = "chrono")]
 use chrono::{Datelike, Timelike};
 
 use crate::Value;
+#[cfg(feature = "chrono")]
 use crate::time::TimeZone;
 use crate::{Date, DateTime, Time};
 
@@ -141,46 +143,69 @@ impl From<chrono::FixedOffset> for TimeZone {
     }
 }
 
-// impl TryFrom<DateTime> for chrono::DateTime<chrono::FixedOffset> {
-//     type Error = &'static str;
+#[cfg(feature = "chrono")]
+impl TryFrom<TimeZone> for chrono::FixedOffset {
+    type Error = &'static str;
+    fn try_from(value: TimeZone) -> Result<Self, Self::Error> {
+        if value.offset() < 0 {
+            chrono::FixedOffset::west_opt(value.offset())
+        } else {
+            chrono::FixedOffset::east_opt(value.offset())
+        }
+        .ok_or_else(|| "Invalid timezone")
+    }
+}
 
-//     fn try_from(value: DateTime) -> Result<Self, Self::Error> {}
-// }
+#[cfg(feature = "chrono")]
+impl TryFrom<DateTime> for chrono::DateTime<chrono::FixedOffset> {
+    type Error = &'static str;
 
-// #[cfg(feature = "chrono")]
-// impl TryFrom<Date> for chrono::NaiveDate {
-//     type Error = chrono::ParseError;
+    fn try_from(value: DateTime) -> Result<Self, Self::Error> {
+        let datetime: chrono::NaiveDateTime = value.try_into()?;
+        let timezone: chrono::FixedOffset = value.time_zone().try_into()?;
+        datetime
+            .and_local_timezone(timezone)
+            .single()
+            .ok_or_else(|| "Invalid datetime")
+    }
+}
 
-//     fn try_from(value: Date) -> Result<Self, Self::Error> {
-//         chrono::NaiveDate::from_ymd_opt(
-//             value.year() as i32,
-//             value.month() as u32,
-//             value.day() as u32,
-//         )
-//         .ok_or_else(|| chrono::ParseError::)
-//     }
-// }
+#[cfg(feature = "chrono")]
+impl TryFrom<Date> for chrono::NaiveDate {
+    type Error = &'static str;
 
-// impl TryFrom<Time> for chrono::NaiveTime {
-//     type Error = chrono::ParseError;
+    fn try_from(value: Date) -> Result<Self, Self::Error> {
+        chrono::NaiveDate::from_ymd_opt(
+            value.year() as i32,
+            value.month() as u32,
+            value.day() as u32,
+        )
+        .ok_or_else(|| "Invalid date")
+    }
+}
 
-//     fn try_from(value: Time) -> Result<Self, Self::Error> {
-//         chrono::NaiveTime::from_hms_nano_opt(
-//             value.hour() as u32,
-//             value.minute() as u32,
-//             value.second() as u32,
-//             value.nanosecond() as u32,
-//         )
-//         .ok_or_else(|| chrono::ParseError::Impossible)
-//     }
-// }
+#[cfg(feature = "chrono")]
+impl TryFrom<Time> for chrono::NaiveTime {
+    type Error = &'static str;
 
-// impl TryFrom<DateTime> for chrono::NaiveDateTime {
-//     type Error = chrono::ParseError;
+    fn try_from(value: Time) -> Result<Self, Self::Error> {
+        chrono::NaiveTime::from_hms_nano_opt(
+            value.hour() as u32,
+            value.minute() as u32,
+            value.second() as u32,
+            value.nanosecond() as u32,
+        )
+        .ok_or_else(|| "Invalid time")
+    }
+}
 
-//     fn try_from(value: DateTime) -> Result<Self, Self::Error> {
-//         let date = chrono::NaiveDate::try_from(value.date())?;
-//         let time = chrono::NaiveTime::try_from(value.time())?;
-//         Ok(chrono::NaiveDateTime::new(date, time))
-//     }
-// }
+#[cfg(feature = "chrono")]
+impl TryFrom<DateTime> for chrono::NaiveDateTime {
+    type Error = &'static str;
+
+    fn try_from(value: DateTime) -> Result<Self, Self::Error> {
+        let date = chrono::NaiveDate::try_from(value.date())?;
+        let time = chrono::NaiveTime::try_from(value.time())?;
+        Ok(chrono::NaiveDateTime::new(date, time))
+    }
+}

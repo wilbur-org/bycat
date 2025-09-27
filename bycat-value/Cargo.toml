@@ -4,17 +4,23 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["serde", "chrono"]
-# default = ["chrono", "ryu"]
 serde = ["dep:serde"]
 chrono = ["dep:chrono"]
 ryu = ["dep:ryu"]
 
 [dependencies]
-serde = { version = "1", default-features = false, optional = true }
+serde = { version = "1", default-features = false, features = [
+  "alloc",
+], optional = true }
 
 chrono = { version = "0.4", default-features = false, optional = true }
 ryu = { version = "1", optional = true }
 
 udled2 = { git = "https://github.com/kildevaeld/udled-rs", branch = "v2" }
 udled2-tokenizers = { git = "https://github.com/kildevaeld/udled-rs", branch = "v2" }
+
+[dev-dependencies]
+serde = { version = "1", default-features = false, features = [
+  "alloc",
+  "derive",
+] }

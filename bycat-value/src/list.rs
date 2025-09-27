@@ -5,11 +5,11 @@ use alloc::{sync::Arc, vec::Vec};
 use crate::value::Value;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct List {
-    items: Arc<Vec<Value>>,
+pub struct List<V = Value> {
+    items: Arc<Vec<V>>,
 }
 
-impl fmt::Display for List {
+impl<V: fmt::Display> fmt::Display for List<V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[")?;
 
@@ -26,48 +26,62 @@ impl fmt::Display for List {
     }
 }
 
-impl core::ops::Deref for List {
-    type Target = [Value];
+impl<V> core::ops::Deref for List<V> {
+    type Target = [V];
     fn deref(&self) -> &Self::Target {
         self.items.as_slice()
     }
 }
 
-impl core::ops::DerefMut for List {
+impl<V: Clone> core::ops::DerefMut for List<V> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         Arc::make_mut(&mut self.items).as_mut_slice()
     }
 }
 
-impl List {
-    pub fn push(&mut self, value: impl Into<Value>) {
+impl<V: Clone> List<V> {
+    pub fn push(&mut self, value: impl Into<V>) {
         Arc::make_mut(&mut self.items).push(value.into())
     }
 
-    pub fn pop(&mut self) -> Option<Value> {
+    pub fn pop(&mut self) -> Option<V> {
         Arc::make_mut(&mut self.items).pop()
     }
 }
 
-impl From<Vec<Value>> for List {
-    fn from(value: Vec<Value>) -> Self {
+impl<V> From<Vec<V>> for List<V> {
+    fn from(value: Vec<V>) -> Self {
         List {
             items: Arc::new(value),
         }
     }
 }
 
-impl From<List> for Vec<Value> {
-    fn from(value: List) -> Self {
+impl<V: Clone> From<List<V>> for Vec<V> {
+    fn from(value: List<V>) -> Self {
         Arc::try_unwrap(value.items).unwrap_or_else(|err| (*err).clone())
     }
 }
 
-impl IntoIterator for List {
-    type Item = Value;
-    type IntoIter = alloc::vec::IntoIter<Value>;
+impl<V: Clone> IntoIterator for List<V> {
+    type Item = V;
+    type IntoIter = alloc::vec::IntoIter<V>;
     fn into_iter(self) -> Self::IntoIter {
-        let entries: Vec<Value> = self.into();
+        let entries: Vec<V> = self.into();
         entries.into_iter()
+    }
+}
+
+impl<V> FromIterator<V> for List<V> {
+    fn from_iter<T: IntoIterator<Item = V>>(iter: T) -> Self {
+        List {
+            items: Arc::new(Vec::from_iter(iter)),
+        }
+    }
+}
+
+impl<V: Clone> Extend<V> for List<V> {
+    fn extend<T: IntoIterator<Item = V>>(&mut self, iter: T) {
+        Arc::make_mut(&mut self.items).extend(iter)
     }
 }

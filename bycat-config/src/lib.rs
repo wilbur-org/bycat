@@ -8,4 +8,4 @@ pub use self::{
     locator::{Locator, Mode},
 };
 
-pub use vaerdi as value;
+pub use bycat_value as value;

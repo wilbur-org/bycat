@@ -1,12 +1,12 @@
 use super::number;
-use crate::{Map, String, value::Value};
+use crate::value::Value;
 use alloc::{
     borrow::ToOwned,
     string::{String as StdString, ToString},
     vec::Vec,
 };
-use core::{fmt, marker::PhantomData};
-use serde::{de, forward_to_deserialize_any};
+use core::fmt;
+use serde::de;
 
 #[derive(Debug)]
 pub enum Unexpected {
@@ -30,7 +30,7 @@ pub enum Unexpected {
     Other(StdString),
 }
 
-pub(crate) fn unexpected(value: &Value) -> serde::de::Unexpected {
+pub(crate) fn unexpected(value: &Value) -> serde::de::Unexpected<'_> {
     match *value {
         Value::Bool(b) => serde::de::Unexpected::Bool(b),
         Value::Number(ref n) => number::unexpected(n),

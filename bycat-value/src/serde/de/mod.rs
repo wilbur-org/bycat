@@ -14,6 +14,8 @@ mod value;
 
 pub use self::error::DeserializerError;
 
-pub fn from_value<T: serde::de::DeserializeOwned>(value: Value) -> Result<T, DeserializerError> {
+pub fn from_value<'de, T: serde::de::Deserialize<'de>>(
+    value: Value,
+) -> Result<T, DeserializerError> {
     T::deserialize(value.into_deserializer())
 }

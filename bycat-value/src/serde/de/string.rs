@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 
 use alloc::string::ToString;
 use serde::{
-    de::{self, value},
+    de::{self},
     forward_to_deserialize_any,
 };
 

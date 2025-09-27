@@ -139,7 +139,7 @@ impl Value {
         key.get(self)
     }
 
-    pub fn get_mut(&mut self, key: &str) -> Option<&mut Value> {
+    pub fn get_mut<T: Key>(&mut self, key: T) -> Option<&mut Value> {
         key.get_mut(self)
     }
 

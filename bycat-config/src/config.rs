@@ -1,5 +1,5 @@
-use vaerdi::{Map, Value, merge};
-
+use bycat_value::{Map, Value, merge};
+use serde::de::IntoDeserializer;
 #[derive(Debug, Default, Clone)]
 pub struct Config {
     pub(crate) inner: Map,
@@ -17,11 +17,11 @@ impl Config {
     pub fn try_get<'a, S: serde::Deserialize<'a>>(
         &self,
         name: &str,
-    ) -> Result<S, vaerdi::de::DeserializerError> {
+    ) -> Result<S, bycat_value::serde::DeserializerError> {
         if let Some(v) = self.inner.get(name).cloned() {
-            S::deserialize(v)
+            bycat_value::from_value(v)
         } else {
-            Err(vaerdi::de::DeserializerError::Custom(format!(
+            Err(bycat_value::serde::DeserializerError::Custom(format!(
                 "field not found: {}",
                 name
             )))
@@ -32,8 +32,10 @@ impl Config {
         &mut self,
         name: &str,
         value: S,
-    ) -> Result<Option<Value>, vaerdi::ser::SerializerError> {
-        Ok(self.inner.insert(name, vaerdi::ser::to_value(value)?))
+    ) -> Result<Option<Value>, bycat_value::serde::SerializerError> {
+        Ok(self
+            .inner
+            .insert(name, bycat_value::serde::to_value(value)?))
     }
 
     pub fn set(&mut self, name: impl ToString, value: impl Into<Value>) -> Option<Value> {
@@ -41,12 +43,12 @@ impl Config {
     }
 
     pub fn contains(&self, name: impl AsRef<str>) -> bool {
-        self.inner.contains(name.as_ref())
+        self.inner.contains_key(name.as_ref())
     }
 
     pub fn extend(&mut self, config: Config) {
         for (key, value) in config.inner.into_iter() {
-            if !self.inner.contains(&key) {
+            if !self.inner.contains_key(&key) {
                 self.inner.insert(key, value);
             } else {
                 let prev = self.inner.get_mut(&key).unwrap();
@@ -57,8 +59,8 @@ impl Config {
 
     pub fn try_into<'de, T: serde::Deserialize<'de>>(
         self,
-    ) -> Result<T, vaerdi::de::DeserializerError> {
-        T::deserialize(Value::Map(self.inner))
+    ) -> Result<T, bycat_value::serde::DeserializerError> {
+        bycat_value::from_value(Value::Map(self.inner))
     }
 }
 
@@ -72,7 +74,7 @@ impl<S: AsRef<str>> std::ops::Index<S> for Config {
 
 impl<S: AsRef<str>> std::ops::IndexMut<S> for Config {
     fn index_mut(&mut self, idx: S) -> &mut Self::Output {
-        if !self.inner.contains(idx.as_ref()) {
+        if !self.inner.contains_key(idx.as_ref()) {
             self.inner.insert(idx.as_ref().to_owned(), Value::Null);
         }
 
