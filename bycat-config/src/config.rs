@@ -1,5 +1,4 @@
 use bycat_value::{Map, Value, merge};
-use serde::de::IntoDeserializer;
 #[derive(Debug, Default, Clone)]
 pub struct Config {
     pub(crate) inner: Map,

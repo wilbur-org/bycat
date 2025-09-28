@@ -2202,12 +2202,12 @@ checksum = "bc7d623258602320d5c55d1bc22793b57daff0ec7efc270ea7d55ce1d5f5471c"
 [[package]]
 name = "udled2"
 version = "0.1.0"
-source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#9d2a67969215658703739f2ed668c61f86e589e6"
+source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#6f89ea149446869118650f31ec9c4d97a5059b58"
 
 [[package]]
 name = "udled2-tokenizers"
 version = "0.1.0"
-source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#9d2a67969215658703739f2ed668c61f86e589e6"
+source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#6f89ea149446869118650f31ec9c4d97a5059b58"
 dependencies = [
  "udled2",
 ]

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use bycat::work_fn;
 use bycat_error::Error;
-use bycat_fs::{Body, WalkDir};
+use bycat_fs::WalkDir;
 use bycat_package::{Decode, Package, match_glob};
 use bycat_source::{Unit, pipe, prelude::*};
 

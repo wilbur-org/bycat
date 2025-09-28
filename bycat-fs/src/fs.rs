@@ -11,24 +11,30 @@ use futures::future::BoxFuture;
 use pin_project_lite::pin_project;
 use relative_path::RelativePath;
 
-use crate::{Body, ReadDir, ReadDirStream, ResolvedPath, WalkDir, WalkDirStream};
+use crate::{Body, ReadDir, ResolvedPath, WalkDir, WalkDirStream};
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Fs {
     root: PathBuf,
 }
 
 impl Fs {
-    pub fn find<T: Matcher<ResolvedPath> + Send + Sync + 'static>(
-        &self,
-        matcher: T,
-    ) -> WalkDirStream {
-        let resolver = WalkDir::new(self.root.to_path_buf()).pattern(matcher);
-        resolver.create_stream(&())
+    pub fn new(path: impl Into<PathBuf>) -> Fs {
+        Fs { root: path.into() }
     }
 
-    pub fn list(&self, path: impl AsRef<RelativePath>) -> ReadDirStream {
+    pub fn path(&self) -> &Path {
+        &self.root
+    }
+
+    pub fn find<T: Matcher<ResolvedPath> + Send + Sync + 'static>(&self, matcher: T) -> WalkDir {
+        let resolver = WalkDir::new(self.root.to_path_buf()).pattern(matcher);
+        resolver
+    }
+
+    pub fn list(&self, path: impl AsRef<RelativePath>) -> ReadDir {
         let resolver = ReadDir::new(path.as_ref().to_logical_path(&self.root));
-        resolver.create_stream(&())
+        resolver
     }
 
     pub async fn read(&self, path: impl AsRef<RelativePath>) -> Result<Package<Body>, Error> {
@@ -42,6 +48,22 @@ impl Fs {
     pub async fn write(&self, file: Package<Body>) -> Result<(), Error> {
         self.call(&(), file).await?;
         Ok(())
+    }
+}
+
+impl<C> Source<C> for Fs {
+    type Item = Package<Body>;
+
+    type Error = bycat_error::Error;
+
+    type Stream<'a>
+        = WalkDirStream
+    where
+        Self: 'a,
+        C: 'a;
+
+    fn create_stream<'a>(self, ctx: &'a C) -> Self::Stream<'a> {
+        WalkDir::new(self.root.clone()).create_stream(ctx)
     }
 }
 

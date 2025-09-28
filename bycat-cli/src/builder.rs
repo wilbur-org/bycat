@@ -1,4 +1,4 @@
-use std::{borrow::Cow, marker::PhantomData, path::Path};
+use std::{marker::PhantomData, path::Path};
 
 use bycat_config::{Config, ConfigFactory, Locator, Mode};
 use bycat_error::Error;
@@ -59,8 +59,8 @@ impl ConfigBuilder {
         let mut factory = ConfigFactory::default();
 
         if let Some(global) = &self.global {
-            debug!(path = ?paths.config().path, "Add config lookup path");
-            factory.add_locator(global.create_locator(paths.config().path));
+            debug!(path = ?paths.config().path(), "Add config lookup path");
+            factory.add_locator(global.create_locator(paths.config().path()));
         }
 
         if let Some(local) = &self.local {

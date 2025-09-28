@@ -34,7 +34,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(Test(FOUR_DIGITS))
+        reader.is(Test(FOUR_DIGITS))
     }
 }
 
@@ -52,7 +52,7 @@ where
 
         let (hour, _, min, _, secs) = reader.parse((&parser, ':', &parser, ':', &parser))?;
 
-        let nano = if reader.peek('.') {
+        let nano = if reader.is('.') {
             reader.eat('.')?;
             let nano = reader.parse(Integer)?;
             nano.value as u32
@@ -71,7 +71,7 @@ where
     fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled2::Error> {
         reader.eat((TWO_DIGITS, ':', TWO_DIGITS, ':', TWO_DIGITS))?;
 
-        if reader.peek('.') {
+        if reader.is('.') {
             reader.eat('.')?;
             reader.eat(Integer)?;
         }
@@ -80,7 +80,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(Test((TWO_DIGITS, ':')))
+        reader.is(Test((TWO_DIGITS, ':')))
     }
 }
 
@@ -135,7 +135,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(Test(('+'.or('-'), TWO_DIGITS)))
+        reader.is(Test(('+'.or('-'), TWO_DIGITS)))
     }
 }
 
@@ -162,7 +162,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.peek(Test((FOUR_DIGITS, '-')))
+        reader.is(Test((FOUR_DIGITS, '-')))
     }
 }
 
