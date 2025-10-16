@@ -7,6 +7,7 @@ edition = "2024"
 serde = ["dep:serde"]
 chrono = ["dep:chrono"]
 ryu = ["dep:ryu"]
+rquickjs = ["klaver-util"]
 
 [dependencies]
 serde = { version = "1", default-features = false, features = [
@@ -18,6 +19,10 @@ ryu = { version = "1", optional = true }
 
 udled2 = { git = "https://github.com/kildevaeld/udled-rs", branch = "v2" }
 udled2-tokenizers = { git = "https://github.com/kildevaeld/udled-rs", branch = "v2" }
+
+klaver-util = { git = "https://github.com/fairy-render/klaver", features = [
+  "chrono",
+], optional = true }
 
 [dev-dependencies]
 serde = { version = "1", default-features = false, features = [

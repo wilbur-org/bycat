@@ -9,6 +9,14 @@ pub struct List<V = Value> {
     items: Arc<Vec<V>>,
 }
 
+impl<V> Default for List<V> {
+    fn default() -> Self {
+        List {
+            items: Default::default(),
+        }
+    }
+}
+
 impl<V: fmt::Display> fmt::Display for List<V> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[")?;

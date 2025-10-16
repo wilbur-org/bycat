@@ -16,6 +16,9 @@ mod value;
 
 mod macros;
 
+#[cfg(feature = "rquickjs")]
+mod rquickjs;
+
 #[cfg(feature = "serde")]
 pub mod serde;
 
