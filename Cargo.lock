@@ -385,8 +385,8 @@ dependencies = [
  "klaver-util",
  "ryu",
  "serde",
- "udled2",
- "udled2-tokenizers",
+ "udled 0.6.0",
+ "udled-tokenizers 0.4.0",
 ]
 
 [[package]]
@@ -1206,8 +1206,8 @@ dependencies = [
  "futures",
  "pin-project-lite",
  "rquickjs",
- "udled",
- "udled-tokenizers",
+ "udled 0.4.0",
+ "udled-tokenizers 0.3.0",
 ]
 
 [[package]]
@@ -2387,26 +2387,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "udled"
+version = "0.6.0"
+source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#2f749ae47a1faf04c3e20ff8963dc7deb5ab1b5a"
+
+[[package]]
 name = "udled-tokenizers"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b45a67a4197cb48e7f3fe2807c20bdf88d9de400cbb579e93f1bc1857ea430e4"
 dependencies = [
- "udled",
+ "udled 0.4.0",
  "unicode-segmentation",
 ]
 
 [[package]]
-name = "udled2"
-version = "0.1.0"
-source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#6f89ea149446869118650f31ec9c4d97a5059b58"
-
-[[package]]
-name = "udled2-tokenizers"
-version = "0.1.0"
-source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#6f89ea149446869118650f31ec9c4d97a5059b58"
+name = "udled-tokenizers"
+version = "0.4.0"
+source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#2f749ae47a1faf04c3e20ff8963dc7deb5ab1b5a"
 dependencies = [
- "udled2",
+ "udled 0.6.0",
 ]
 
 [[package]]
