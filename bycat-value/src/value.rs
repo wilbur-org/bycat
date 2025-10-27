@@ -28,7 +28,7 @@ impl fmt::Display for Value {
             Value::String(v) => v.fmt(f),
             Value::Map(v) => v.fmt(f),
             Value::List(v) => v.fmt(f),
-            Value::Bytes(v) => write!(f, "<Binary {}>", v.len()),
+            Value::Bytes(v) => write!(f, "<Bytes {}>", v.len()),
             Value::Date(v) => v.fmt(f),
             Value::DateTime(v) => v.fmt(f),
             Value::Time(v) => v.fmt(f),
