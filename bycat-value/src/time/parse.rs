@@ -157,7 +157,6 @@ where
 
     fn eat(&self, reader: &mut Reader<'_, 'input, B>) -> Result<(), udled2::Error> {
         reader.eat((DateParser, 'T'.or(' '), TimeParser, TimeZoneParser))?;
-
         Ok(())
     }
 
