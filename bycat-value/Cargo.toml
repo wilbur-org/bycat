@@ -8,6 +8,7 @@ serde = ["dep:serde"]
 chrono = ["dep:chrono"]
 ryu = ["dep:ryu"]
 rquickjs = ["klaver-util"]
+uuid = ["dep:uuid"]
 
 [dependencies]
 serde = { version = "1", default-features = false, features = [
@@ -23,6 +24,8 @@ udled-tokenizers = { git = "https://github.com/kildevaeld/udled-rs", branch = "v
 klaver-util = { git = "https://github.com/fairy-render/klaver", features = [
   "chrono",
 ], optional = true }
+
+uuid = { version = "1", optional = true }
 
 [dev-dependencies]
 serde = { version = "1", default-features = false, features = [

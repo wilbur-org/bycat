@@ -4,9 +4,17 @@ use alloc::{sync::Arc, vec::Vec};
 
 use crate::value::Value;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct List<V = Value> {
     items: Arc<Vec<V>>,
+}
+
+impl<V> Clone for List<V> {
+    fn clone(&self) -> Self {
+        Self {
+            items: self.items.clone(),
+        }
+    }
 }
 
 impl<V> Default for List<V> {

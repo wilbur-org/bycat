@@ -44,3 +44,26 @@ impl From<Vec<Value>> for Value {
         Value::List(value.into())
     }
 }
+
+#[cfg(feature = "uuid")]
+impl From<uuid::Uuid> for Value {
+    fn from(value: uuid::Uuid) -> Self {
+        use alloc::string::ToString;
+        Value::String(value.hyphenated().to_string().into())
+    }
+}
+
+#[cfg(feature = "uuid")]
+impl TryFrom<Value> for uuid::Uuid {
+    type Error = &'static str;
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::String(str) => {
+                use core::str::FromStr;
+                uuid::Uuid::from_str(&str).map_err(|_| "Invalid uuid")
+            }
+            Value::Bytes(bs) => uuid::Uuid::from_slice(&*bs).map_err(|_| "Invalid uuid"),
+            _ => Err("Invalid uuid"),
+        }
+    }
+}

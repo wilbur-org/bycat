@@ -7,9 +7,17 @@ use alloc::{collections::btree_map::BTreeMap, sync::Arc};
 
 use crate::{string::String, value::Value};
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Map<K = String, V = Value> {
     pub(crate) entries: Arc<BTreeMap<K, V>>,
+}
+
+impl<K, V> Clone for Map<K, V> {
+    fn clone(&self) -> Self {
+        Self {
+            entries: self.entries.clone(),
+        }
+    }
 }
 
 impl<K, V> Default for Map<K, V> {
