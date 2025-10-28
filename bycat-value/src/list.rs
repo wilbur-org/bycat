@@ -56,6 +56,12 @@ impl<V: Clone> core::ops::DerefMut for List<V> {
 }
 
 impl<V: Clone> List<V> {
+    pub fn with_capacity(capcity: usize) -> List<V> {
+        List {
+            items: Arc::new(Vec::with_capacity(capcity)),
+        }
+    }
+
     pub fn push(&mut self, value: impl Into<V>) {
         Arc::make_mut(&mut self.items).push(value.into())
     }
