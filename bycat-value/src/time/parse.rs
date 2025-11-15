@@ -1,6 +1,9 @@
 use core::str::FromStr;
 
-use udled::{AsChar, Buffer, Digit, EOF, Input, Reader, Test, Tokenizer, TokenizerExt, or};
+use udled::{
+    AsChar, Buffer, EOF, Input, Reader, Tokenizer, TokenizerExt,
+    tokenizers::{Digit, Peek, or},
+};
 use udled_tokenizers::Integer;
 
 use crate::{Date, DateTime, Time, time::TimeZone};
@@ -34,7 +37,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.is(Test(FOUR_DIGITS))
+        reader.is(Peek(FOUR_DIGITS))
     }
 }
 
@@ -80,7 +83,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.is(Test((TWO_DIGITS, ':')))
+        reader.is(Peek((TWO_DIGITS, ':')))
     }
 }
 
@@ -135,7 +138,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.is(Test(('+'.or('-'), TWO_DIGITS)))
+        reader.is(Peek(('+'.or('-'), TWO_DIGITS)))
     }
 }
 
@@ -161,7 +164,7 @@ where
     }
 
     fn peek(&self, reader: &mut Reader<'_, 'input, B>) -> bool {
-        reader.is(Test((FOUR_DIGITS, '-')))
+        reader.is(Peek((FOUR_DIGITS, '-')))
     }
 }
 

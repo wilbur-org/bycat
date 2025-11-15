@@ -2390,7 +2390,8 @@ dependencies = [
 [[package]]
 name = "udled"
 version = "0.6.0"
-source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#2f749ae47a1faf04c3e20ff8963dc7deb5ab1b5a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e46405f95e54ddc6e8cfd0a236ee74d883290a66138f6ccc0add8ed902804c15"
 
 [[package]]
 name = "udled-tokenizers"
@@ -2405,7 +2406,8 @@ dependencies = [
 [[package]]
 name = "udled-tokenizers"
 version = "0.4.0"
-source = "git+https://github.com/kildevaeld/udled-rs?branch=v2#2f749ae47a1faf04c3e20ff8963dc7deb5ab1b5a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99da2eba91025d12ccbfa26a624a064529d108edae14ac123b84458919b9ab9a"
 dependencies = [
  "udled 0.6.0",
 ]
