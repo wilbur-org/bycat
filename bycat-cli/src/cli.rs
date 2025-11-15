@@ -5,47 +5,12 @@ use std::{
 };
 
 use bycat::Work;
-use bycat_config::{Config, ConfigFactory, Locator, Mode};
+use bycat_config::ConfigFactory;
 use bycat_error::Error;
 use bycat_service::Shutdown;
-use directories::{BaseDirs, ProjectDirs};
 use pin_project_lite::pin_project;
 
 use crate::{App, AppInner, ConfigBuilder, paths::Paths, req::CliRequest};
-
-// pub struct ConfigBuilder<'a> {
-//     pub local: Option<&'a str>,
-//     pub pattern: Option<&'a str>,
-// }
-
-// pub struct Builder<'a> {
-//     name: &'a str,
-//     config: ConfigBuilder<'a>,
-// }
-
-// impl<'a> Builder<'a> {
-//     pub fn new(name: &'a str) -> Builder<'a> {
-//         Builder {
-//             name,
-//             config: ConfigBuilder {
-//                 local: Default::default(),
-//                 pattern: Default::default(),
-//             },
-//         }
-//     }
-
-//     pub fn build<C, T>(self, work: T) -> Result<Cli<C, T>, Error> {
-//         let base = BaseDirs::new().ok_or_else(|| Error::new("Could not acquire home directory"))?;
-//         let project = ProjectDirs::from("", "", &self.name)
-//             .ok_or_else(|| Error::new("Could not acquire home directory"))?;
-
-//         Ok(Cli {
-//             work,
-//             paths: (base, project).into(),
-//             ctx: PhantomData,
-//         })
-//     }
-// }
 
 pub struct Cli<C, T> {
     pub(crate) paths: Paths,
@@ -83,13 +48,6 @@ where
         C: 'a;
 
     fn call<'a>(&'a self, ctx: &'a C, req: CliRequest) -> Self::Future<'a> {
-        // let mut factory = ConfigFactory::default();
-        // factory.add_locator(Locator::new(self.paths.config().path));
-        // factory.add_locator(
-        //     Locator::new(req.cwd.clone())
-        //         .mode(Mode::Many)
-        //         .pattern("*.{ext}"),
-        // );
         let factory = self.config.create_factory(&self.paths, &req.cwd);
 
         CliWorkFuture {
