@@ -4,9 +4,11 @@ use std::{
 };
 
 use bycat_error::Error;
-use bycat_fs::{FileResolver, IntoResolverStream, ReadDir, ReadDirStream, ResolvedPath};
+use bycat_fs::{
+    FileResolver,
+    fs::{IntoResolverListStream, IntoResolverWalkStream, ResolvedPath},
+};
 use bycat_package::match_glob;
-use bycat_source::Source;
 use futures::Stream;
 use pin_project_lite::pin_project;
 use tinytemplate::TinyTemplate;
@@ -80,12 +82,12 @@ impl Locator {
 
                 LocatorStream {
                     state: StreamState::Walk {
-                        stream: readdir.create_stream(&()),
+                        stream: readdir.into_walkdir(),
                     },
                 }
             }
             Mode::Single | Mode::Many => {
-                let mut readdir = ReadDir::new(&self.root);
+                let mut readdir = FileResolver::new(self.root.clone());
 
                 for ext in exts {
                     let glob = template
@@ -97,7 +99,7 @@ impl Locator {
                 LocatorStream {
                     state: StreamState::Read {
                         single: self.mode.is_single(),
-                        stream: readdir.create_stream(&()),
+                        stream: readdir.into_list_dir(),
                     },
                 }
             }
@@ -114,11 +116,11 @@ pin_project! {
         Read {
             single: bool,
             #[pin]
-            stream: ReadDirStream,
+            stream: IntoResolverListStream,
         },
         Walk {
             #[pin]
-            stream: IntoResolverStream
+            stream: IntoResolverWalkStream
         },
         Done
     }

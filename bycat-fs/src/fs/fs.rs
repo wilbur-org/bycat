@@ -1,4 +1,5 @@
 use std::{
+    boxed::Box,
     path::{Path, PathBuf},
     task::{Poll, ready},
 };
@@ -11,7 +12,8 @@ use futures::future::BoxFuture;
 use pin_project_lite::pin_project;
 use relative_path::RelativePath;
 
-use crate::{Body, ReadDir, ResolvedPath, WalkDir, WalkDirStream};
+use super::{Body, ReadDir, ResolvedPath, WalkDir, WalkDirStream};
+use crate::virtual_fs::VirtualFS;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Fs {
@@ -26,28 +28,42 @@ impl Fs {
     pub fn path(&self) -> &Path {
         &self.root
     }
+}
 
-    pub fn find<T: Matcher<ResolvedPath> + Send + Sync + 'static>(&self, matcher: T) -> WalkDir {
-        let resolver = WalkDir::new(self.root.to_path_buf()).pattern(matcher);
-        resolver
+impl VirtualFS for Fs {
+    type Body = Body;
+
+    type Error = Error;
+
+    type Walk = WalkDir;
+
+    type List = ReadDir;
+
+    type Read<'a> = <ResolvedPath as IntoPackage<Body>>::Future;
+
+    type Write<'a> = BoxFuture<'a, Result<(), Self::Error>>;
+
+    fn walk(&self) -> Self::Walk {
+        WalkDir::new(self.root.to_path_buf())
     }
 
-    pub fn list(&self, path: impl AsRef<RelativePath>) -> ReadDir {
-        let resolver = ReadDir::new(path.as_ref().to_logical_path(&self.root));
-        resolver
+    fn list(&self, path: impl AsRef<RelativePath>) -> Self::List {
+        ReadDir::new(path.as_ref().to_logical_path(&self.root))
     }
 
-    pub async fn read(&self, path: impl AsRef<RelativePath>) -> Result<Package<Body>, Error> {
+    fn read<'a>(&'a self, path: impl AsRef<RelativePath>) -> Self::Read<'a> {
         let path = ResolvedPath::new(
             self.root.to_path_buf(),
             path.as_ref().to_relative_path_buf(),
         );
-        path.into_package().await
+        path.into_package()
     }
 
-    pub async fn write(&self, file: Package<Body>) -> Result<(), Error> {
-        self.call(&(), file).await?;
-        Ok(())
+    fn write<'a>(&'a self, package: Package<Self::Body>) -> Self::Write<'a> {
+        Box::pin(async move {
+            self.call(&(), package).await?;
+            Ok(())
+        })
     }
 }
 

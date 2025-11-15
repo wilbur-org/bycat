@@ -42,12 +42,12 @@ where
     for<'a> S::Item: 'a,
 {
     type Future<'a>
-        = SourceUnitFure<'a, S, C>
+        = SourceUnitFuture<'a, S, C>
     where
         C: 'a;
 
     fn run<'a>(self, ctx: &'a C) -> Self::Future<'a> {
-        SourceUnitFure {
+        SourceUnitFuture {
             stream: self.source.create_stream(ctx),
         }
     }
@@ -55,14 +55,14 @@ where
 
 pin_project! {
     #[project(!Unpin)]
-    pub struct SourceUnitFure<'a, S: 'a, C: 'a> where  S: Source<C>, S::Item: 'a {
+    pub struct SourceUnitFuture<'a, S: 'a, C: 'a> where  S: Source<C>, S::Item: 'a {
         #[pin]
         stream: S::Stream<'a>,
 
     }
 }
 
-impl<'a, S, C> Future for SourceUnitFure<'a, S, C>
+impl<'a, S, C> Future for SourceUnitFuture<'a, S, C>
 where
     S: Source<C> + 'a,
 {

@@ -4,7 +4,7 @@ use bycat::work_fn;
 use bycat_error::Error;
 use bycat_fs::WalkDir;
 use bycat_package::{Decode, Package, match_glob};
-use bycat_source::{Unit, pipe, prelude::*};
+use bycat_source::{pipe, prelude::*};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Test {
@@ -13,11 +13,11 @@ pub struct Test {
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
-    let fs = pipe(WalkDir::new(PathBuf::from(".")).pattern(match_glob("**/*.json")))
+    pipe(WalkDir::new(PathBuf::from(".")).pattern(match_glob("**/*.json")))
         .pipe(Decode::new())
         .pipe(work_fn(|_, pkg: Package<Test>| async move {
             //
-            println!("{}", pkg.name());
+            println!("{}", pkg.content().rustc_fingerprint);
             Result::<_, Error>::Ok(())
         }))
         .then(work_fn(|ctx, ret: Result<(), Error>| async move {
@@ -26,7 +26,6 @@ async fn main() {
             }
             ret
         }))
-        .unit()
         .run(&())
         .await;
 }

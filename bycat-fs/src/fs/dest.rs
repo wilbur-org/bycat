@@ -3,10 +3,10 @@ use bycat_error::Error;
 use bycat_package::Package;
 use futures::future::BoxFuture;
 use mime::Mime;
-use std::path::PathBuf;
+use std::{boxed::Box, path::PathBuf, vec::Vec};
 use tokio::io::AsyncWriteExt;
 
-use crate::Body;
+use super::Body;
 
 pub trait Filter: Send + Sync {
     fn append(&self, pkg: &Package<Body>) -> bool;

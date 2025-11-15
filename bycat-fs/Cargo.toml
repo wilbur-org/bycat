@@ -4,26 +4,32 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
+default = ["std"]
+std = [
+    "tokio",
+    "tokio-stream",
+    "async-walkdir",
+    "mime_guess",
+    "pathdiff",
+    "relative-path/std",
+]
 
 [dependencies]
 bycat-package = { path = "../bycat-package" }
 bycat-source = { path = "../bycat-source", features = ["std"] }
+bycat-futures = { path = "../bycat-futures" }
 bycat = { path = "../bycat" }
 bycat-error = { path = "../bycat-error" }
 
-tokio = { version = "1", features = ["fs", "io-util"] }
-tokio-stream = { version = "0.1", features = ["fs"] }
-async-walkdir = { version = "2" }
-fast-glob = { version = "0.4" }
-async-stream = { version = "0.3" }
-relative-path = { workspace = true, features = ["serde", "std"] }
+tokio = { version = "1", features = ["fs", "io-util"], optional = true }
+tokio-stream = { version = "0.1", features = ["fs"], optional = true }
+async-walkdir = { version = "2.1", optional = true }
+relative-path = { workspace = true }
 futures = { version = "0.3" }
-pathdiff = { version = "0.2" }
-
-mime_guess = { version = "2" }
+pathdiff = { version = "0.2", optional = true }
+mime_guess = { version = "2", optional = true }
 
 pin-project-lite = { version = "0.2" }
-either = { version = "*" }
 bytes = { version = "1", default-features = false }
 mime = { version = "0.3" }
 

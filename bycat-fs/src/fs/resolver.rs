@@ -1,19 +1,22 @@
-use std::{
-    path::{Path, PathBuf},
-    task::{Poll, ready},
-};
-
 use async_walkdir::WalkDir;
+use bycat_error::BoxError;
+use bycat_futures::IntoResult;
 use bycat_package::{IntoPackage, Package, WithPath};
 use bycat_source::Source;
-use futures::{Stream, future::BoxFuture};
+use futures::{FutureExt, Stream, future::BoxFuture};
+use std::{
+    boxed::Box,
+    format,
+    path::{Path, PathBuf},
+    task::{Poll, ready},
+    vec::Vec,
+};
 
-pub use async_walkdir::Error as WalkDirError;
 use bycat::Matcher;
 use pin_project_lite::pin_project;
 use relative_path::{RelativePath, RelativePathBuf};
 
-use crate::Body;
+use crate::fs::Body;
 
 pub struct ResolvedPath {
     pub(crate) root: PathBuf,
@@ -100,47 +103,85 @@ impl FileResolver {
         &self.root
     }
 
-    pub fn find<'a>(&'a self) -> ResolverStream<'a> {
+    pub fn walkdir<'a>(&'a self) -> ResolverWalkStream<'a> {
         ResolverStream {
             stream: WalkDir::new(&self.root),
             resolver: self,
         }
     }
 
-    pub fn into_find(self) -> IntoResolverStream {
+    pub fn into_walkdir(self) -> IntoResolverWalkStream {
         IntoResolverStream {
             stream: WalkDir::new(&self.root),
             resolver: self,
         }
     }
+
+    pub fn list_dir<'a>(&'a self) -> ResolverListStream<'a> {
+        ResolverStream {
+            stream: ReadDirStream {
+                state: ReadDirState::ReadDir {
+                    future: tokio::fs::read_dir(self.root.clone()).boxed(),
+                },
+                root: self.root.clone(),
+            },
+            resolver: self,
+        }
+    }
+
+    pub fn into_list_dir(self) -> IntoResolverListStream {
+        IntoResolverStream {
+            stream: ReadDirStream {
+                state: ReadDirState::ReadDir {
+                    future: tokio::fs::read_dir(self.root.clone()).boxed(),
+                },
+                root: self.root.clone(),
+            },
+            resolver: self,
+        }
+    }
 }
+
+pub type ResolverWalkStream<'a> = ResolverStream<'a, WalkDir>;
+
+pub type IntoResolverWalkStream = IntoResolverStream<WalkDir>;
+
+pub type ResolverListStream<'a> = ResolverStream<'a, ReadDirStream>;
+
+pub type IntoResolverListStream = IntoResolverStream<ReadDirStream>;
 
 impl<C> Source<C> for FileResolver {
     type Item = ResolvedPath;
 
-    type Error = WalkDirError;
+    type Error = bycat_error::Error;
 
     type Stream<'a>
-        = IntoResolverStream
+        = IntoResolverStream<WalkDir>
     where
         Self: 'a,
         C: 'a;
 
     fn create_stream<'a>(self, _ctx: &'a C) -> Self::Stream<'a> {
-        self.into_find()
+        self.into_walkdir()
     }
 }
 
 pin_project! {
-    pub struct ResolverStream<'a> {
+    pub struct ResolverStream<'a, S> {
         #[pin]
-        stream: WalkDir,
+        stream: S,
         resolver: &'a FileResolver,
     }
 }
 
-impl<'a> Stream for ResolverStream<'a> {
-    type Item = Result<ResolvedPath, WalkDirError>;
+impl<'a, S> Stream for ResolverStream<'a, S>
+where
+    S: Stream,
+    S::Item: IntoResult,
+    <S::Item as IntoResult>::Output: DirEntryTrait,
+    <S::Item as IntoResult>::Error: Into<BoxError>,
+{
+    type Item = Result<ResolvedPath, bycat_error::Error>;
 
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,
@@ -149,9 +190,9 @@ impl<'a> Stream for ResolverStream<'a> {
         loop {
             let this = self.as_mut().project();
 
-            let next = match ready!(this.stream.poll_next(cx)) {
+            let next = match ready!(this.stream.poll_next(cx)).map(|m| m.into_result()) {
                 Some(Ok(ret)) => ret,
-                Some(Err(err)) => return Poll::Ready(Some(Err(err))),
+                Some(Err(err)) => return Poll::Ready(Some(Err(bycat_error::Error::new(err)))),
                 None => return Poll::Ready(None),
             };
 
@@ -183,15 +224,21 @@ impl<'a> Stream for ResolverStream<'a> {
 }
 
 pin_project! {
-    pub struct IntoResolverStream {
+    pub struct IntoResolverStream<S> {
         #[pin]
-        stream: WalkDir,
+        stream: S,
         resolver: FileResolver,
     }
 }
 
-impl Stream for IntoResolverStream {
-    type Item = Result<ResolvedPath, WalkDirError>;
+impl<S> Stream for IntoResolverStream<S>
+where
+    S: Stream,
+    S::Item: IntoResult,
+    <S::Item as IntoResult>::Output: DirEntryTrait,
+    <S::Item as IntoResult>::Error: Into<BoxError>,
+{
+    type Item = Result<ResolvedPath, bycat_error::Error>;
 
     fn poll_next(
         mut self: std::pin::Pin<&mut Self>,
@@ -200,9 +247,9 @@ impl Stream for IntoResolverStream {
         loop {
             let this = self.as_mut().project();
 
-            let next = match ready!(this.stream.poll_next(cx)) {
+            let next = match ready!(this.stream.poll_next(cx)).map(|m| m.into_result()) {
                 Some(Ok(ret)) => ret,
-                Some(Err(err)) => return Poll::Ready(Some(Err(err))),
+                Some(Err(err)) => return Poll::Ready(Some(Err(bycat_error::Error::new(err)))),
                 None => return Poll::Ready(None),
             };
 
@@ -228,6 +275,77 @@ impl Stream for IntoResolverStream {
                         return Poll::Ready(Some(Ok(path)));
                     }
                 }
+            }
+        }
+    }
+}
+
+trait DirEntryTrait {
+    fn path(&self) -> PathBuf;
+}
+
+impl DirEntryTrait for tokio::fs::DirEntry {
+    fn path(&self) -> PathBuf {
+        self.path()
+    }
+}
+
+impl DirEntryTrait for async_walkdir::DirEntry {
+    fn path(&self) -> PathBuf {
+        self.path()
+    }
+}
+
+pin_project! {
+    #[project= ReadDirProj]
+    enum ReadDirState {
+        ReadDir {
+            #[pin]
+            future: BoxFuture<'static, Result<tokio::fs::ReadDir, std::io::Error>>,
+        },
+        Stream {
+            #[pin]
+            stream: tokio_stream::wrappers::ReadDirStream,
+        },
+        Done
+    }
+
+}
+
+pin_project! {
+    pub struct ReadDirStream {
+        #[pin]
+        state: ReadDirState,
+        root: PathBuf
+    }
+
+}
+
+impl Stream for ReadDirStream {
+    type Item = Result<tokio::fs::DirEntry, tokio::io::Error>;
+
+    fn poll_next(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> Poll<Option<Self::Item>> {
+        loop {
+            let mut this = self.as_mut().project();
+
+            match this.state.as_mut().project() {
+                ReadDirProj::ReadDir { future } => match ready!(future.poll(cx)) {
+                    Ok(ret) => {
+                        let stream = tokio_stream::wrappers::ReadDirStream::new(ret);
+                        this.state.set(ReadDirState::Stream { stream });
+                    }
+                    Err(err) => {
+                        this.state.set(ReadDirState::Done);
+                        return Poll::Ready(Some(Err(err)));
+                    }
+                },
+                ReadDirProj::Stream { stream } => {
+                    return stream.poll_next(cx);
+                }
+                ReadDirProj::Done => return Poll::Ready(None),
             }
         }
     }

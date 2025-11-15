@@ -1,5 +1,6 @@
 use crate::cloned::AsyncCloned;
 use crate::{concurrent::Concurrent, Pipeline, SourceUnit};
+use crate::{SourceUnitFuture, Unit};
 use bycat::{pipe::And, then::Then, Work};
 use bycat_futures::{IntoResult, ResultIterator};
 use core::{mem::transmute, task::Poll};
@@ -137,6 +138,14 @@ pub trait SourceExt<C>: Source<C> {
         Self: Sized,
     {
         SourceUnit::new(self)
+    }
+
+    fn run<'a>(self, ctx: &'a C) -> SourceUnitFuture<'a, Self, C>
+    where
+        Self: Sized + 'static,
+        Self::Item: 'static,
+    {
+        self.unit().run(ctx)
     }
 
     fn concurrent<W>(self, work: W) -> Concurrent<Self, W>

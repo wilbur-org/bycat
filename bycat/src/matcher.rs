@@ -1,8 +1,14 @@
 #[cfg(feature = "alloc")]
 use alloc::{boxed::Box, string::String};
 
-pub trait Matcher<T> {
+pub trait Matcher<T: ?Sized> {
     fn is_match(&self, path: &T) -> bool;
+}
+
+impl<T> Matcher<T> for () {
+    fn is_match(&self, _path: &T) -> bool {
+        true
+    }
 }
 
 #[cfg(feature = "alloc")]

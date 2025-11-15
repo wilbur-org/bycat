@@ -5,7 +5,7 @@ use bycat_error::Error;
 use bycat_package::Package;
 use relative_path::RelativePathBuf;
 
-use crate::Body;
+use super::Body;
 
 pub struct FsWork {
     root: PathBuf,

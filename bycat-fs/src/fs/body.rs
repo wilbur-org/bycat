@@ -1,8 +1,13 @@
 use bycat_error::{BoxError, Error};
 use bycat_package::{Content, async_trait};
 use bytes::{BufMut, Bytes, BytesMut};
+use core::fmt;
 use futures::{TryStreamExt, stream::BoxStream};
-use std::path::{Path, PathBuf};
+use std::{
+    boxed::Box,
+    path::{Path, PathBuf},
+    string::ToString,
+};
 use tokio::io::AsyncWriteExt;
 
 pub enum Body {
@@ -10,6 +15,12 @@ pub enum Body {
     Path(PathBuf),
     Stream(BoxStream<'static, Result<Bytes, BoxError>>),
     Empty,
+}
+
+impl fmt::Debug for Body {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Body")
+    }
 }
 
 impl Default for Body {
