@@ -1,9 +1,6 @@
 use bycat::work_fn;
-use bycat_cli::{App, prelude::*};
-use bycat_config::Mode;
-use bycat_error::Error;
-use bycat_package::match_glob;
-use futures::{StreamExt, TryStreamExt};
+use bycat_cli::{App, Result, config::Mode, prelude::*};
+use futures::TryStreamExt;
 use tracing::Level;
 
 #[tokio::main(flavor = "current_thread")]
@@ -27,7 +24,8 @@ async fn main() -> bycat_error::Result<()> {
                     .try_collect::<Vec<_>>()
                     .await
             );
-            Result::<_, Error>::Ok(())
+
+            Result::Ok(())
         }))?
         .run()
         .await?;
