@@ -11,6 +11,7 @@ pub mod body;
 
 pub mod handler;
 mod into_response;
+#[cfg(feature = "router")]
 pub mod router;
 
 pub mod extract;
@@ -32,4 +33,6 @@ pub use self::{
     into_response::*,
 };
 
-pub use http::{self, HeaderMap, HeaderName, HeaderValue, Request, Response, StatusCode, Uri};
+pub use http::{
+    self, HeaderMap, HeaderName, HeaderValue, Request, Response, StatusCode, Uri, header,
+};

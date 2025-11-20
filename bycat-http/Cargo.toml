@@ -4,16 +4,17 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-# default = ["serve"]
+default = ["serve"]
 std = ["http/std", "http-body", "http-body-util", "routing/std", "bytes"]
 
-serde = ["dep:serde", "serde_json", "multer?/json"]
+serde = ["dep:serde", "serde_json", "multer?/json", "std"]
 multipart = ["dep:multer"]
+cookies = ["dep:cookie", "dep:parking_lot"]
+router = ["routing"]
+
 serve = ["dep:hyper", "bycat-service", "futures", "std"]
 serve-tokio = ["serve", "tokio", "hyper-util"]
 serve-smol = ["serve", "smol"]
-
-cookies = ["dep:cookie", "dep:parking_lot"]
 
 client = ["bycat-package", "dep:reqwest", "dep:mime", "relative-path"]
 
@@ -25,7 +26,7 @@ bycat-futures = { path = "../bycat-futures" }
 bycat-container = { path = "../bycat-container" }
 routing = { git = "https://github.com/kildevaeld/router-rs", features = [
     "router",
-], default-features = false }
+], optional = true, default-features = false }
 http = { version = "1", default-features = false }
 
 ## Body

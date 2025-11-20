@@ -8,8 +8,6 @@ use bycat_error::Error;
 use http::{HeaderMap, Uri, request::Parts};
 use pin_project_lite::pin_project;
 
-use crate::router::UrlParams;
-
 pub trait FromRequestParts<C>: Sized {
     type Future<'a>: Future<Output = Result<Self, Error>>
     where
@@ -40,7 +38,8 @@ impl<C> FromRequestParts<C> for Uri {
     }
 }
 
-impl<C> FromRequestParts<C> for UrlParams {
+#[cfg(feature = "router")]
+impl<C> FromRequestParts<C> for crate::router::UrlParams {
     type Future<'a>
         = core::future::Ready<Result<Self, Error>>
     where

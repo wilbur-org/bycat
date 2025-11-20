@@ -25,10 +25,6 @@ where
 {
     use http_body_util::BodyExt;
 
-    // BodyExt::collect(body)
-    //     .await
-    //     .map(|buf| buf.to_bytes())
-    //     .map_err(Error::new)
     ToBytes {
         inner: BodyExt::collect(body),
     }
