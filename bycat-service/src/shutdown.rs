@@ -39,7 +39,7 @@ impl Shutdown {
         }
     }
 
-    pub async fn shutdown(&self) {
+    pub fn shutdown(&self) {
         self.event.notify(usize::MAX);
     }
 }
@@ -169,7 +169,7 @@ mod tests {
         assert!(!shutdown_called.get());
 
         // Trigger shutdown
-        block_on(shutdown.shutdown());
+        shutdown.shutdown();
 
         // Now, polling should call graceful_shutdown and complete
         assert!(Pin::new(&mut fut).poll(&mut cx).is_ready());
@@ -195,8 +195,8 @@ mod tests {
         assert!(Pin::new(&mut fut).poll(&mut cx).is_pending());
 
         // Trigger shutdown multiple times
-        block_on(shutdown.shutdown());
-        block_on(shutdown.shutdown());
+        shutdown.shutdown();
+        shutdown.shutdown();
 
         // Should still only call graceful_shutdown once and complete
         assert!(Pin::new(&mut fut).poll(&mut cx).is_ready());
@@ -222,7 +222,7 @@ mod tests {
         assert!(Pin::new(&mut fut).poll(&mut cx).is_pending());
 
         // Trigger shutdown from original
-        block_on(shutdown.shutdown());
+        shutdown.shutdown();
 
         assert!(Pin::new(&mut fut).poll(&mut cx).is_ready());
         assert!(shutdown_called.get());

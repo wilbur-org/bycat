@@ -4,16 +4,80 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
+# default = ["serve"]
+std = ["http/std", "http-body", "http-body-util", "routing/std", "bytes"]
+
+serde = ["dep:serde", "serde_json", "multer?/json"]
+multipart = ["dep:multer"]
+serve = ["dep:hyper", "bycat-service", "futures", "std"]
+serve-tokio = ["serve", "tokio", "hyper-util"]
+serve-smol = ["serve", "smol"]
+
+cookies = ["dep:cookie", "dep:parking_lot"]
+
+client = ["bycat-package", "dep:reqwest", "dep:mime", "relative-path"]
 
 
 [dependencies]
-pin-project-lite = { version = "0.2" }
-http-body = { version = "1" }
-bycat = { path = "../bycat" }
-bycat-package = { path = "../bycat-package" }
+bycat = { path = "../bycat", features = ["alloc"] }
 bycat-error = { path = "../bycat-error" }
-reqwest = { version = "0.12" }
-mime = { version = "0.3" }
-futures = { version = "0.3" }
-relative-path = { workspace = true, features = ["serde"] }
-bytes = { version = "1", default-features = false }
+bycat-futures = { path = "../bycat-futures" }
+bycat-container = { path = "../bycat-container" }
+routing = { git = "https://github.com/kildevaeld/router-rs", features = [
+    "router",
+], default-features = false }
+http = { version = "1", default-features = false }
+
+## Body
+http-body-util = { version = "0.1", default-features = false, optional = true }
+http-body = { version = "1", default-features = false, optional = true }
+bytes = { version = "1", default-features = false, optional = true }
+
+pin-project-lite = { version = "0.2" }
+
+## Encoding
+serde = { version = "1", default-features = false, optional = true }
+serde_json = { version = "1", default-features = false, features = [
+    "alloc",
+], optional = true }
+
+## Cookies
+cookie = { version = "0.18", features = [
+    "signed",
+    "private",
+    "percent-encode",
+    "secure",
+], optional = true }
+parking_lot = { version = "0.12", optional = true }
+
+## Multipart
+multer = { version = "3", optional = true }
+
+## Serve
+hyper = { version = "1", features = ["http1", "server"], optional = true }
+bycat-service = { path = "../bycat-service", optional = true }
+futures = { version = "0.3", optional = true }
+tokio = { version = "1", features = [
+    "net",
+], default-features = false, optional = true }
+hyper-util = { version = "0.1", features = ["tokio"], optional = true }
+smol = { version = "2", optional = true }
+
+tracing = { version = "0.1", default-features = false }
+
+
+## Client
+bycat-package = { path = "../bycat-package", optional = true }
+reqwest = { version = "0.12", optional = true }
+mime = { version = "0.3", optional = true }
+relative-path = { workspace = true, features = ["serde"], optional = true }
+
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+
+
+[[example]]
+name = "http"
+path = "examples/http.rs"
+required-features = ["serve-tokio"]

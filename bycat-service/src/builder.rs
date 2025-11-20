@@ -5,7 +5,7 @@ use pin_project_lite::pin_project;
 
 use crate::{service::Service, shutdown::Shutdown};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ServiceBuilder<S> {
     service: Vec<S>,
 }
@@ -38,10 +38,25 @@ where
     }
 }
 
+impl<S> Service for ServiceBuilder<S>
+where
+    S: Service,
+{
+    type Error = S::Error;
+    type Future<'a>
+        = ServiceFuture<'a, S>
+    where
+        Self: 'a,
+        S: 'a;
+    fn serve<'a>(&'a self, shutdown: &'a Shutdown) -> Self::Future<'a> {
+        self.serve(shutdown)
+    }
+}
+
 pin_project! {
     pub struct ServiceFuture<'a, S: 'a>
     where
-        S: Service,
+        S: Service
     {
         #[pin]
         futures: FuturesUnordered<S::Future<'a>>,
