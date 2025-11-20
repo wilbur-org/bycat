@@ -104,7 +104,6 @@ mod tests {
     use core::future::Future;
     use core::pin::Pin;
     use core::task::{Context, Poll, RawWaker, RawWakerVTable, Waker};
-    use futures::executor::block_on;
 
     struct TestConn {
         polled: Rc<Cell<u32>>,
