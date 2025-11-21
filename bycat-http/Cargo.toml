@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["serve"]
+default = ["serve", "router"]
 std = ["http/std", "http-body", "http-body-util", "routing/std", "bytes"]
 
 serde = ["dep:serde", "serde_json", "multer?/json", "std"]

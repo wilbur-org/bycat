@@ -1,9 +1,11 @@
 use core::marker::PhantomData;
 
-use crate::router::RouteError;
+use crate::router::{RouteError, UrlParams};
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
 use bycat::{Middleware, Work};
-use http::Request;
+use bycat_error::Error;
+use http::{Request, Response};
+use pin_project_lite::pin_project;
 use routing::{Params, Segments, router::MethodFilter};
 
 #[derive(Debug, Clone)]
@@ -152,5 +154,93 @@ impl<T, C, B> Router<T, C, B> {
 
     pub fn iter(&self) -> impl Iterator<Item = (&Segments<'_>, &routing::router::Route<Entry<T>>)> {
         self.routes.iter()
+    }
+}
+
+impl<T, C, B> Work<C, Request<B>> for Router<T, C, B>
+where
+    T: Work<C, Request<B>, Output = Response<B>>,
+{
+    type Error = T::Error;
+    type Output = Response<B>;
+
+    type Future<'a>
+        = RouterFuture<'a, T, C, B>
+    where
+        Self: 'a,
+        C: 'a;
+
+    fn call<'a>(&'a self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+        RouterFuture {
+            state: State::Init {
+                context: Some(context),
+                req: Some(req),
+            },
+            router: self,
+        }
+    }
+}
+
+pin_project! {
+    #[project = StateProj]
+    enum State<'a, T: 'a, C, B>
+    where
+        T: Work<C, Request<B>>
+    {
+        Init {
+            context: Option<&'a C>,
+            req: Option<Request<B>>
+        },
+        Future {
+            #[pin]
+            future: T::Future<'a>
+        }
+    }
+}
+
+pin_project! {
+    pub struct RouterFuture<'a, T:'a, C, B>
+    where
+        T: Work<C, Request<B>>
+    {
+        router: &'a Router<T, C, B>,
+        #[pin]
+        state: State<'a, T, C, B>
+    }
+}
+
+impl<'a, T, C, B> Future for RouterFuture<'a, T, C, B>
+where
+    T: Work<C, Request<B>, Output = Response<B>>,
+{
+    type Output = Result<Response<B>, T::Error>;
+
+    fn poll(
+        mut self: core::pin::Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Self::Output> {
+        loop {
+            let mut this = self.as_mut().project();
+
+            match this.state.as_mut().project() {
+                StateProj::Init { context, req } => {
+                    let mut req = req.take().unwrap();
+                    let context = context.take().unwrap();
+                    let mut params = UrlParams::default();
+                    let Some(found) = this.router.get_match(
+                        req.method().clone().into(),
+                        req.uri().path(),
+                        &mut params,
+                    ) else {
+                        todo!()
+                    };
+
+                    req.extensions_mut().insert(params);
+                    let future = found.handler.call(context, req);
+                    this.state.set(State::Future { future });
+                }
+                StateProj::Future { future } => return future.poll(cx),
+            }
+        }
     }
 }
