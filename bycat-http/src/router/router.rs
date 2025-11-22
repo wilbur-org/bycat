@@ -1,10 +1,11 @@
-use core::marker::PhantomData;
-
-use crate::router::{RouteError, UrlParams};
+use crate::{
+    body::HttpBody,
+    router::{RouteError, UrlParams},
+};
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
 use bycat::{Middleware, Work};
-use bycat_error::Error;
-use http::{Request, Response};
+use core::{marker::PhantomData, task::Poll};
+use http::{Request, Response, StatusCode};
 use pin_project_lite::pin_project;
 use routing::{Params, Segments, router::MethodFilter};
 
@@ -113,6 +114,7 @@ where
 
         Router {
             routes,
+            fallback: None,
             context: PhantomData,
         }
     }
@@ -130,6 +132,7 @@ where
 
 pub struct Router<T, C, B> {
     routes: routing::router::Router<Entry<T>>,
+    fallback: Option<T>,
     context: PhantomData<fn() -> (C, B)>,
 }
 
@@ -138,6 +141,7 @@ impl<T, C, B> Default for Router<T, C, B> {
         Router {
             routes: routing::router::Router::new(),
             context: PhantomData,
+            fallback: None,
         }
     }
 }
@@ -160,6 +164,7 @@ impl<T, C, B> Router<T, C, B> {
 impl<T, C, B> Work<C, Request<B>> for Router<T, C, B>
 where
     T: Work<C, Request<B>, Output = Response<B>>,
+    B: HttpBody,
 {
     type Error = T::Error;
     type Output = Response<B>;
@@ -212,6 +217,7 @@ pin_project! {
 impl<'a, T, C, B> Future for RouterFuture<'a, T, C, B>
 where
     T: Work<C, Request<B>, Output = Response<B>>,
+    B: HttpBody,
 {
     type Output = Result<Response<B>, T::Error>;
 
@@ -227,16 +233,22 @@ where
                     let mut req = req.take().unwrap();
                     let context = context.take().unwrap();
                     let mut params = UrlParams::default();
-                    let Some(found) = this.router.get_match(
+                    let found = if let Some(found) = this.router.get_match(
                         req.method().clone().into(),
                         req.uri().path(),
                         &mut params,
-                    ) else {
-                        todo!()
+                    ) {
+                        &found.handler
+                    } else if let Some(fallback) = &this.router.fallback {
+                        fallback
+                    } else {
+                        let mut resp = Response::new(B::empty());
+                        *resp.status_mut() = StatusCode::NOT_FOUND;
+                        return Poll::Ready(Ok(resp));
                     };
 
                     req.extensions_mut().insert(params);
-                    let future = found.handler.call(context, req);
+                    let future = found.call(context, req);
                     this.state.set(State::Future { future });
                 }
                 StateProj::Future { future } => return future.poll(cx),
