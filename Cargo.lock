@@ -429,6 +429,7 @@ dependencies = [
  "bycat",
  "bycat-container",
  "bycat-error",
+ "bycat-fs",
  "bycat-futures",
  "bycat-package",
  "bycat-service",

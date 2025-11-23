@@ -39,6 +39,8 @@ impl VirtualFS for Fs {
 
     type List = ReadDir;
 
+    type Exists<'a> = BoxFuture<'a, Result<bool, Self::Error>>;
+
     type Read<'a> = <ResolvedPath as IntoPackage<Body>>::Future;
 
     type Write<'a> = BoxFuture<'a, Result<(), Self::Error>>;
@@ -57,6 +59,11 @@ impl VirtualFS for Fs {
             path.as_ref().to_relative_path_buf(),
         );
         path.into_package()
+    }
+
+    fn exists<'a>(&self, path: impl AsRef<RelativePath>) -> Self::Exists<'a> {
+        let path = path.as_ref().to_logical_path(&self.root);
+        Box::pin(async move { tokio::fs::try_exists(path).await.map_err(Error::new) })
     }
 
     fn write<'a>(&'a self, package: Package<Self::Body>) -> Self::Write<'a> {

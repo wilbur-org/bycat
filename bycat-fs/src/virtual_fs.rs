@@ -7,6 +7,10 @@ pub trait VirtualFS {
     type Error;
     type Walk: Source<(), Item = Package<Self::Body>, Error = Self::Error>;
     type List: Source<(), Item = Package<Self::Body>, Error = Self::Error>;
+    type Exists<'a>: Future<Output = Result<bool, Self::Error>>
+    where
+        Self: 'a;
+
     type Read<'a>: Future<Output = Result<Package<Self::Body>, Self::Error>>
     where
         Self: 'a;
@@ -15,6 +19,8 @@ pub trait VirtualFS {
         Self: 'a;
 
     fn walk(&self) -> Self::Walk;
+
+    fn exists<'a>(&self, path: impl AsRef<RelativePath>) -> Self::Exists<'a>;
 
     fn list(&self, path: impl AsRef<RelativePath>) -> Self::List;
 

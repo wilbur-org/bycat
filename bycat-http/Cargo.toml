@@ -4,12 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["serve", "router"]
+default = ["serve", "router", "statics"]
 std = ["http/std", "http-body", "http-body-util", "routing/std", "bytes"]
 
 serde = ["dep:serde", "serde_json", "multer?/json", "std"]
 multipart = ["dep:multer"]
 cookies = ["dep:cookie", "dep:parking_lot"]
+statics = ["relative-path", "tokio/fs", "bycat-fs", "bycat-package"]
 router = ["routing"]
 
 serve = ["dep:hyper", "bycat-service", "futures", "std"]
@@ -51,6 +52,11 @@ cookie = { version = "0.18", features = [
 ], optional = true }
 parking_lot = { version = "0.12", optional = true }
 
+## Statics
+relative-path = { workspace = true, optional = true }
+bycat-fs = { path = "../bycat-fs", optional = true }
+
+
 ## Multipart
 multer = { version = "3", optional = true }
 
@@ -71,7 +77,7 @@ tracing = { version = "0.1", default-features = false }
 bycat-package = { path = "../bycat-package", optional = true }
 reqwest = { version = "0.12", optional = true }
 mime = { version = "0.3", optional = true }
-relative-path = { workspace = true, features = ["serde"], optional = true }
+# relative-path = { workspace = true, features = ["serde"], optional = true }
 
 
 [dev-dependencies]

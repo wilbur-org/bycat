@@ -24,6 +24,11 @@ pub mod multipart;
 #[cfg(feature = "serve")]
 pub mod serve;
 
+mod session;
+
+#[cfg(feature = "statics")]
+mod statics;
+
 #[cfg(feature = "serve-tokio")]
 pub use self::serve::serve;
 
