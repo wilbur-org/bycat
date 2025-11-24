@@ -3,7 +3,7 @@ use core::future::{Ready, ready};
 use alloc::{borrow::ToOwned, string::ToString, sync::Arc};
 use bycat_error::Error;
 use http::{
-    HeaderMap,
+    HeaderMap, Request,
     header::{COOKIE, SET_COOKIE},
 };
 use parking_lot::RwLock;
@@ -42,7 +42,7 @@ impl CookieJar {
 }
 
 impl CookieJar {
-    pub fn from_headers(headers: &HeaderMap) -> CookieJar {
+    pub(crate) fn from_headers(headers: &HeaderMap) -> CookieJar {
         let cookies = headers
             .get_all(COOKIE)
             .into_iter()
@@ -59,6 +59,13 @@ impl CookieJar {
         CookieJar {
             inner: Arc::new(RwLock::new(jar)),
         }
+    }
+
+    pub fn from_request<B>(req: &Request<B>) -> Result<CookieJar, Error> {
+        req.extensions()
+            .get::<CookieJar>()
+            .cloned()
+            .ok_or_else(|| Error::new("CookieJar modifier not registered"))
     }
 
     pub fn apply(&self, headers: &mut HeaderMap) {

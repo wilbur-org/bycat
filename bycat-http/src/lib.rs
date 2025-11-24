@@ -6,6 +6,8 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+mod ext;
+
 #[cfg(feature = "std")]
 pub mod body;
 
