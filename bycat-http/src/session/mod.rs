@@ -1,6 +1,13 @@
 mod session;
 mod store;
 
+use crate::{
+    cookies::CookieJar,
+    session::{
+        session::State,
+        store::{DynStoreImpl, SessionStore},
+    },
+};
 use alloc::{borrow::Cow, string::ToString, sync::Arc};
 use bycat::{Middleware, Work};
 use bycat_error::{BoxError, Error};
@@ -13,17 +20,9 @@ use http::Request;
 use pin_project_lite::pin_project;
 use uuid::Uuid;
 
-use crate::{
-    cookies::CookieJar,
-    session::{
-        session::State,
-        store::{DynStoreImpl, SessionStore},
-    },
-};
-
 pub use self::{
     session::{Session, SessionId},
-    store::Store,
+    store::{MemoryStore, Store},
 };
 
 #[derive(Clone)]
@@ -74,6 +73,17 @@ pub struct SessionsWork<C, B, T> {
     store: SessionStore,
     cookie_name: Cow<'static, str>,
     req: PhantomData<(C, B)>,
+}
+
+impl<C, B, T: Clone> Clone for SessionsWork<C, B, T> {
+    fn clone(&self) -> Self {
+        Self {
+            work: self.work.clone(),
+            store: self.store.clone(),
+            cookie_name: self.cookie_name.clone(),
+            req: self.req.clone(),
+        }
+    }
 }
 
 impl<C, B, T> Work<C, Request<B>> for SessionsWork<C, B, T>

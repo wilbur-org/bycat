@@ -4,7 +4,10 @@ use arc_swap::{ArcSwap, ArcSwapAny};
 use bycat_container::{Extensible, ReadableContainer};
 use bycat_error::Error;
 use bycat_value::{Map, Value};
-use core::task::{Poll, ready};
+use core::{
+    mem::transmute,
+    task::{Poll, ready},
+};
 use futures::future::BoxFuture;
 use http::request::Parts;
 use pin_project_lite::pin_project;
@@ -41,6 +44,10 @@ impl Default for SessionId {
 impl SessionId {
     pub fn new(id: Uuid) -> SessionId {
         SessionId(Arc::new(ArcSwapAny::new(State::Init(id).into())))
+    }
+
+    pub fn id(&self) -> Option<Uuid> {
+        self.0.load().id()
     }
 
     pub(crate) fn state(&self) -> State {
@@ -108,7 +115,7 @@ impl Session {
     }
 }
 
-impl<C: Extensible> FromRequestParts<C> for Session {
+impl<C> FromRequestParts<C> for Session {
     type Future<'a>
         = SessionFuture<'a, C>
     where
@@ -134,7 +141,7 @@ pin_project! {
           #[pin]
           future: BoxFuture<'a, Result<Map, Error>>,
           id: SessionId,
-          store: &'a SessionStore
+          store: SessionStore
       },
   }
 }
@@ -146,7 +153,7 @@ pin_project! {
   }
 }
 
-impl<'a, C: Extensible> Future for SessionFuture<'a, C> {
+impl<'a, C> Future for SessionFuture<'a, C> {
     type Output = Result<Session, Error>;
 
     fn poll(
@@ -158,7 +165,7 @@ impl<'a, C: Extensible> Future for SessionFuture<'a, C> {
 
             match this.state.as_mut().project() {
                 SessionFutureStateProj::Init { state, parts } => {
-                    let Some(store) = (*state).get::<SessionStore>() else {
+                    let Some(store) = parts.extensions.get::<SessionStore>() else {
                         return Poll::Ready(Err(Error::new("session store not found")));
                     };
 
@@ -169,10 +176,15 @@ impl<'a, C: Extensible> Future for SessionFuture<'a, C> {
                     let future = store.load(id.clone());
 
                     let id = id.clone();
+                    let store = store.clone();
 
-                    this.state
-                        .set(SessionFutureState::Future { future, id, store });
-
+                    unsafe {
+                        // SAFTY: We own Store
+                        let state = transmute::<SessionFutureState<'_, C>, SessionFutureState<'a, C>>(
+                            SessionFutureState::Future { future, id, store },
+                        );
+                        this.state.set(state);
+                    }
                     continue;
                 }
                 SessionFutureStateProj::Future { future, id, store } => {
