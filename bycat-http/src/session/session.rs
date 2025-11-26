@@ -1,70 +1,63 @@
-use core::{
-    mem::transmute,
-    task::{Poll, ready},
-};
-
-use crate::{
-    FromRequest, FromRequestParts,
-    session::{SessionId, SessionStore},
-};
+use crate::{FromRequestParts, session::store::SessionStore};
 use alloc::sync::Arc;
 use arc_swap::{ArcSwap, ArcSwapAny};
 use bycat_container::{Extensible, ReadableContainer};
 use bycat_error::Error;
 use bycat_value::{Map, Value};
+use core::task::{Poll, ready};
 use futures::future::BoxFuture;
 use http::request::Parts;
 use pin_project_lite::pin_project;
 use uuid::Uuid;
 
-// #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-// pub(crate) enum State {
-//     Set(Uuid),
-//     Remove(Uuid),
-//     Init(Uuid),
-//     Noop,
-// }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum State {
+    Set(Uuid),
+    Remove(Uuid),
+    Init(Uuid),
+    Noop,
+}
 
-// impl State {
-//     pub fn id(&self) -> Option<Uuid> {
-//         match self {
-//             Self::Remove(id) => Some(*id),
-//             Self::Set(id) => Some(*id),
-//             Self::Init(id) => Some(*id),
-//             _ => None,
-//         }
-//     }
-// }
+impl State {
+    pub fn id(&self) -> Option<Uuid> {
+        match self {
+            Self::Remove(id) => Some(*id),
+            Self::Set(id) => Some(*id),
+            Self::Init(id) => Some(*id),
+            _ => None,
+        }
+    }
+}
 
-// #[derive(Debug, Clone)]
-// pub struct SessionId(pub(crate) Arc<ArcSwap<State>>);
+#[derive(Debug, Clone)]
+pub struct SessionId(pub(crate) Arc<ArcSwap<State>>);
 
-// impl Default for SessionId {
-//     fn default() -> Self {
-//         SessionId(Arc::new(ArcSwapAny::new(State::Noop.into())))
-//     }
-// }
+impl Default for SessionId {
+    fn default() -> Self {
+        SessionId(Arc::new(ArcSwapAny::new(State::Noop.into())))
+    }
+}
 
-// impl SessionId {
-//     pub fn new(id: Uuid) -> SessionId {
-//         SessionId(Arc::new(ArcSwapAny::new(State::Init(id).into())))
-//     }
+impl SessionId {
+    pub fn new(id: Uuid) -> SessionId {
+        SessionId(Arc::new(ArcSwapAny::new(State::Init(id).into())))
+    }
 
-//     pub(crate) fn state(&self) -> State {
-//         **self.0.load()
-//     }
+    pub(crate) fn state(&self) -> State {
+        **self.0.load()
+    }
 
-//     fn remove(&self) {
-//         let state = self.state();
-//         if let Some(id) = state.id() {
-//             self.0.store(State::Remove(id).into());
-//         }
-//     }
+    fn remove(&self) {
+        let state = self.state();
+        if let Some(id) = state.id() {
+            self.0.store(State::Remove(id).into());
+        }
+    }
 
-//     fn generate(&self) {
-//         self.0.store(State::Set(Uuid::new_v4()).into());
-//     }
-// }
+    fn generate(&self) {
+        self.0.store(State::Set(Uuid::new_v4()).into());
+    }
+}
 
 pub struct Session {
     id: SessionId,
@@ -91,28 +84,28 @@ impl Session {
         self.value.remove(name);
     }
 
-    pub async fn regenerate_id(&mut self) {
-        self.store.remove(self.id.clone()).await;
+    pub async fn regenerate_id(&mut self) -> Result<(), Error> {
+        self.store.remove(self.id.clone()).await?;
         self.id.generate();
-        self.save().await;
+        self.save().await?;
+        Ok(())
     }
 
-    pub async fn save(&mut self) {
+    pub async fn save(&mut self) -> Result<(), Error> {
         if self.id.state().id().is_none() {
             self.id.generate();
         }
 
-        self.store.save(self.id.clone(), &self.value).await;
+        self.store.save(self.id.clone(), &self.value).await?;
+
+        Ok(())
     }
 
-    pub async fn delete(&mut self) {
-        self.store.remove(self.id.clone()).await;
+    pub async fn delete(&mut self) -> Result<(), Error> {
+        self.store.remove(self.id.clone()).await?;
         self.id.remove();
+        Ok(())
     }
-
-    // pub fn iter(&self) -> Iter<'_, vaerdi::String, Value> {
-    //     self.value.iter()
-    // }
 }
 
 impl<C: Extensible> FromRequestParts<C> for Session {

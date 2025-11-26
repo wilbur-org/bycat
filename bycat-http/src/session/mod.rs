@@ -1,96 +1,55 @@
 mod session;
+mod store;
 
-use core::marker::PhantomData;
-
-use alloc::{boxed::Box, string::ToString, sync::Arc};
-use arc_swap::{ArcSwap, ArcSwapAny};
+use alloc::{borrow::Cow, string::ToString, sync::Arc};
 use bycat::{Middleware, Work};
 use bycat_error::{BoxError, Error};
-use bycat_value::Map;
 use cookie::Cookie;
-use futures::future::{BoxFuture, LocalBoxFuture};
+use core::{
+    marker::PhantomData,
+    task::{Poll, ready},
+};
 use http::Request;
+use pin_project_lite::pin_project;
 use uuid::Uuid;
 
-use crate::cookies::CookieJar;
+use crate::{
+    cookies::CookieJar,
+    session::{
+        session::State,
+        store::{DynStoreImpl, SessionStore},
+    },
+};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum State {
-    Set(Uuid),
-    Remove(Uuid),
-    Init(Uuid),
-    Noop,
-}
+pub use self::{
+    session::{Session, SessionId},
+    store::Store,
+};
 
-impl State {
-    pub fn id(&self) -> Option<Uuid> {
-        match self {
-            Self::Remove(id) => Some(*id),
-            Self::Set(id) => Some(*id),
-            Self::Init(id) => Some(*id),
-            _ => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct SessionId(pub(crate) Arc<ArcSwap<State>>);
-
-impl Default for SessionId {
-    fn default() -> Self {
-        SessionId(Arc::new(ArcSwapAny::new(State::Noop.into())))
-    }
-}
-
-impl SessionId {
-    pub fn new(id: Uuid) -> SessionId {
-        SessionId(Arc::new(ArcSwapAny::new(State::Init(id).into())))
-    }
-
-    pub(crate) fn state(&self) -> State {
-        **self.0.load()
-    }
-
-    fn remove(&self) {
-        let state = self.state();
-        if let Some(id) = state.id() {
-            self.0.store(State::Remove(id).into());
-        }
-    }
-
-    fn generate(&self) {
-        self.0.store(State::Set(Uuid::new_v4()).into());
-    }
-}
-
-pub struct Session {}
-
-pub trait Store {
-    type Save<'a>
-    where
-        Self: 'a;
-    type Load<'a>
-    where
-        Self: 'a;
-    type Delete<'a>
-    where
-        Self: 'a;
-
-    fn save<'a>(&'a self, id: &'a SessionId, session: &'a Session) -> Self::Save<'a>;
-    fn load<'a>(&'a self, id: &'a SessionId) -> Self::Load<'a>;
-    fn delete<'a>(&'a self, id: &'a SessionId) -> Self::Delete<'a>;
-}
-
-pub trait DynStore {
-    fn save<'a>(&'a self, id: SessionId, session: &'a Map) -> BoxFuture<'a, Result<(), Error>>;
-    fn load<'a>(&'a self, id: SessionId) -> BoxFuture<'a, Result<Map, Error>>;
-    fn remove<'a>(&'a self, id: SessionId) -> BoxFuture<'a, Result<Map, Error>>;
-}
-
-pub type SessionStore = Arc<dyn DynStore>;
-
+#[derive(Clone)]
 pub struct Sessions {
-    store: Arc<dyn DynStore>,
+    store: SessionStore,
+    cookie_name: Cow<'static, str>,
+}
+
+impl Sessions {
+    pub fn new<S>(store: S) -> Sessions
+    where
+        S: Store + Send + Sync + 'static,
+    {
+        Sessions {
+            store: Arc::new(DynStoreImpl(store)),
+            cookie_name: Cow::Borrowed("sess_id"),
+        }
+    }
+
+    pub fn cookie_name<T>(mut self, cookie: T) -> Self
+    where
+        T: Into<Cow<'static, str>>,
+    {
+        self.cookie_name = cookie.into();
+        self
+    }
 }
 
 impl<C, B, T> Middleware<C, Request<B>, T> for Sessions
@@ -103,6 +62,8 @@ where
     fn wrap(&self, handler: T) -> Self::Work {
         SessionsWork {
             work: handler,
+            store: self.store.clone(),
+            cookie_name: self.cookie_name.clone(),
             req: PhantomData,
         }
     }
@@ -110,6 +71,8 @@ where
 
 pub struct SessionsWork<C, B, T> {
     work: T,
+    store: SessionStore,
+    cookie_name: Cow<'static, str>,
     req: PhantomData<(C, B)>,
 }
 
@@ -123,43 +86,126 @@ where
     type Error = Error;
 
     type Future<'a>
-        = LocalBoxFuture<'a, Result<Self::Output, Self::Error>>
+        = SessionWorkFuture<'a, C, B, T>
     where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, mut req: Request<B>) -> Self::Future<'a> {
-        Box::pin(async move {
-            let cookies = CookieJar::from_request(&req)?;
+    fn call<'a>(&'a self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+        SessionWorkFuture {
+            state: SessionWorkFutureState::Init {
+                req: Some(req),
+                context,
+                work: &self.work,
+            },
+            cookie_key: &self.cookie_name,
+            store: &self.store,
+        }
+    }
+}
 
-            let id = if let Some(id) = req.extensions().get::<SessionId>() {
-                id.clone()
-            } else {
-                let id = if let Some(id) = cookies.get("sess_id") {
-                    let id = Uuid::parse_str(id.value()).map_err(bycat_error::Error::new)?;
-                    SessionId::new(id)
-                } else {
-                    SessionId::default()
-                };
+pin_project! {
+    #[project = SessionFutureStateProj]
+    enum SessionWorkFutureState<'a, C, B, T: 'a>
+    where
+        T: Work<C, Request<B>>
+    {
+        Init {
+            req: Option<Request<B>>,
+            context: &'a C,
+            work: &'a T
+        },
+        Future {
+            #[pin]
+            future: T::Future<'a>,
+            cookies: CookieJar,
+            id: SessionId
+        }
+    }
+}
 
-                req.extensions_mut().insert(id.clone());
+pin_project! {
+    pub struct SessionWorkFuture<'a, C, B, T>
+    where
+        T: Work<C, Request<B>>
+    {
+        #[pin]
+        state: SessionWorkFutureState<'a, C, B, T>,
+        cookie_key: &'a Cow<'static,str>,
+        store: &'a SessionStore,
+    }
+}
 
-                id
-            };
+impl<'a, C, B, T> Future for SessionWorkFuture<'a, C, B, T>
+where
+    T: Work<C, Request<B>>,
+    T::Error: Into<BoxError>,
+{
+    type Output = Result<T::Output, Error>;
 
-            let resp = self.work.call(context, req).await.map_err(Error::new)?;
+    fn poll(
+        mut self: core::pin::Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Self::Output> {
+        loop {
+            let mut this = self.as_mut().project();
 
-            match id.state() {
-                State::Set(uuid) => {
-                    cookies.add(Cookie::new("sess_id", uuid.hyphenated().to_string()));
+            match this.state.as_mut().project() {
+                SessionFutureStateProj::Init { req, context, work } => {
+                    let mut req = req.take().unwrap();
+
+                    let cookies = CookieJar::from_request(&req)?;
+                    let id = if let Some(id) = req.extensions().get::<SessionId>() {
+                        id.clone()
+                    } else {
+                        let id = if let Some(id) = cookies.get(&this.cookie_key) {
+                            let id =
+                                Uuid::parse_str(id.value()).map_err(bycat_error::Error::new)?;
+                            SessionId::new(id)
+                        } else {
+                            SessionId::default()
+                        };
+
+                        req.extensions_mut().insert(id.clone());
+
+                        id
+                    };
+
+                    let future = work.call(*context, req);
+
+                    this.state.set(SessionWorkFutureState::Future {
+                        future,
+                        cookies,
+                        id,
+                    });
                 }
-                State::Remove(uuid) => {
-                    cookies.remove(Cookie::new("sess_id", uuid.hyphenated().to_string()));
-                }
-                _ => {}
+                SessionFutureStateProj::Future {
+                    future,
+                    cookies,
+                    id,
+                } => match ready!(future.poll(cx)) {
+                    Ok(ret) => {
+                        match id.state() {
+                            State::Set(uuid) => {
+                                cookies.add(Cookie::new(
+                                    this.cookie_key.clone(),
+                                    uuid.hyphenated().to_string(),
+                                ));
+                            }
+                            State::Remove(uuid) => {
+                                cookies.remove(Cookie::new(
+                                    this.cookie_key.clone(),
+                                    uuid.hyphenated().to_string(),
+                                ));
+                            }
+                            _ => {}
+                        }
+
+                        return Poll::Ready(Ok(ret));
+                    }
+                    Err(err) => return Poll::Ready(Err(Error::new(err))),
+                },
             }
-
-            Ok(resp)
-        })
+        }
     }
 }

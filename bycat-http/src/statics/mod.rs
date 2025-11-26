@@ -1,12 +1,11 @@
 use core::task::{Poll, ready};
 
-use alloc::{path::PathBuf, vec::Vec};
+use alloc::path::PathBuf;
 use bycat::Work;
-use bycat_fs::{Fs, VirtualFS};
+use bycat_fs::VirtualFS;
 use bycat_package::Package;
-use http::{Request, Response};
+use http::Request;
 use pin_project_lite::pin_project;
-use relative_path::RelativePath;
 
 enum AssetSource {
     File(PathBuf),

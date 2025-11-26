@@ -26,7 +26,8 @@ pub mod multipart;
 #[cfg(feature = "serve")]
 pub mod serve;
 
-mod session;
+#[cfg(feature = "session")]
+pub mod session;
 
 #[cfg(feature = "statics")]
 mod statics;
