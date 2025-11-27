@@ -12,6 +12,8 @@ use bycat_futures::IntoResult;
 use http::{HeaderValue, Request, Response};
 use pin_project_lite::pin_project;
 
+use crate::body::HttpBody;
+
 pub trait IntoResponse<B> {
     type Error;
     fn into_response(self) -> Result<Response<B>, Self::Error>;
@@ -85,6 +87,14 @@ where
             HeaderValue::from_static("text/html"),
         );
         Ok(resp)
+    }
+}
+
+impl<B: HttpBody> IntoResponse<B> for bycat_error::Error {
+    type Error = Error;
+    fn into_response(self) -> Result<Response<B>, Self::Error> {
+        // let resp = Response::new(B::empty());
+        Err(self)
     }
 }
 

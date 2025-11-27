@@ -23,6 +23,7 @@ where
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct CookieWork<H> {
     handler: H,
 }

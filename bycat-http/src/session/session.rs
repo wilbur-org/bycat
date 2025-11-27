@@ -1,7 +1,6 @@
 use crate::{FromRequestParts, session::store::SessionStore};
 use alloc::sync::Arc;
 use arc_swap::{ArcSwap, ArcSwapAny};
-use bycat_container::{Extensible, ReadableContainer};
 use bycat_error::Error;
 use bycat_value::{Map, Value};
 use core::{
@@ -73,11 +72,21 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn get(&self, key: &str) -> Option<&Value> {
+    pub fn get<T: TryFrom<Value>>(&self, key: &str) -> Result<Option<T>, Error>
+    where
+        T::Error: core::error::Error + Send + Sync + 'static,
+    {
+        match self.value.get(key) {
+            Some(ret) => T::try_from(ret.clone()).map(Some).map_err(Error::new),
+            None => Ok(None),
+        }
+    }
+
+    pub fn get_raw(&self, key: &str) -> Option<&Value> {
         self.value.get(key)
     }
 
-    pub fn set(&mut self, key: &str, value: Value) -> Option<Value> {
+    pub fn set<V: Into<Value>>(&mut self, key: &str, value: V) -> Option<Value> {
         self.value.insert(key, value)
     }
 
@@ -164,7 +173,7 @@ impl<'a, C> Future for SessionFuture<'a, C> {
             let mut this = self.as_mut().project();
 
             match this.state.as_mut().project() {
-                SessionFutureStateProj::Init { state, parts } => {
+                SessionFutureStateProj::Init { parts, .. } => {
                     let Some(store) = parts.extensions.get::<SessionStore>() else {
                         return Poll::Ready(Err(Error::new("session store not found")));
                     };

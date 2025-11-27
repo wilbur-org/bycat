@@ -181,6 +181,8 @@ where
                         id
                     };
 
+                    req.extensions_mut().insert(this.store.clone());
+
                     let future = work.call(*context, req);
 
                     this.state.set(SessionWorkFutureState::Future {

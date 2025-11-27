@@ -135,7 +135,13 @@ where
                                 Body::from_streaming(body.map_err(Error::new))
                             });
 
-                            work.call(&context, req).await
+                            match work.call(&context, req).await {
+                                Ok(ret) => Ok(ret),
+                                Err(err) => {
+                                    alloc::println!("Error {}", err);
+                                    Err(err)
+                                }
+                            }
                         }
                     });
 
