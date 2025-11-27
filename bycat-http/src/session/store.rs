@@ -55,15 +55,15 @@ impl Store for MemoryStore {
     }
 }
 
-pub(crate) trait DynStore: Send + Sync {
+pub(super) trait DynStore: Send + Sync {
     fn save<'a>(&'a self, id: SessionId, session: &'a Map) -> BoxFuture<'a, Result<(), Error>>;
     fn load<'a>(&'a self, id: SessionId) -> BoxFuture<'a, Result<Map, Error>>;
     fn remove<'a>(&'a self, id: SessionId) -> BoxFuture<'a, Result<(), Error>>;
 }
 
-pub(crate) type SessionStore = Arc<dyn DynStore>;
+pub(super) type SessionStore = Arc<dyn DynStore>;
 
-pub(crate) struct DynStoreImpl<T>(pub T);
+pub(super) struct DynStoreImpl<T>(pub T);
 
 impl<T> DynStore for DynStoreImpl<T>
 where

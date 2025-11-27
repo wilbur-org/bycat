@@ -29,7 +29,7 @@ bycat-container = { path = "../bycat-container" }
 routing = { git = "https://github.com/kildevaeld/router-rs", features = [
     "router",
 ], optional = true, default-features = false }
-http = { version = "1", default-features = false }
+http = { version = "1" }
 
 ## Body
 http-body-util = { version = "0.1", default-features = false, optional = true }

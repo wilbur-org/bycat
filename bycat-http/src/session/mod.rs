@@ -8,7 +8,7 @@ use crate::{
         store::{DynStoreImpl, SessionStore},
     },
 };
-use alloc::{borrow::Cow, string::ToString, sync::Arc};
+use alloc::{borrow::Cow, println, string::ToString, sync::Arc};
 use bycat::{Middleware, Work};
 use bycat_error::{BoxError, Error};
 use cookie::Cookie;
@@ -29,6 +29,7 @@ pub use self::{
 pub struct Sessions {
     store: SessionStore,
     cookie_name: Cow<'static, str>,
+    cookie_key: cookie::Key,
 }
 
 impl Sessions {
@@ -39,6 +40,7 @@ impl Sessions {
         Sessions {
             store: Arc::new(DynStoreImpl(store)),
             cookie_name: Cow::Borrowed("sess_id"),
+            cookie_key: cookie::Key::generate(),
         }
     }
 
@@ -63,6 +65,7 @@ where
             work: handler,
             store: self.store.clone(),
             cookie_name: self.cookie_name.clone(),
+            cookie_key: self.cookie_key.clone(),
             req: PhantomData,
         }
     }
@@ -72,6 +75,7 @@ pub struct SessionsWork<C, B, T> {
     work: T,
     store: SessionStore,
     cookie_name: Cow<'static, str>,
+    cookie_key: cookie::Key,
     req: PhantomData<(C, B)>,
 }
 
@@ -81,6 +85,7 @@ impl<C, B, T: Clone> Clone for SessionsWork<C, B, T> {
             work: self.work.clone(),
             store: self.store.clone(),
             cookie_name: self.cookie_name.clone(),
+            cookie_key: self.cookie_key.clone(),
             req: self.req.clone(),
         }
     }
@@ -108,7 +113,8 @@ where
                 context,
                 work: &self.work,
             },
-            cookie_key: &self.cookie_name,
+            cookie_name: &self.cookie_name,
+            cookie_key: &self.cookie_key,
             store: &self.store,
         }
     }
@@ -141,8 +147,10 @@ pin_project! {
     {
         #[pin]
         state: SessionWorkFutureState<'a, C, B, T>,
-        cookie_key: &'a Cow<'static,str>,
+        cookie_name: &'a Cow<'static,str>,
+        cookie_key: &'a cookie::Key,
         store: &'a SessionStore,
+
     }
 }
 
@@ -168,7 +176,9 @@ where
                     let id = if let Some(id) = req.extensions().get::<SessionId>() {
                         id.clone()
                     } else {
-                        let id = if let Some(id) = cookies.get(&this.cookie_key) {
+                        let id = if let Some(id) =
+                            cookies.signed(&this.cookie_key).get(&this.cookie_name)
+                        {
                             let id =
                                 Uuid::parse_str(id.value()).map_err(bycat_error::Error::new)?;
                             SessionId::new(id)
@@ -199,14 +209,19 @@ where
                     Ok(ret) => {
                         match id.state() {
                             State::Set(uuid) => {
-                                cookies.add(Cookie::new(
-                                    this.cookie_key.clone(),
+                                let mut cookie = Cookie::new(
+                                    this.cookie_name.clone(),
                                     uuid.hyphenated().to_string(),
-                                ));
+                                );
+
+                                cookie.set_secure(true);
+                                cookie.set_http_only(true);
+
+                                cookies.signed(&this.cookie_key).add(cookie);
                             }
                             State::Remove(uuid) => {
-                                cookies.remove(Cookie::new(
-                                    this.cookie_key.clone(),
+                                cookies.signed(&this.cookie_key).remove(Cookie::new(
+                                    this.cookie_name.clone(),
                                     uuid.hyphenated().to_string(),
                                 ));
                             }

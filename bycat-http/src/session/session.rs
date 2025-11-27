@@ -32,7 +32,7 @@ impl State {
 }
 
 #[derive(Debug, Clone)]
-pub struct SessionId(pub(crate) Arc<ArcSwap<State>>);
+pub struct SessionId(Arc<ArcSwap<State>>);
 
 impl Default for SessionId {
     fn default() -> Self {
@@ -90,12 +90,6 @@ impl Session {
         self.value.insert(key, value)
     }
 
-    pub async fn load(&mut self) {
-        if let Ok(ret) = self.store.load(self.id.clone()).await {
-            self.value = ret;
-        }
-    }
-
     pub fn remove(&mut self, name: &str) {
         self.value.remove(name);
     }
@@ -115,6 +109,12 @@ impl Session {
         self.store.save(self.id.clone(), &self.value).await?;
 
         Ok(())
+    }
+
+    pub async fn load(&mut self) {
+        if let Ok(ret) = self.store.load(self.id.clone()).await {
+            self.value = ret;
+        }
     }
 
     pub async fn delete(&mut self) -> Result<(), Error> {

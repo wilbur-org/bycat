@@ -1,9 +1,4 @@
-#![no_std]
-
-#[cfg(not(feature = "std"))]
-extern crate alloc;
-
-#[cfg(feature = "std")]
+// TODO: Fix this
 extern crate std as alloc;
 
 mod ext;
