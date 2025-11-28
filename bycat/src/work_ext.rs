@@ -1,5 +1,6 @@
 use crate::{
-    Middleware, Work, map_err::MapErr, pipe::And, split::Split, then::Then, util::IntoEither,
+    Middleware, Work, and::And, map::Map, map_err::MapErr, split::Split, then::Then,
+    util::IntoEither,
 };
 
 pub trait WorkExt<C, I>: Work<C, I> {
@@ -37,6 +38,14 @@ pub trait WorkExt<C, I>: Work<C, I> {
         T: Fn(Self::Error) -> E,
     {
         MapErr::new(self, map)
+    }
+
+    fn map<T, O>(self, map: T) -> Map<Self, T, O>
+    where
+        Self: Sized,
+        T: Fn(Self::Output) -> O,
+    {
+        Map::new(self, map)
     }
 
     fn wrap<M>(self, middleware: M) -> M::Work

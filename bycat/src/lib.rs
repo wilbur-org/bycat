@@ -3,11 +3,12 @@
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+pub mod and;
+pub mod map;
 pub mod map_err;
 mod matcher;
 mod middleware;
 mod middleware_fn;
-pub mod pipe;
 pub mod split;
 pub mod then;
 #[cfg(feature = "tower")]

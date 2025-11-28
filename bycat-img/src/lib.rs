@@ -89,10 +89,15 @@ pub fn load<C>() -> ImageWork<C> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
 pub enum Format {
     Jpg(u8),
     Png,
-    Webp { quality: f32, lossless: bool },
+    #[cfg(feature = "webp")]
+    Webp {
+        quality: f32,
+        lossless: bool,
+    },
 }
 
 impl Format {
@@ -108,6 +113,7 @@ impl Format {
                 let encoder = image::codecs::png::PngEncoder::new(buf_writer);
                 img.write_with_encoder(encoder).map_err(Error::new)?;
             }
+            #[cfg(feature = "webp")]
             Format::Webp { quality, lossless } => {
                 let encoder = webp::Encoder::from_image(img).map_err(Error::new)?;
                 let mem = encoder
@@ -125,6 +131,7 @@ impl Format {
         match self {
             Self::Jpg(_) => "jpeg",
             Self::Png => "png",
+            #[cfg(feature = "webp")]
             Self::Webp { .. } => "webp",
         }
     }
@@ -133,6 +140,7 @@ impl Format {
         match self {
             Self::Jpg(_) => mime::IMAGE_JPEG,
             Self::Png => mime::IMAGE_PNG,
+            #[cfg(feature = "webp")]
             Self::Webp { .. } => {
                 let mime: mime::Mime = "image/webp".parse().expect("webp");
                 mime

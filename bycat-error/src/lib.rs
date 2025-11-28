@@ -1,8 +1,7 @@
 #![no_std]
 
-use core::{convert::Infallible, fmt};
-
 use alloc::{borrow::Cow, boxed::Box, collections::btree_map::BTreeMap};
+use core::{convert::Infallible, fmt};
 
 extern crate alloc;
 

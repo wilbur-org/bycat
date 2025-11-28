@@ -1,16 +1,15 @@
-use std::{
-    boxed::Box,
-    path::{Path, PathBuf},
-    task::{Poll, ready},
-};
-
-use bycat::{Matcher, Work};
+use bycat::Work;
 use bycat_error::Error;
 use bycat_package::{IntoPackage, Package};
 use bycat_source::Source;
 use futures::future::BoxFuture;
 use pin_project_lite::pin_project;
 use relative_path::RelativePath;
+use std::{
+    boxed::Box,
+    path::{Path, PathBuf},
+    task::{Poll, ready},
+};
 
 use super::{Body, ReadDir, ResolvedPath, WalkDir, WalkDirStream};
 use crate::virtual_fs::VirtualFS;

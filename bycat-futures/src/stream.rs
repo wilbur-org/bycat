@@ -7,7 +7,7 @@ use core::{
 use futures_core::Stream;
 use pin_project_lite::pin_project;
 
-use bycat::{Work, pipe::And};
+use bycat::{Work, and::And};
 
 use crate::IntoResult;
 

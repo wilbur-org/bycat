@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
+webp = ["image/webp", "dep:webp"]
 
 [dependencies]
 bycat = { path = "../bycat" }
@@ -15,7 +16,6 @@ heather = { workspace = true }
 image = { version = "0.25", default-features = false, features = [
     "jpeg",
     "png",
-    "webp",
 ] }
 mime = { workspace = true }
 relative-path = { workspace = true }
@@ -23,4 +23,4 @@ futures = { version = "0.3", default-features = false, features = ["alloc"] }
 tokio = { version = "1", features = ["rt"] }
 bytes = { workspace = true, default-features = false }
 pin-project-lite = { version = "0.2" }
-webp = { version = "0.3" }
+webp = { version = "0.3", optional = true }

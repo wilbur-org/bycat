@@ -1,4 +1,4 @@
-use bycat::pipe::And;
+use bycat::and::And;
 use core::task::Poll;
 use futures::{ready, Future, TryStream};
 use pin_project_lite::pin_project;
