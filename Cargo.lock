@@ -2091,7 +2091,7 @@ dependencies = [
 [[package]]
 name = "routing"
 version = "0.3.0"
-source = "git+https://github.com/kildevaeld/router-rs#888e8c23d2f5afb1cd84832024b18ae9a7bc7ccb"
+source = "git+https://github.com/kildevaeld/router-rs#f49709a359c1a427eb7cee39a30e75ecb286acc8"
 dependencies = [
  "bitflags",
  "http",

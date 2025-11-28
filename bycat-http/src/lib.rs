@@ -1,6 +1,7 @@
 // TODO: Fix this
 extern crate std as alloc;
 
+mod error;
 mod ext;
 
 #[cfg(feature = "std")]
@@ -31,6 +32,7 @@ mod statics;
 pub use self::serve::serve;
 
 pub use self::{
+    error::HttpError,
     extract::{from_request::FromRequest, from_request_parts::FromRequestParts},
     handler::handler,
     into_response::*,

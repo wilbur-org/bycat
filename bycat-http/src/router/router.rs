@@ -5,9 +5,10 @@ use crate::{
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
 use bycat::{Middleware, Work};
 use core::{marker::PhantomData, task::Poll};
-use http::{Request, Response, StatusCode};
+use http::{HeaderValue, Method, Request, Response, StatusCode, header::ALLOW};
 use pin_project_lite::pin_project;
 use routing::{Params, Segments, router::MethodFilter};
+use std::fmt::Write as _;
 
 #[derive(Debug, Clone)]
 pub struct Entry<T> {
@@ -153,7 +154,9 @@ impl<T, C, B> Router<T, C, B> {
         path: &str,
         params: &mut P,
     ) -> Option<&Entry<T>> {
-        self.routes.match_route(path, method, params)
+        self.routes
+            .match_route(path, method, params)
+            .map(|(m, _)| m)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (&Segments<'_>, &routing::router::Route<Entry<T>>)> {
@@ -239,6 +242,28 @@ where
                         &mut params,
                     ) {
                         &found.handler
+                    } else if req.method() == Method::OPTIONS {
+                        let mut output = String::new();
+
+                        for (idx, method) in this
+                            .router
+                            .routes
+                            .match_routes(req.uri().path(), MethodFilter::all(), &mut ())
+                            .map(|(_, method)| method)
+                            .enumerate()
+                        {
+                            if idx > 0 {
+                                output.push(',');
+                            }
+
+                            write!(&mut output, "{}", method).expect("Write");
+                        }
+
+                        let mut resp = Response::new(B::empty());
+                        *resp.status_mut() = StatusCode::NO_CONTENT;
+                        resp.headers_mut()
+                            .insert(ALLOW, HeaderValue::from_str(&output).expect("HeaderValue"));
+                        return Poll::Ready(Ok(resp));
                     } else if let Some(fallback) = &this.router.fallback {
                         fallback
                     } else {

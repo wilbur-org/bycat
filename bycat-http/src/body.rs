@@ -12,6 +12,8 @@ use bycat_error::{BoxError, Error};
 pub trait HttpBody: http_body::Body + Sized {
     fn empty() -> Self;
 
+    fn from_bytes(bytes: Bytes) -> Self;
+
     fn from_streaming<B>(inner: B) -> Self
     where
         B: http_body::Body + Send + Sync + 'static,
@@ -108,6 +110,12 @@ impl HttpBody for Body {
     fn empty() -> Self {
         Body {
             inner: Inner::Reusable(Bytes::new()),
+        }
+    }
+
+    fn from_bytes(bytes: Bytes) -> Self {
+        Body {
+            inner: Inner::Reusable(bytes),
         }
     }
 
