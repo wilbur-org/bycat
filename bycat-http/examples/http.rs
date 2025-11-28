@@ -2,6 +2,7 @@ use bycat::prelude::WorkExt;
 use bycat_http::{
     WorkIntoResponseExt,
     cookies::Cookies,
+    cors::Cors,
     extract::RequestBodyLimit,
     handler,
     session::{MemoryStore, Session, Sessions},
@@ -23,6 +24,7 @@ async fn main() -> bycat_error::Result<()> {
         .wrap(RequestBodyLimit(1024))
         .wrap(Sessions::new(MemoryStore::default()))
         .wrap(Cookies)
+        .wrap(Cors::default())
         .into_response(),
     )
     .await

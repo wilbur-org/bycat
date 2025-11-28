@@ -140,6 +140,12 @@ pub struct Cors {
     opts: Arc<CorsOptions>,
 }
 
+impl Default for Cors {
+    fn default() -> Self {
+        Cors::new()
+    }
+}
+
 impl Cors {
     pub fn new() -> Cors {
         Cors {

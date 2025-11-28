@@ -8,7 +8,7 @@ use crate::{
         store::{DynStoreImpl, SessionStore},
     },
 };
-use alloc::{borrow::Cow, println, string::ToString, sync::Arc};
+use alloc::{borrow::Cow, string::ToString, sync::Arc};
 use bycat::{Middleware, Work};
 use bycat_error::{BoxError, Error};
 use cookie::Cookie;
