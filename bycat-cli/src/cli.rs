@@ -131,6 +131,7 @@ where
                         settings,
                         args: this.req.args.clone(),
                         shutdown: Shutdown::new(),
+                        work_dir: this.req.cwd.clone(),
                     }));
 
                     let future = this.task.call(*&this.ctx, app.clone());

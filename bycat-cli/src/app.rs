@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use bycat_config::Config;
 
@@ -8,6 +11,7 @@ use crate::{Builder, paths::Paths};
 
 pub(crate) struct AppInner {
     pub paths: Paths,
+    pub work_dir: PathBuf,
     pub settings: Config,
     pub args: Vec<String>,
     pub shutdown: Shutdown,
@@ -33,5 +37,9 @@ impl App {
 
     pub fn settings(&self) -> &Config {
         &self.0.settings
+    }
+
+    pub fn work_dir(&self) -> &Path {
+        &self.0.work_dir
     }
 }
