@@ -29,7 +29,7 @@ pub use self::{
     merge::merge,
     number::Number,
     string::String,
-    time::{Date, DateTime, Time},
+    time::{Date, DateTime, Time, TimeZone},
     value::Value,
 };
 

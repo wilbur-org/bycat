@@ -533,7 +533,7 @@ dependencies = [
  "ryu",
  "serde",
  "udled 0.6.0",
- "udled-tokenizers 0.4.0",
+ "udled-tokenizers 0.5.0",
  "uuid",
 ]
 
@@ -2894,15 +2894,6 @@ checksum = "b45a67a4197cb48e7f3fe2807c20bdf88d9de400cbb579e93f1bc1857ea430e4"
 dependencies = [
  "udled 0.4.0",
  "unicode-segmentation",
-]
-
-[[package]]
-name = "udled-tokenizers"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "99da2eba91025d12ccbfa26a624a064529d108edae14ac123b84458919b9ab9a"
-dependencies = [
- "udled 0.6.0",
 ]
 
 [[package]]
