@@ -1,0 +1,10 @@
+[package]
+name = "bycat-cmd"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bycat = { path = "../bycat" }
+bycat-container = { path = "../bycat-container" }
+
+futures-core = { version = "0.3" }

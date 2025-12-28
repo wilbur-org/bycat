@@ -361,6 +361,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bycat-cmd"
+version = "0.1.0"
+dependencies = [
+ "bycat",
+ "bycat-container",
+ "futures-core",
+]
+
+[[package]]
 name = "bycat-config"
 version = "0.1.0"
 dependencies = [
