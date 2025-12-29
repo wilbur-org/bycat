@@ -366,6 +366,7 @@ version = "0.1.0"
 dependencies = [
  "bycat",
  "bycat-container",
+ "bycat-error",
  "futures-core",
 ]
 

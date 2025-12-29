@@ -3,8 +3,13 @@ name = "bycat-cmd"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+std = []
+
 [dependencies]
 bycat = { path = "../bycat" }
 bycat-container = { path = "../bycat-container" }
-
-futures-core = { version = "0.3" }
+bycat-error = { path = "../bycat-error" }
+futures-core = { version = "0.3", default-features = false, features = [
+  "alloc",
+] }

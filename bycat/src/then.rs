@@ -79,7 +79,6 @@ where
                 ThenWorkProject::Left { future, next, ctx } => {
                     let ret = ready!(future.poll(cx));
 
-                    // let next = next.take().expect("next");
                     let ctx = ctx.take().expect("context");
                     let future = next.call(ctx, ret);
                     self.set(ThenWorkFuture::Right { future });
