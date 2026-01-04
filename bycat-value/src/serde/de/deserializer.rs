@@ -213,7 +213,7 @@ where
     {
         match self.value {
             Some(Value::Map(v)) => de::Deserializer::deserialize_any(
-                de::value::MapDeserializer::new(v.into_iter().map(|(k, v)| (Value::String(k), v))),
+                de::value::MapDeserializer::new(v.into_iter()),
                 visitor,
             ),
             Some(other) => Err(de::Error::invalid_type(

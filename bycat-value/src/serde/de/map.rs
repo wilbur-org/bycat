@@ -1,13 +1,13 @@
 use crate::Map;
-use crate::{String, Value};
 use core::fmt;
+use core::marker::PhantomData;
 use serde::de;
 
-struct MapVisitor;
+struct MapVisitor<K, V>(PhantomData<K>, PhantomData<V>);
 
-impl MapVisitor {
+impl<K, V> MapVisitor<K, V> {
     fn new() -> Self {
-        MapVisitor
+        MapVisitor(PhantomData, PhantomData)
     }
 }
 
@@ -17,9 +17,13 @@ impl MapVisitor {
 // implemented here, for example deserializing from integers or strings.
 // By default those methods will return an error, which makes sense
 // because we cannot deserialize a MyMap from an integer or string.
-impl<'de> de::Visitor<'de> for MapVisitor {
+impl<'de, K, V> de::Visitor<'de> for MapVisitor<K, V>
+where
+    K: Clone + de::Deserialize<'de> + Ord,
+    V: de::Deserialize<'de> + Clone,
+{
     // The type that our Visitor is going to produce.
-    type Value = Map;
+    type Value = Map<K, V>;
 
     // Format a message stating what data this Visitor expects to receive.
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -37,7 +41,7 @@ impl<'de> de::Visitor<'de> for MapVisitor {
 
         // While there are entries remaining in the input, add them
         // into our map.
-        while let Some((key, value)) = access.next_entry::<String, Value>()? {
+        while let Some((key, value)) = access.next_entry::<K, V>()? {
             map.insert(key, value);
         }
 
@@ -45,7 +49,11 @@ impl<'de> de::Visitor<'de> for MapVisitor {
     }
 }
 
-impl<'de> de::Deserialize<'de> for Map {
+impl<'de, K, V> de::Deserialize<'de> for Map<K, V>
+where
+    K: Clone + de::Deserialize<'de> + Ord,
+    V: de::Deserialize<'de> + Clone,
+{
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: de::Deserializer<'de>,
