@@ -75,6 +75,12 @@ impl PartialEq<str> for String {
     }
 }
 
+impl<'a> PartialEq<&'a str> for String {
+    fn eq(&self, other: &&'a str) -> bool {
+        self.as_str() == *other
+    }
+}
+
 impl PartialEq<alloc::string::String> for String {
     fn eq(&self, other: &alloc::string::String) -> bool {
         self.as_str() == other
