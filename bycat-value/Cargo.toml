@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["interner"]
+# default = ["interner"]
 serde = ["dep:serde"]
 chrono = ["dep:chrono"]
 ryu = ["dep:ryu"]
