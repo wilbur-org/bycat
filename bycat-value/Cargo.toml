@@ -4,11 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
+default = ["interner"]
 serde = ["dep:serde"]
 chrono = ["dep:chrono"]
 ryu = ["dep:ryu"]
 rquickjs = ["klaver-util"]
 uuid = ["dep:uuid"]
+
+interner = ["spin"]
+std = ["spin?/std"]
 
 [dependencies]
 serde = { version = "1", default-features = false, features = [
@@ -26,6 +30,8 @@ klaver-util = { git = "https://github.com/fairy-render/klaver", features = [
 ], optional = true }
 
 uuid = { version = "1", optional = true }
+
+spin = { version = "0.10", optional = true }
 
 [dev-dependencies]
 serde = { version = "1", default-features = false, features = [

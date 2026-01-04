@@ -22,12 +22,12 @@ macro_rules! value_internal {
 
     // Done with trailing comma.
     (@array [$($elems:expr,)*]) => {
-        value_internal_vec![$($elems,)*]
+        list![$($elems,)*]
     };
 
     // Done without trailing comma.
     (@array [$($elems:expr),*]) => {
-        value_internal_vec![$($elems),*]
+        list![$($elems),*]
     };
 
     // Next element is `null`.
@@ -199,7 +199,7 @@ macro_rules! value_internal {
     };
 
     ([]) => {
-        $crate::Value::List(value_internal_vec![])
+        $crate::Value::List($crate::List::default())
     };
 
     ([ $($tt:tt)+ ]) => {
@@ -228,16 +228,16 @@ macro_rules! value_internal {
     };
 }
 
-// The value_internal macro above cannot invoke vec directly because it uses
-// local_inner_macros. A vec invocation there would resolve to $crate::vec.
-// Instead invoke vec here outside of local_inner_macros.
-#[macro_export]
-#[doc(hidden)]
-macro_rules! value_internal_vec {
-    ($($content:tt)*) => {
-        vec![$($content)*].into()
-    };
-}
+// // The value_internal macro above cannot invoke vec directly because it uses
+// // local_inner_macros. A vec invocation there would resolve to $crate::vec.
+// // Instead invoke vec here outside of local_inner_macros.
+// #[macro_export]
+// #[doc(hidden)]
+// macro_rules! value_internal_vec {
+//     ($($content:tt)*) => {
+//         vec![$($content)*].into()
+//     };
+// }
 
 #[macro_export]
 #[doc(hidden)]
@@ -249,4 +249,49 @@ macro_rules! value_unexpected {
 #[doc(hidden)]
 macro_rules! value_expect_expr_comma {
     ($e:expr , $($tt:tt)*) => {};
+}
+
+#[macro_export]
+macro_rules! list {
+    [$($item:expr,)*] => {
+        {
+            let mut output = $crate::List::<$crate::Value>::default();
+            $(
+                output.push($item);
+            )*
+            output
+        }
+
+    };
+    [$($item:expr),*] => {
+        {
+            let mut output = $crate::List::<$crate::Value>::default();
+            $(
+                output.push($item);
+            )*
+            output
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! map {
+    ($($key: literal : $value: expr,)*) => {
+        {
+            let mut output = $crate::Map::<$crate::String, $crate::Value>::default();
+            $(
+                output.insert($key, $value);
+            )*
+            output
+        }
+    };
+    ($($key: literal : $value: expr),*) => {
+        {
+            let mut output = $crate::Map::<$crate::String, $crate::Value>::default();
+            $(
+                output.insert($key, $value);
+            )*
+            output
+        }
+    };
 }

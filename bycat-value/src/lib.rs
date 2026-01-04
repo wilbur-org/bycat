@@ -6,15 +6,16 @@ mod access;
 mod bytes;
 pub mod convert;
 mod floating;
+#[cfg(feature = "interner")]
+mod interner;
 mod list;
+mod macros;
 mod map;
 mod merge;
 mod number;
 mod string;
 mod time;
 mod value;
-
-mod macros;
 
 #[cfg(feature = "rquickjs")]
 mod rquickjs;
@@ -35,3 +36,6 @@ pub use self::{
 
 #[cfg(feature = "serde")]
 pub use self::serde::{from_value, to_value};
+
+#[cfg(feature = "interner")]
+pub use self::interner::Interner;
