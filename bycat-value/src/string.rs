@@ -1,17 +1,16 @@
+use alloc::{string::ToString, sync::Arc};
 use core::{borrow::Borrow, fmt};
 
-use alloc::sync::Arc;
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct String(Arc<alloc::string::String>);
+pub struct String(Arc<str>);
 
 impl String {
     pub fn new(std: alloc::string::String) -> String {
-        String(Arc::new(std))
+        String(Arc::from(std))
     }
 
     pub fn as_str(&self) -> &str {
-        self.0.as_str()
+        &*self.0
     }
 }
 
@@ -42,11 +41,17 @@ impl core::ops::Deref for String {
 
 impl From<Arc<alloc::string::String>> for String {
     fn from(value: Arc<alloc::string::String>) -> Self {
+        String(Arc::from(value.as_str()))
+    }
+}
+
+impl From<Arc<str>> for String {
+    fn from(value: Arc<str>) -> Self {
         String(value)
     }
 }
 
-impl From<String> for Arc<alloc::string::String> {
+impl From<String> for Arc<str> {
     fn from(value: String) -> Self {
         value.0
     }
@@ -54,12 +59,24 @@ impl From<String> for Arc<alloc::string::String> {
 
 impl From<String> for alloc::string::String {
     fn from(value: String) -> Self {
-        Arc::try_unwrap(value.0).unwrap_or_else(|err| (*err).clone())
+        value.to_string()
     }
 }
 
 impl From<alloc::string::String> for String {
     fn from(value: alloc::string::String) -> Self {
         String::new(value)
+    }
+}
+
+impl PartialEq<str> for String {
+    fn eq(&self, other: &str) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl PartialEq<alloc::string::String> for String {
+    fn eq(&self, other: &alloc::string::String) -> bool {
+        self.as_str() == other
     }
 }
