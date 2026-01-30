@@ -1,40 +1,11 @@
-use std::path::{Path, PathBuf};
-
 use bycat_value::{Map, Value, merge};
 use serde::ser::SerializeMap;
 
-pub struct Layer {
-    source: PathBuf, // TODO ConfigSource
-    config: Map,
-}
-
-impl Layer {
-    pub fn path(&self) -> &Path {
-        &self.source
-    }
-
-    pub fn config(&self) -> &Map {
-        &self.config
-    }
-
-    pub fn get(&self, key: &str) -> Option<&Value> {
-        self.config.get(key)
-    }
-
-    pub fn contains(&self, key: &str) -> bool {
-        self.config.contains_key(key)
-    }
-}
-
-impl Layer {
-    fn merge_into(self, map: &mut Map) {
-        map.extend(self.config);
-    }
-}
+use super::layer::Layer;
 
 pub struct Config {
-    layer: Vec<Layer>,
-    overrides: Map,
+    pub(super) layers: Vec<Layer>,
+    pub(super) overrides: Map,
 }
 
 impl Config {
@@ -42,7 +13,7 @@ impl Config {
         if let Some(value) = self.overrides.get(key) {
             Some(value)
         } else {
-            for item in self.layer.iter().rev() {
+            for item in self.layers.iter().rev() {
                 if let Some(found) = item.get(key) {
                     return Some(found);
                 }
@@ -84,7 +55,7 @@ impl Config {
             return true;
         }
 
-        for item in self.layer.iter().rev() {
+        for item in self.layers.iter().rev() {
             if item.contains(name.as_ref()) {
                 return true;
             }
@@ -112,7 +83,7 @@ impl Config {
     }
 
     pub fn layers(&self) -> &[Layer] {
-        &self.layer
+        &self.layers
     }
 
     pub fn overrides(&self) -> &Map {
@@ -121,7 +92,7 @@ impl Config {
 
     fn into_merged(self) -> Map {
         let mut map = Map::default();
-        for layer in self.layer {
+        for layer in self.layers {
             layer.merge_into(&mut map);
         }
         map.extend(self.overrides);
@@ -135,8 +106,8 @@ impl serde::Serialize for Config {
         S: serde::Serializer,
     {
         let mut builder = serializer.serialize_map(None)?;
-        for layer in &self.layer {
-            for (k, v) in layer.config.iter() {
+        for layer in &self.layers {
+            for (k, v) in layer.config().iter() {
                 builder.serialize_entry(k, v)?;
             }
         }
@@ -155,7 +126,7 @@ impl<'de> serde::Deserialize<'de> for Config {
         D: serde::Deserializer<'de>,
     {
         Ok(Config {
-            layer: Default::default(),
+            layers: Default::default(),
             overrides: Map::deserialize(deserializer)?,
         })
     }
