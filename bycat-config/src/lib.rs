@@ -1,5 +1,6 @@
 mod config;
 mod factory;
+mod layer;
 mod locator;
 
 pub use self::{
