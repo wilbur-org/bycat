@@ -7,6 +7,7 @@ use crate::number::Number;
 use crate::time::{Date, DateTime, Time};
 use crate::{list::List, map::Map, string::String};
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Value {
     Bool(bool),

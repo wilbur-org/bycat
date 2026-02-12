@@ -1,6 +1,7 @@
 use alloc::{string::ToString, sync::Arc};
 use core::{borrow::Borrow, fmt};
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct String(Arc<str>);
 

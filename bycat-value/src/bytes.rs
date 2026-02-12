@@ -2,6 +2,7 @@ use core::borrow::{Borrow, BorrowMut};
 
 use alloc::{sync::Arc, vec::Vec};
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Bytes(Arc<Vec<u8>>);
 

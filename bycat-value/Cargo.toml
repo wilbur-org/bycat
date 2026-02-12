@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-# default = ["interner"]
 serde = ["dep:serde"]
 chrono = ["dep:chrono"]
 ryu = ["dep:ryu"]
@@ -13,11 +12,13 @@ uuid = ["dep:uuid"]
 
 interner = ["spin"]
 std = ["spin?/std"]
+jsonschema = ["schemars"]
 
 [dependencies]
 serde = { version = "1", default-features = false, features = [
   "alloc",
 ], optional = true }
+schemars = { version = "1", features = [], optional = true }
 
 chrono = { version = "0.4", default-features = false, optional = true }
 ryu = { version = "1", optional = true }

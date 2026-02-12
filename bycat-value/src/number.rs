@@ -4,6 +4,7 @@ use core::{
     hash::{Hash, Hasher},
 };
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Copy)]
 pub enum Number {
     U8(u8),

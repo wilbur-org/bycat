@@ -7,6 +7,7 @@ use alloc::{collections::btree_map::BTreeMap, sync::Arc};
 
 use crate::{string::String, value::Value};
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Map<K = String, V = Value> {
     pub(crate) entries: Arc<BTreeMap<K, V>>,

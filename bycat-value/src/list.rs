@@ -4,6 +4,7 @@ use alloc::{sync::Arc, vec::Vec};
 
 use crate::value::Value;
 
+#[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct List<V = Value> {
     items: Arc<Vec<V>>,
