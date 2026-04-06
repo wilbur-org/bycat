@@ -1,4 +1,4 @@
-use alloc::{string::ToString, sync::Arc};
+use alloc::{borrow::Cow, string::ToString, sync::Arc};
 use core::{borrow::Borrow, fmt};
 
 #[cfg_attr(feature = "jsonschema", derive(schemars::JsonSchema))]
@@ -40,6 +40,26 @@ impl core::ops::Deref for String {
     }
 }
 
+impl PartialEq<str> for String {
+    fn eq(&self, other: &str) -> bool {
+        self.as_str() == other
+    }
+}
+
+impl<'a> PartialEq<&'a str> for String {
+    fn eq(&self, other: &&'a str) -> bool {
+        self.as_str() == *other
+    }
+}
+
+impl PartialEq<alloc::string::String> for String {
+    fn eq(&self, other: &alloc::string::String) -> bool {
+        self.as_str() == other
+    }
+}
+
+// Conversions
+
 impl From<Arc<alloc::string::String>> for String {
     fn from(value: Arc<alloc::string::String>) -> Self {
         String(Arc::from(value.as_str()))
@@ -70,20 +90,20 @@ impl From<alloc::string::String> for String {
     }
 }
 
-impl PartialEq<str> for String {
-    fn eq(&self, other: &str) -> bool {
-        self.as_str() == other
+impl From<Arc<String>> for String {
+    fn from(value: Arc<String>) -> Self {
+        String::from(value.as_str())
     }
 }
 
-impl<'a> PartialEq<&'a str> for String {
-    fn eq(&self, other: &&'a str) -> bool {
-        self.as_str() == *other
+impl<'a> From<&'a String> for Cow<'a, str> {
+    fn from(value: &'a String) -> Self {
+        Cow::Borrowed(value.as_str())
     }
 }
 
-impl PartialEq<alloc::string::String> for String {
-    fn eq(&self, other: &alloc::string::String) -> bool {
-        self.as_str() == other
+impl From<String> for Cow<'_, str> {
+    fn from(value: String) -> Self {
+        Cow::Owned(value.into())
     }
 }
