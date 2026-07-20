@@ -453,6 +453,8 @@ version = "0.1.0"
 dependencies = [
  "async-fs",
  "async-process",
+ "bycat",
+ "bycat-package",
  "ctrlc",
  "futures",
  "relative-path",

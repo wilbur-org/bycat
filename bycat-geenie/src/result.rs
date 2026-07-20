@@ -1,75 +1,68 @@
 use std::collections::BTreeSet;
 
+use bycat_package::{Content, Package};
 use relative_path::RelativePathBuf;
 use spurgt::Spurgt;
 
-use crate::command::DynamicCommand;
-use crate::{command::CommandList, FileList};
-use crate::{File, GeenieError, Item};
+use crate::FileList;
+use crate::{GeenieError, Item};
 
-pub(crate) struct ResultBuilder<E> {
-    pub(crate) files: Vec<File>,
+pub(crate) struct ResultBuilder<B> {
+    pub(crate) files: Vec<Package<B>>,
     seen: BTreeSet<RelativePathBuf>,
-    pub(crate) commands: Vec<Box<dyn DynamicCommand<E>>>,
 }
 
-impl<E> Default for ResultBuilder<E> {
+impl<B> Default for ResultBuilder<B> {
     fn default() -> Self {
         Self {
             files: Default::default(),
             seen: Default::default(),
-            commands: Default::default(),
         }
     }
 }
 
-impl<E> ResultBuilder<E> {
-    pub fn push_file(&mut self, file: File) -> Result<(), GeenieError> {
-        if self.seen.contains(&file.path) {
-            return Err(GeenieError::duplicate(file.path.clone()));
+impl<B> ResultBuilder<B> {
+    pub fn push_file(&mut self, file: Package<B>) -> Result<(), GeenieError> {
+        if self.seen.contains(file.path()) {
+            return Err(GeenieError::duplicate(file.path().to_relative_path_buf()));
         }
 
-        self.seen.insert(file.path.clone());
+        self.seen.insert(file.path().to_relative_path_buf());
         self.files.push(file);
 
         Ok(())
     }
 
-    pub fn push_command(&mut self, command: Box<dyn DynamicCommand<E>>) {
-        self.commands.push(command);
-    }
+    // pub fn push_command(&mut self, command: Box<dyn DynamicCommand<E>>) {
+    //     self.commands.push(command);
+    // }
 
-    pub fn build(self, env: Spurgt<E>) -> GeenieResult<E> {
-        GeenieResult {
-            files: FileList { files: self.files },
-            commands: self.commands.into(),
-            env,
-        }
+    pub fn build(self) -> GeenieResult<B> {
+        GeenieResult { files: self.files }
     }
 }
 
-impl<E: 'static, C> Item<E, C> for ResultBuilder<E> {
+impl<C, B> Item<C, B> for ResultBuilder<B>
+where
+    B: Content + 'static,
+{
     fn process<'a>(
         self,
-        mut ctx: crate::Context<'a, E, C>,
-        _env: &'a mut Spurgt<E>,
+        mut ctx: crate::Context<'a, C, B>,
     ) -> impl std::future::Future<Output = Result<(), GeenieError>> + 'a {
         async move {
-            ctx.push(FileList::from(self.files))
-                .push(CommandList::from(self.commands));
+            ctx.push(FileList::from(self.files));
 
             Ok(())
         }
     }
 }
 
-pub struct GeenieResult<E> {
-    pub env: Spurgt<E>,
-    pub files: FileList,
-    pub commands: CommandList<E>,
+pub struct GeenieResult<B> {
+    pub files: Vec<Package<B>>,
 }
 
-impl<E> GeenieResult<E> {
+impl<B> GeenieResult<B> {
     #[cfg(feature = "fs")]
     pub async fn write_to(
         &mut self,
@@ -83,14 +76,16 @@ impl<E> GeenieResult<E> {
     }
 }
 
-impl<E: 'static, C> Item<E, C> for GeenieResult<E> {
+impl<C, B> Item<C, B> for GeenieResult<B>
+where
+    B: Content + 'static,
+{
     fn process<'a>(
         self,
-        mut ctx: crate::Context<'a, E, C>,
-        _env: &'a mut Spurgt<E>,
+        mut ctx: crate::Context<'a, C, B>,
     ) -> impl std::future::Future<Output = Result<(), GeenieError>> + 'a {
         async move {
-            ctx.push(self.files).push(self.commands);
+            ctx.push(FileList { files: self.files });
 
             Ok(())
         }

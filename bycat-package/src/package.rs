@@ -89,6 +89,14 @@ pub struct Package<B> {
     pub parts: Parts,
 }
 
+impl<B: core::fmt::Debug> core::fmt::Debug for Package<B> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Package")
+            .field("content", &self.content)
+            .finish()
+    }
+}
+
 impl<B> Package<B> {
     pub fn new(name: impl Into<RelativePathBuf>, mime: Mime, body: B) -> Package<B> {
         Package {
@@ -146,6 +154,17 @@ impl<B> Package<B> {
 
     pub fn meta_mut(&mut self) -> &mut Meta {
         &mut self.parts.meta
+    }
+
+    pub fn map_path<T: FnOnce(RelativePathBuf) -> RelativePathBuf>(self, f: T) -> Package<B> {
+        Package {
+            content: self.content,
+            parts: Parts {
+                name: f(self.parts.name),
+                mime: self.parts.mime,
+                meta: self.parts.meta,
+            },
+        }
     }
 
     pub fn map_content<T>(self, content: T) -> Package<T> {

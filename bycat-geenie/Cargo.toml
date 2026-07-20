@@ -4,11 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-cli = ["spurgt-cliclack"]
+default = ["process"]
 fs = ["async-fs", "futures"]
 process = ["async-process"]
 
 [dependencies]
+bycat = { path = "../bycat" }
+bycat-package = { path = "../bycat-package" }
 relative-path = "2"
 thiserror = "2"
 

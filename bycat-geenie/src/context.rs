@@ -1,36 +1,29 @@
+use bycat_package::Package;
+
 use crate::{
-    File, GeenieError, Item,
-    command::{Command, CommandBox},
+    GeenieError, Item,
     item::{DynamicItem, ItemBox},
     result::ResultBuilder,
 };
 
-pub struct Context<'a, E, C> {
-    pub(crate) files: &'a mut ResultBuilder<E>,
-    pub(crate) questions: &'a mut Vec<Box<dyn DynamicItem<E, C>>>,
+pub struct Context<'a, C, B> {
+    pub(crate) files: &'a mut ResultBuilder<B>,
+    pub(crate) questions: &'a mut Vec<Box<dyn DynamicItem<C, B>>>,
     pub(crate) ctx: &'a mut C,
 }
 
-impl<'a, E, C> Context<'a, E, C> {
+impl<'a, C, B> Context<'a, C, B> {
     pub fn push<T>(&mut self, item: T) -> &mut Self
     where
-        T: Item<E, C> + 'static,
+        T: Item<C, B> + 'static,
     {
         self.questions.push(Box::new(ItemBox(item)));
         self
     }
 
-    pub fn file(&mut self, file: impl Into<File>) -> Result<&mut Self, GeenieError> {
-        self.files.push_file(file.into())?;
+    pub fn package(&mut self, file: Package<B>) -> Result<&mut Self, GeenieError> {
+        self.files.push_file(file)?;
         Ok(self)
-    }
-
-    pub fn command<T>(&mut self, command: T) -> &mut Self
-    where
-        T: Command<E> + 'static,
-    {
-        self.files.push_command(Box::new(CommandBox(command)));
-        self
     }
 
     pub fn data_mut(&mut self) -> &mut C {
@@ -42,12 +35,12 @@ impl<'a, E, C> Context<'a, E, C> {
     }
 }
 
-pub trait ContextLike<'a, E, C> {
-    fn env(&self) -> &E;
+pub trait ContextLike<'a, C, B> {
+    fn env(&self) -> &C;
 
     fn cwd(&self) -> &std::path::Path;
 
     fn push<T>(&mut self, item: T) -> &mut Self
     where
-        T: Item<E, C> + 'a;
+        T: Item<C, B> + 'a;
 }

@@ -70,14 +70,47 @@ impl<E: Asger> crate::command::Command<E> for Process {
     }
 }
 
-impl<E: Asger, C> Item<E, C> for Process {
+impl<C, B> Item<C, B> for Process {
     fn process<'a>(
         self,
-        mut ctx: crate::Context<'a, E, C>,
-        _env: &'a mut Spurgt<E>,
+        mut ctx: crate::Context<'a, C, B>,
     ) -> impl std::future::Future<Output = Result<(), GeenieError>> + 'a {
         async move {
-            ctx.command(self);
+            let cmd = format!("{} {}", self.cmd, self.args.join(" "));
+
+            let mut spinner = Spinner::new(env);
+
+            spinner.start(format!("Executing {}", cmd));
+
+            let ret = Command::new(&self.cmd)
+                .args(&self.args)
+                .current_dir(path)
+                .output()
+                .await;
+
+            let ret = match ret {
+                Ok(ret) => {
+                    spinner.stop(format!("Executed {}", cmd));
+                    ret
+                }
+                Err(err) => {
+                    spinner.error(err.to_string());
+                    return Err(GeenieError::backend(err));
+                }
+            };
+
+            if self.output {
+                env.info(&*String::from_utf8_lossy(&ret.stdout))
+                    .await
+                    .map_err(GeenieError::backend)?;
+            }
+
+            if !ret.status.success() {
+                return Err(GeenieError::command(
+                    String::from_utf8_lossy(&ret.stderr).to_string(),
+                ));
+            }
+
             Ok(())
         }
     }

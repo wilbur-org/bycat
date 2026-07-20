@@ -1,32 +1,30 @@
 use relative_path::RelativePathBuf;
 use spurgt::Spurgt;
 
-use crate::{result::ResultBuilder, Context, File, GeenieError};
+use crate::{Context, GeenieError, result::ResultBuilder};
 use core::{future::Future, pin::Pin};
 
-pub trait Item<E, C> {
+pub trait Item<C, B> {
     fn process<'a>(
         self,
-        ctx: Context<'a, E, C>,
-        env: &'a mut Spurgt<E>,
+        ctx: Context<'a, C, B>,
     ) -> impl Future<Output = Result<(), GeenieError>> + 'a;
 }
 
-impl<T, E, C> Item<E, C> for T
+impl<T, C, B> Item<C, B> for T
 where
     T: 'static,
-    for<'a> T: FnOnce(Context<'a, E, C>, &'a mut Spurgt<E>) -> Result<(), GeenieError>,
+    for<'a> T: FnOnce(Context<'a, C, B>) -> Result<(), GeenieError>,
 {
     fn process<'a>(
         self,
-        ctx: Context<'a, E, C>,
-        env: &'a mut Spurgt<E>,
+        ctx: Context<'a, C, B>,
     ) -> impl Future<Output = Result<(), GeenieError>> + 'a {
-        async move { (self)(ctx, env) }
+        async move { (self)(ctx) }
     }
 }
 
-pub trait ItemExt<E, C>: Item<E, C> {
+pub trait ItemExt<C, B>: Item<C, B> {
     fn mount<P>(self, path: P) -> MountItem<Self>
     where
         Self: Sized,
@@ -39,38 +37,35 @@ pub trait ItemExt<E, C>: Item<E, C> {
     }
 }
 
-impl<T, E, C> ItemExt<E, C> for T where T: Item<E, C> {}
+impl<T, C, B> ItemExt<C, B> for T where T: Item<C, B> {}
 
-pub trait DynamicItem<E, C> {
+pub trait DynamicItem<C, B> {
     fn process<'a>(
         self: Box<Self>,
-        ctx: Context<'a, E, C>,
-        env: &'a mut Spurgt<E>,
+        ctx: Context<'a, C, B>,
     ) -> Pin<Box<dyn Future<Output = Result<(), GeenieError>> + 'a>>;
 }
 
 pub struct ItemBox<T>(pub T);
 
-impl<T, E, C> DynamicItem<E, C> for ItemBox<T>
+impl<T, C, B> DynamicItem<C, B> for ItemBox<T>
 where
-    T: Item<E, C> + 'static,
+    T: Item<C, B> + 'static,
 {
     fn process<'a>(
         self: Box<Self>,
-        ctx: Context<'a, E, C>,
-        env: &'a mut Spurgt<E>,
+        ctx: Context<'a, C, B>,
     ) -> Pin<Box<dyn Future<Output = Result<(), GeenieError>> + 'a>> {
-        Box::pin(async move { self.0.process(ctx, env).await })
+        Box::pin(async move { self.0.process(ctx).await })
     }
 }
 
-impl<E, C> Item<E, C> for ItemBox<Box<dyn DynamicItem<E, C>>> {
+impl<C, B> Item<C, B> for ItemBox<Box<dyn DynamicItem<C, B>>> {
     fn process<'a>(
         self,
-        ctx: Context<'a, E, C>,
-        env: &'a mut Spurgt<E>,
+        ctx: Context<'a, C, B>,
     ) -> impl Future<Output = Result<(), GeenieError>> + 'a {
-        async move { self.0.process(ctx, env).await }
+        async move { self.0.process(ctx).await }
     }
 }
 
@@ -88,41 +83,30 @@ impl<T> MountItem<T> {
     }
 }
 
-impl<T, E, C> Item<E, C> for MountItem<T>
+impl<T, C, B> Item<C, B> for MountItem<T>
 where
     C: 'static,
-    E: 'static,
-    T: Item<E, C> + 'static,
+    T: Item<C, B> + 'static,
+    B: 'static,
 {
     fn process<'a>(
         self,
-        mut ctx: Context<'a, E, C>,
-        env: &'a mut Spurgt<E>,
+        mut ctx: Context<'a, C, B>,
     ) -> impl Future<Output = Result<(), GeenieError>> + 'a {
         async move {
             let mut files = ResultBuilder::default();
             let mut items = Vec::default();
 
             self.item
-                .process(
-                    Context {
-                        files: &mut files,
-                        questions: &mut items,
-                        ctx: ctx.ctx,
-                    },
-                    env,
-                )
+                .process(Context {
+                    files: &mut files,
+                    questions: &mut items,
+                    ctx: ctx.ctx,
+                })
                 .await?;
 
             for file in files.files {
-                ctx.file(File {
-                    path: self.mount.join(file.path),
-                    content: file.content,
-                })?;
-            }
-
-            for cmd in files.commands {
-                ctx.files.push_command(cmd);
+                ctx.package(file.map_path(|path| self.mount.join(path)))?;
             }
 
             for item in items {

@@ -72,15 +72,15 @@ impl<'a, E> IntoIterator for &'a CommandList<E> {
     }
 }
 
-impl<E, C> Item<E, C> for CommandList<E> {
+impl<E, C, B> Item<E, C, B> for CommandList<E> {
     fn process<'a>(
         self,
-        ctx: crate::Context<'a, E, C>,
+        ctx: crate::Context<'a, E, C, B>,
         _env: &'a mut Spurgt<E>,
     ) -> impl Future<Output = Result<(), GeenieError>> + 'a {
         async move {
             for cmd in self {
-                ctx.files.push_command(cmd);
+                // ctx.files.push_command(cmd);
             }
 
             Ok(())
@@ -90,17 +90,17 @@ impl<E, C> Item<E, C> for CommandList<E> {
 
 pub struct CommandItem<T>(pub T);
 
-impl<E, C, T> Item<E, C> for CommandItem<T>
+impl<E, C, T, B> Item<E, C, B> for CommandItem<T>
 where
     T: Command<E> + 'static,
 {
     fn process<'a>(
         self,
-        mut ctx: crate::Context<'a, E, C>,
+        mut ctx: crate::Context<'a, E, C, B>,
         _env: &'a mut Spurgt<E>,
     ) -> impl Future<Output = Result<(), GeenieError>> + 'a {
         async move {
-            ctx.command(self.0);
+            // ctx.command(self.0);
             Ok(())
         }
     }
