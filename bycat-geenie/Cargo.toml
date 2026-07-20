@@ -1,0 +1,23 @@
+[package]
+name = "bycat-geenie"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+cli = ["spurgt-cliclack"]
+fs = ["async-fs", "futures"]
+process = ["async-process"]
+
+[dependencies]
+relative-path = "2"
+thiserror = "2"
+
+spurgt = { git = "ssh://git@github.com/fairy-render/spurgt.git" }
+spurgt-cliclack = { git = "ssh://git@github.com/fairy-render/spurgt.git", optional = true }
+
+async-process = { version = "2", optional = true }
+async-fs = { version = "2", optional = true }
+futures = { version = "0.3", optional = true }
+
+[dev-dependencies]
+ctrlc = { version = "3" }
