@@ -1,4 +1,5 @@
 use bycat_package::{Content, IntoPackage, Package};
+use bycat_source::Source;
 #[cfg(feature = "fs")]
 use futures::StreamExt;
 use relative_path::RelativePathBuf;
@@ -86,37 +87,6 @@ pub struct FileList<T: Content> {
 }
 
 impl<T: Content> FileList<T> {
-    #[cfg(feature = "fs")]
-    pub async fn write_to(
-        &self,
-        path: impl AsRef<std::path::Path>,
-        force: bool,
-    ) -> Result<(), GeenieError> {
-        let path = path.as_ref();
-        for files in self.files.chunks(10) {
-            let mut futures = futures::stream::FuturesUnordered::new();
-
-            for file in files {
-                futures.push(async move { file.write_to(path, force).await });
-            }
-
-            while let Some(next) = futures.next().await {
-                match next {
-                    Ok(e) => {
-                        let _ = e;
-                    }
-                    Err(err) => {
-                        if err.is_io() {
-                            return Err(err);
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(())
-    }
-
     pub fn push(&mut self, file: Package<T>) {
         self.files.push(file);
     }

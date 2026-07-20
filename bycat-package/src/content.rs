@@ -1,4 +1,4 @@
-use alloc::boxed::Box;
+use alloc::{boxed::Box, string::String};
 use async_trait::async_trait;
 use bytes::{BufMut, Bytes, BytesMut};
 use core::{
@@ -19,6 +19,14 @@ impl Content for Bytes {
     type Error = Infallible;
     async fn bytes(&mut self) -> Result<Bytes, Self::Error> {
         Ok(self.clone())
+    }
+}
+
+#[async_trait]
+impl Content for String {
+    type Error = Infallible;
+    async fn bytes(&mut self) -> Result<Bytes, Self::Error> {
+        Ok(Bytes::from(self.clone()))
     }
 }
 

@@ -7,6 +7,7 @@ use crate::{
     result::{GeenieResult, ResultBuilder},
 };
 use bycat_package::IntoPackage;
+use bycat_source::Source;
 use spurgt::{Spurgt, core::BoxError};
 
 pub struct Geenie<C, B> {
@@ -41,7 +42,7 @@ impl<C, B> Geenie<C, B> {
         Ok(self)
     }
 
-    pub async fn run(mut self, context: &mut C) -> Result<GeenieResult<B>, GeenieError> {
+    pub async fn run(self, context: &mut C) -> Result<GeenieResult<B>, GeenieError> {
         let mut files = ResultBuilder::<B>::default();
         for item in self.items {
             Self::process_item(item, &mut files, context).await?;

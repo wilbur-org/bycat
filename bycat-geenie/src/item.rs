@@ -14,13 +14,13 @@ pub trait Item<C, B> {
 impl<T, C, B> Item<C, B> for T
 where
     T: 'static,
-    for<'a> T: FnOnce(Context<'a, C, B>) -> Result<(), GeenieError>,
+    for<'a> T: AsyncFnOnce(Context<'a, C, B>) -> Result<(), GeenieError>,
 {
     fn process<'a>(
         self,
         ctx: Context<'a, C, B>,
     ) -> impl Future<Output = Result<(), GeenieError>> + 'a {
-        async move { (self)(ctx) }
+        async move { (self)(ctx).await }
     }
 }
 

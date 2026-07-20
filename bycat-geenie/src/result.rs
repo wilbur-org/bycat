@@ -62,20 +62,6 @@ pub struct GeenieResult<B> {
     pub files: Vec<Package<B>>,
 }
 
-impl<B> GeenieResult<B> {
-    #[cfg(feature = "fs")]
-    pub async fn write_to(
-        &mut self,
-        path: impl AsRef<std::path::Path>,
-        force: bool,
-    ) -> Result<(), GeenieError> {
-        self.files.write_to(path.as_ref(), force).await?;
-        self.commands.run_in(&mut self.env, path.as_ref()).await?;
-
-        Ok(())
-    }
-}
-
 impl<C, B> Item<C, B> for GeenieResult<B>
 where
     B: Content + 'static,

@@ -11,6 +11,8 @@ process = ["async-process"]
 [dependencies]
 bycat = { path = "../bycat" }
 bycat-package = { path = "../bycat-package" }
+bycat-source = { path = "../bycat-source" }
+
 relative-path = "2"
 thiserror = "2"
 
@@ -23,3 +25,10 @@ futures = { version = "0.3", optional = true }
 
 [dev-dependencies]
 ctrlc = { version = "3" }
+futures = { version = "0.3", features = ["executor"] }
+
+
+[[example]]
+name = "geenie"
+path = "examples/geenie.rs"
+# required-features = ["fs", "process"]

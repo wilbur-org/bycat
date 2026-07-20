@@ -455,6 +455,7 @@ dependencies = [
  "async-process",
  "bycat",
  "bycat-package",
+ "bycat-source",
  "ctrlc",
  "futures",
  "relative-path",

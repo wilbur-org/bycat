@@ -1,3 +1,4 @@
+use bycat_package::mime;
 use relative_path::RelativePathBuf;
 
 #[derive(Debug, thiserror::Error)]
@@ -35,5 +36,11 @@ impl GeenieError {
 
     pub fn backend<E: Into<Box<dyn std::error::Error + Send + Sync>>>(error: E) -> GeenieError {
         GeenieError::Backend(error.into())
+    }
+}
+
+impl From<mime::FromStrError> for GeenieError {
+    fn from(err: mime::FromStrError) -> Self {
+        GeenieError::Backend(Box::new(err))
     }
 }
