@@ -40,6 +40,28 @@ where
 }
 
 #[cfg(feature = "serve-tokio")]
+pub async fn serve_local<T, C, A>(addr: A, context: C, service: T) -> Result<(), tokio::io::Error>
+where
+    A: tokio::net::ToSocketAddrs,
+    T: Work<
+            C,
+            http::Request<crate::body::Body>,
+            Output = http::Response<crate::body::Body>,
+            Error = Error,
+        > + Clone
+        + 'static,
+    C: Clone + 'static,
+{
+    let server = Server::new(TokioExecutor::default(), LocalTokioServer(service, context));
+
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+
+    server.serve(listener, &Shutdown::new()).await;
+
+    Ok(())
+}
+
+#[cfg(feature = "serve-tokio")]
 struct TokioServer<T, C>(T, C);
 
 #[cfg(feature = "serve-tokio")]
@@ -155,6 +177,120 @@ where
                 core::task::Poll::Ready(())
             }
             TokioServerFutureProj::Done => panic!("Poll after done"),
+        }
+    }
+}
+
+#[cfg(feature = "serve-tokio")]
+struct LocalTokioServer<T, C>(T, C);
+
+#[cfg(feature = "serve-tokio")]
+impl<T, C, L> Servable<TokioExecutor, L> for LocalTokioServer<T, C>
+where
+    L: Listener + 'static,
+    L::Io: Send,
+    L::Addr: Send,
+    T: Work<
+            C,
+            http::Request<crate::body::Body>,
+            Output = http::Response<crate::body::Body>,
+            Error = Error,
+        > + Clone
+        + 'static,
+    C: Clone + 'static,
+{
+    type Future<'a>
+        = LocalTokioServerFuture<L, T, C>
+    where
+        Self: 'a;
+
+    fn call(&self, conn: Connection<L, TokioExecutor>) -> Self::Future<'_> {
+        LocalTokioServerFuture::Init {
+            work: Some(self.0.clone()),
+            conn: Some(conn),
+            context: Some(self.1.clone()),
+        }
+    }
+}
+
+#[cfg(feature = "serve-tokio")]
+pin_project_lite::pin_project! {
+    #[project = LocalTokioServerFutureProj]
+    pub enum LocalTokioServerFuture<L, T, C>
+    where
+        L: Listener
+    {
+       Init {
+        work: Option<T>,
+        conn: Option<Connection<L, TokioExecutor>>,
+        context: Option<C>
+
+       },
+       Done
+    }
+}
+#[cfg(feature = "serve-tokio")]
+impl<L, T, C> Future for LocalTokioServerFuture<L, T, C>
+where
+    L: Listener + 'static,
+    L::Io: Send,
+    L::Addr: Send,
+    T: Work<
+            C,
+            http::Request<crate::body::Body>,
+            Output = http::Response<crate::body::Body>,
+            Error = Error,
+        > + Clone
+        + 'static,
+    C: Clone + 'static,
+{
+    type Output = ();
+
+    fn poll(
+        mut self: core::pin::Pin<&mut Self>,
+        _cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Self::Output> {
+        let this = self.as_mut().project();
+
+        match this {
+            LocalTokioServerFutureProj::Init {
+                conn,
+                work,
+                context,
+            } => {
+                let work = work.take().unwrap();
+                let conn = conn.take().unwrap();
+                let context = context.take().unwrap();
+
+                tokio::task::spawn_local(async move {
+                    let svc = hyper::service::service_fn(move |req| {
+                        let work = work.clone();
+                        let context = context.clone();
+                        async move {
+                            let req = req.map(|body: hyper::body::Incoming| {
+                                Body::from_streaming(body.map_err(Error::new))
+                            });
+
+                            match work.call(&context, req).await {
+                                Ok(ret) => Ok(ret),
+                                Err(err) => {
+                                    alloc::println!("Error {}", err);
+                                    Err(err)
+                                }
+                            }
+                        }
+                    });
+
+                    if let Err(err) = conn.serve_connection(svc).await {
+                        alloc::eprintln!("server error: {}", err);
+                    }
+                });
+
+                self.set(Self::Done);
+
+                core::task::Poll::Ready(())
+            }
+            LocalTokioServerFutureProj::Done => panic!("Poll after done"),
         }
     }
 }
