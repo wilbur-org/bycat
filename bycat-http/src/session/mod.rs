@@ -1,6 +1,7 @@
 mod session;
 mod store;
 
+use crate::{Error, error::BoxError};
 use crate::{
     cookies::CookieJar,
     session::{
@@ -10,7 +11,6 @@ use crate::{
 };
 use alloc::{borrow::Cow, string::ToString, sync::Arc};
 use bycat::{Middleware, Work};
-use bycat_error::{BoxError, Error};
 use cookie::Cookie;
 use core::{
     marker::PhantomData,
@@ -179,8 +179,7 @@ where
                         let id = if let Some(id) =
                             cookies.signed(&this.cookie_key).get(&this.cookie_name)
                         {
-                            let id =
-                                Uuid::parse_str(id.value()).map_err(bycat_error::Error::new)?;
+                            let id = Uuid::parse_str(id.value()).map_err(Error::custom)?;
                             SessionId::new(id)
                         } else {
                             SessionId::default()
@@ -230,7 +229,7 @@ where
 
                         return Poll::Ready(Ok(ret));
                     }
-                    Err(err) => return Poll::Ready(Err(Error::new(err))),
+                    Err(err) => return Poll::Ready(Err(Error::custom(err))),
                 },
             }
         }

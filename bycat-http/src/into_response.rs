@@ -5,9 +5,9 @@ use core::{
     task::{Context, Poll},
 };
 
+use crate::{Error, error::BoxError};
 use alloc::string::String;
 use bycat::Work;
-use bycat_error::{BoxError, Error};
 use bycat_futures::IntoResult;
 use http::{HeaderValue, Request, Response};
 use pin_project_lite::pin_project;
@@ -33,11 +33,11 @@ where
     E: IntoResponse<B>,
     E::Error: core::error::Error + Send + Sync + 'static,
 {
-    type Error = bycat_error::Error;
+    type Error = Error;
     fn into_response(self) -> Result<Response<B>, Self::Error> {
         match self {
-            Self::Ok(ret) => ret.into_response().map_err(Error::new),
-            Self::Err(err) => err.into_response().map_err(Error::new),
+            Self::Ok(ret) => ret.into_response().map_err(Error::custom),
+            Self::Err(err) => err.into_response().map_err(Error::custom),
         }
     }
 }
@@ -90,13 +90,13 @@ where
     }
 }
 
-impl<B: HttpBody> IntoResponse<B> for bycat_error::Error {
-    type Error = Error;
-    fn into_response(self) -> Result<Response<B>, Self::Error> {
-        // let resp = Response::new(B::empty());
-        Err(self)
-    }
-}
+// impl<B: HttpBody> IntoResponse<B> for bycat_error::Error {
+//     type Error = Error;
+//     fn into_response(self) -> Result<Response<B>, Self::Error> {
+//         // let resp = Response::new(B::empty());
+//         Err(self)
+//     }
+// }
 
 pub trait WorkIntoResponseExt<C, B>: Work<C, Request<B>> {
     fn into_response(self) -> RouteHandler<Self>
@@ -163,7 +163,7 @@ where
             result
                 .into_result()
                 .map_err(Into::into)
-                .and_then(|resp| resp.into_response().map_err(Error::new))
+                .and_then(|resp| resp.into_response().map_err(Error::custom))
         })
     }
 }

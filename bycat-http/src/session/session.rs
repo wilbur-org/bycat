@@ -1,7 +1,7 @@
+use crate::Error;
 use crate::{FromRequestParts, session::store::SessionStore};
 use alloc::sync::Arc;
 use arc_swap::{ArcSwap, ArcSwapAny};
-use bycat_error::Error;
 use bycat_value::{Map, Value};
 use core::{
     mem::transmute,
@@ -77,7 +77,7 @@ impl Session {
         T::Error: core::error::Error + Send + Sync + 'static,
     {
         match self.value.get(key) {
-            Some(ret) => T::try_from(ret.clone()).map(Some).map_err(Error::new),
+            Some(ret) => T::try_from(ret.clone()).map(Some).map_err(Error::custom),
             None => Ok(None),
         }
     }
@@ -175,11 +175,11 @@ impl<'a, C> Future for SessionFuture<'a, C> {
             match this.state.as_mut().project() {
                 SessionFutureStateProj::Init { parts, .. } => {
                     let Some(store) = parts.extensions.get::<SessionStore>() else {
-                        return Poll::Ready(Err(Error::new("session store not found")));
+                        return Poll::Ready(Err(Error::custom("session store not found")));
                     };
 
                     let Some(id) = parts.extensions.get::<SessionId>() else {
-                        return Poll::Ready(Err(Error::new("session not found")));
+                        return Poll::Ready(Err(Error::custom("session not found")));
                     };
 
                     let future = store.load(id.clone());

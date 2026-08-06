@@ -1,7 +1,7 @@
 use super::from_request_parts::FromRequestParts;
+use crate::Error;
 #[cfg(feature = "std")]
 use crate::body::Body;
-use bycat_error::Error;
 use core::{
     mem::transmute,
     pin::Pin,

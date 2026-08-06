@@ -1,6 +1,6 @@
+use crate::Error;
 use alloc::format;
 use bycat_container::Extensible;
-use bycat_error::Error;
 use core::any::{Any, type_name};
 use core::future::{self, Ready};
 
@@ -31,7 +31,7 @@ where
                 .cloned()
                 .map(Ext)
                 .ok_or_else(|| {
-                    Error::new(format!("Type {:?} not found in state", type_name::<T>()))
+                    Error::custom(format!("Type {:?} not found in state", type_name::<T>()))
                 }),
         )
     }

@@ -5,7 +5,7 @@ use http::Request;
 use routing::router::MethodFilter;
 
 use crate::{
-    IntoResponse,
+    Error, IntoResponse,
     body::HttpBody,
     router::{Builder, Router, RouterFuture},
 };
@@ -23,20 +23,22 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
 
     pub fn get<T>(self, path: &str, worker: T) -> Self
     where
-        T: Work<C, Request<B>, Error = bycat_error::Error> + Send + Sync + 'static,
+        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
-        <T::Output as IntoResponse<B>>::Error: Into<bycat_error::Error>,
+        <T::Output as IntoResponse<B>>::Error: Into<Error>,
     {
         self.route(MethodFilter::GET, path, worker)
     }
 
     pub fn route<T>(mut self, method: MethodFilter, path: &str, worker: T) -> Self
     where
-        T: Work<C, Request<B>, Error = bycat_error::Error> + Send + Sync + 'static,
+        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
-        <T::Output as IntoResponse<B>>::Error: Into<bycat_error::Error>,
+        <T::Output as IntoResponse<B>>::Error: Into<Error>,
     {
         let send_worker = SendWork::new(worker);
         self.builder.add_route(method, path, send_worker).unwrap();
@@ -46,10 +48,10 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
     pub fn middleware<T>(mut self, middleware: T) -> Self
     where
         T: Middleware<C, Request<B>, SendWork<C, B>> + Send + Sync + 'static,
-        T::Work: Work<C, Request<B>, Error = bycat_error::Error> + Send + Sync + 'static,
+        T::Work: Work<C, Request<B>> + Send + Sync + 'static,
+        <T::Work as Work<C, Request<B>>>::Error: Into<Error>,
         <T::Work as Work<C, Request<B>>>::Output: IntoResponse<B>,
-        <<T::Work as Work<C, Request<B>>>::Output as IntoResponse<B>>::Error:
-            Into<bycat_error::Error>,
+        <<T::Work as Work<C, Request<B>>>::Output as IntoResponse<B>>::Error: Into<Error>,
         for<'a> <T::Work as Work<C, Request<B>>>::Future<'a>: Send + 'a,
     {
         let send_middleware = SendMiddleware::new(middleware);
@@ -77,7 +79,7 @@ impl<C, B> Clone for SendRouter<C, B> {
 }
 
 impl<C, B: HttpBody> Work<C, Request<B>> for SendRouter<C, B> {
-    type Error = bycat_error::Error;
+    type Error = Error;
     type Output = http::Response<B>;
     type Future<'a>
         = RouterFuture<'a, SendWork<C, B>, C, B>
@@ -105,29 +107,31 @@ impl<C, B> Clone for SendWork<C, B> {
 impl<C: Send + Sync, B: Send + 'static> SendWork<C, B> {
     pub fn new<T>(worker: T) -> Self
     where
-        T: Work<C, Request<B>, Error = bycat_error::Error> + Send + Sync + 'static,
+        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
-        <T::Output as IntoResponse<B>>::Error: Into<bycat_error::Error>,
+        <T::Output as IntoResponse<B>>::Error: Into<Error>,
     {
         struct Wrapper<T>(T);
 
         impl<C: Send + Sync, B: Send + 'static, T> Worker<C, B> for Wrapper<T>
         where
-            T: Work<C, Request<B>, Error = bycat_error::Error> + Send + Sync + 'static,
+            T: Work<C, Request<B>> + Send + Sync + 'static,
+            T::Error: Into<Error>,
             for<'a> T::Future<'a>: Send + 'a,
             T::Output: IntoResponse<B>,
-            <T::Output as IntoResponse<B>>::Error: Into<bycat_error::Error>,
+            <T::Output as IntoResponse<B>>::Error: Into<Error>,
         {
             fn call<'a>(
                 &'a self,
                 context: &'a C,
                 req: http::Request<B>,
-            ) -> BoxFuture<'a, Result<http::Response<B>, bycat_error::Error>> {
+            ) -> BoxFuture<'a, Result<http::Response<B>, Error>> {
                 Box::pin(async move {
                     let fut = self.0.call(context, req);
 
-                    let res = fut.await?;
+                    let res = fut.await.map_err(Into::into)?;
                     res.into_response().map_err(Into::into)
                 })
             }
@@ -140,7 +144,7 @@ impl<C: Send + Sync, B: Send + 'static> SendWork<C, B> {
 }
 
 impl<C, B> Work<C, Request<B>> for SendWork<C, B> {
-    type Error = bycat_error::Error;
+    type Error = Error;
     type Output = http::Response<B>;
     type Future<'a>
         = BoxFuture<'a, Result<Self::Output, Self::Error>>
@@ -158,7 +162,7 @@ trait Worker<C, B> {
         &'a self,
         context: &'a C,
         req: http::Request<B>,
-    ) -> BoxFuture<'a, Result<http::Response<B>, bycat_error::Error>>;
+    ) -> BoxFuture<'a, Result<http::Response<B>, Error>>;
 }
 
 trait Middler<C, B> {
@@ -173,10 +177,10 @@ impl<C: Send + Sync, B: Send + 'static> SendMiddleware<C, B> {
     pub fn new<T>(middleware: T) -> Self
     where
         T: Middleware<C, Request<B>, SendWork<C, B>> + Send + Sync + 'static,
-        T::Work: Work<C, Request<B>, Error = bycat_error::Error> + Send + Sync + 'static,
+        T::Work: Work<C, Request<B>> + Send + Sync + 'static,
         <T::Work as Work<C, Request<B>>>::Output: IntoResponse<B>,
-        <<T::Work as Work<C, Request<B>>>::Output as IntoResponse<B>>::Error:
-            Into<bycat_error::Error>,
+        <T::Work as Work<C, Request<B>>>::Error: Into<Error>,
+        <<T::Work as Work<C, Request<B>>>::Output as IntoResponse<B>>::Error: Into<Error>,
         for<'a> <T::Work as Work<C, Request<B>>>::Future<'a>: Send + 'a,
     {
         struct Wrapper<T>(T);
@@ -184,10 +188,10 @@ impl<C: Send + Sync, B: Send + 'static> SendMiddleware<C, B> {
         impl<C: Send + Sync, B: Send + 'static, T> Middler<C, B> for Wrapper<T>
         where
             T: Middleware<C, Request<B>, SendWork<C, B>> + Send + Sync + 'static,
-            T::Work: Work<C, Request<B>, Error = bycat_error::Error> + Send + Sync + 'static,
+            T::Work: Work<C, Request<B>> + Send + Sync + 'static,
+            <T::Work as Work<C, Request<B>>>::Error: Into<Error>,
             <T::Work as Work<C, Request<B>>>::Output: IntoResponse<B>,
-            <<T::Work as Work<C, Request<B>>>::Output as IntoResponse<B>>::Error:
-                Into<bycat_error::Error>,
+            <<T::Work as Work<C, Request<B>>>::Output as IntoResponse<B>>::Error: Into<Error>,
             for<'a> <T::Work as Work<C, Request<B>>>::Future<'a>: Send + 'a,
         {
             fn wrap(&self, future: SendWork<C, B>) -> SendWork<C, B> {

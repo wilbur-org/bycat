@@ -1,5 +1,5 @@
+use crate::{Error, error::BoxError};
 use bycat::Work;
-use bycat_error::{BoxError, Error};
 use core::{
     marker::PhantomData,
     pin::Pin,
@@ -185,7 +185,7 @@ where
                 }
                 HandlerFnFutureStateProj::Handler { future } => {
                     let ret = ready!(future.poll(cx));
-                    return Poll::Ready(ret.into_response().map_err(Error::new));
+                    return Poll::Ready(ret.into_response().map_err(Error::custom));
                 }
             }
         }

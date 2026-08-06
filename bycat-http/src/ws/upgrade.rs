@@ -1,3 +1,4 @@
+use crate::Error;
 use crate::{
     FromRequestParts,
     body::HttpBody,
@@ -12,7 +13,6 @@ use alloc::{
     collections::BTreeSet,
     task::{Poll, ready},
 };
-use bycat_error::Error;
 use bytes::Bytes;
 use http::{HeaderValue, Method, Response, StatusCode, Version, header, request::Parts};
 use hyper::upgrade::{OnUpgrade, Upgraded};

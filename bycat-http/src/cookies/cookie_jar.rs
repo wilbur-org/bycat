@@ -1,7 +1,7 @@
 use core::future::{Ready, ready};
 
+use crate::Error;
 use alloc::{borrow::ToOwned, string::ToString, sync::Arc};
-use bycat_error::Error;
 use http::{
     HeaderMap, Request,
     header::{COOKIE, SET_COOKIE},
@@ -65,7 +65,7 @@ impl CookieJar {
         req.extensions()
             .get::<CookieJar>()
             .cloned()
-            .ok_or_else(|| Error::new("CookieJar modifier not registered"))
+            .ok_or_else(|| Error::custom("CookieJar modifier not registered"))
     }
 
     pub fn apply(&self, headers: &mut HeaderMap) {
@@ -94,7 +94,7 @@ impl<C> FromRequestParts<C> for CookieJar {
                 .extensions
                 .get::<CookieJar>()
                 .cloned()
-                .ok_or_else(|| Error::new("CookieJar modifier not registered")),
+                .ok_or_else(|| Error::custom("CookieJar modifier not registered")),
         )
     }
 }

@@ -1,8 +1,9 @@
 use crate::{IntoResponse, body::HttpBody};
 use alloc::{convert::Infallible, fmt};
-use bycat_error::BoxError;
 use bytes::Bytes;
 use http::{Error as HttpError, Response, StatusCode};
+
+pub type BoxError = alloc::boxed::Box<dyn alloc::error::Error + Send + Sync + 'static>;
 
 #[derive(Debug)]
 enum ErrorKind {

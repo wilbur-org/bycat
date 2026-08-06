@@ -7,7 +7,7 @@ use core::task::Poll;
 use http_body_util::combinators::BoxBody;
 use pin_project_lite::pin_project;
 
-use bycat_error::{BoxError, Error};
+use crate::{Error, error::BoxError};
 
 pub trait HttpBody: http_body::Body + Sized {
     fn empty() -> Self;
@@ -129,7 +129,7 @@ impl HttpBody for Body {
 
         let boxed = inner
             .map_frame(|f| f.map_data(Into::into))
-            .map_err(|err| (Box::new(err) as Box<dyn core::error::Error + Send + Sync>).into())
+            .map_err(Error::custom)
             .boxed();
 
         Body {
@@ -187,7 +187,7 @@ where
         let this = self.project();
         match this.inner.poll(cx) {
             Poll::Ready(Ok(buf)) => Poll::Ready(Ok(buf.to_bytes())),
-            Poll::Ready(Err(err)) => Poll::Ready(Err(Error::new(err))),
+            Poll::Ready(Err(err)) => Poll::Ready(Err(Error::custom(err))),
             Poll::Pending => Poll::Pending,
         }
     }

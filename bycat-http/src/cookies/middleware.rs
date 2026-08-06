@@ -1,5 +1,5 @@
+use crate::Error;
 use bycat::{Middleware, Work};
-use bycat_error::Error;
 use core::task::{Poll, ready};
 use http::{Request, Response};
 use pin_project_lite::pin_project;

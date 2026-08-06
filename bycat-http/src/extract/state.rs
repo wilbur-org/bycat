@@ -1,6 +1,6 @@
+use crate::Error;
 use alloc::format;
 use bycat_container::{Extensible, ReadableContainer};
-use bycat_error::Error;
 use core::any::{Any, type_name};
 use core::future::{self, Ready};
 
@@ -24,10 +24,8 @@ where
         _parts: &'a mut http::request::Parts,
         state: &'a C,
     ) -> Self::Future<'a> {
-        future::ready(
-            state.get::<T>().cloned().map(State).ok_or_else(|| {
-                Error::new(format!("Type {:?} not found in state", type_name::<T>()))
-            }),
-        )
+        future::ready(state.get::<T>().cloned().map(State).ok_or_else(|| {
+            Error::custom(format!("Type {:?} not found in state", type_name::<T>()))
+        }))
     }
 }

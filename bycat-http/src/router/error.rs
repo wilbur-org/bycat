@@ -1,4 +1,4 @@
-use bycat_error::Error;
+use crate::Error;
 use core::fmt;
 
 #[derive(Debug)]
@@ -39,6 +39,6 @@ impl From<routing::router::RouteError> for RouteError {
 
 impl From<RouteError> for Error {
     fn from(value: RouteError) -> Self {
-        Error::new(value)
+        Error::custom(value)
     }
 }

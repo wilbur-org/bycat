@@ -17,8 +17,8 @@ impl core::fmt::Display for WebsocketError {
 
 impl core::error::Error for WebsocketError {}
 
-impl From<WebsocketError> for bycat_error::Error {
+impl From<WebsocketError> for crate::Error {
     fn from(value: WebsocketError) -> Self {
-        bycat_error::Error::new(value)
+        crate::Error::custom(value)
     }
 }

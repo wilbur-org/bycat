@@ -4,7 +4,7 @@ use core::{
     task::{Context, Poll, ready},
 };
 
-use bycat_error::Error;
+use crate::Error;
 use http::{HeaderMap, Uri, request::Parts};
 use pin_project_lite::pin_project;
 
@@ -51,7 +51,7 @@ impl<C> FromRequestParts<C> for crate::router::UrlParams {
                 .extensions
                 .get::<Self>()
                 .cloned()
-                .ok_or(Error::new("Missing UrlParams")),
+                .ok_or(Error::custom("Missing UrlParams")),
         )
     }
 }

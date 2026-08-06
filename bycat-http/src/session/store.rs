@@ -1,6 +1,6 @@
+use crate::Error;
 use crate::session::SessionId;
 use alloc::{boxed::Box, collections::HashMap, sync::Arc};
-use bycat_error::Error;
 use bycat_value::Map;
 use futures::future::BoxFuture;
 use parking_lot::RwLock;

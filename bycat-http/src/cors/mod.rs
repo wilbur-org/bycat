@@ -1,3 +1,4 @@
+use crate::{Error, error::BoxError};
 use alloc::{
     fmt::{self, Debug},
     marker::PhantomData,
@@ -6,7 +7,6 @@ use alloc::{
     time::Duration,
 };
 use bycat::{Middleware, Work};
-use bycat_error::{BoxError, Error};
 use http::{
     HeaderMap, HeaderValue, Method, Request, Response,
     header::{
@@ -319,12 +319,12 @@ where
                 } => {
                     let resp = match ready!(future.poll(cx)) {
                         Ok(ret) => ret,
-                        Err(err) => return Poll::Ready(Err(Error::new(err))),
+                        Err(err) => return Poll::Ready(Err(Error::custom(err))),
                     };
 
                     let mut resp = match resp.into_response() {
                         Ok(ret) => ret,
-                        Err(err) => return Poll::Ready(Err(Error::new(err))),
+                        Err(err) => return Poll::Ready(Err(Error::custom(err))),
                     };
 
                     if *passthrough {
