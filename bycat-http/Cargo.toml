@@ -26,7 +26,7 @@ http2 = []
 
 [dependencies]
 bycat = { path = "../bycat", features = ["alloc"] }
-# bycat-futures = { path = "../bycat-futures" }
+bycat-futures = { path = "../bycat-futures" }
 bycat-container = { path = "../bycat-container" }
 routing = { git = "https://github.com/kildevaeld/router-rs", features = [
   "router",
