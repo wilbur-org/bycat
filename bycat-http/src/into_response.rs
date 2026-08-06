@@ -4,7 +4,7 @@ use core::{
     task::{Context, Poll},
 };
 
-use crate::Error;
+use crate::{Error, body::HttpBody};
 use alloc::string::String;
 use bycat::Work;
 use bycat_futures::IntoResult;
@@ -21,15 +21,15 @@ impl<B> IntoResponse<B> for Response<B> {
     }
 }
 
-impl<T, E, B> IntoResponse<B> for Result<T, E>
+impl<T, E, B: HttpBody> IntoResponse<B> for Result<T, E>
 where
     T: IntoResponse<B>,
-    E: IntoResponse<B>,
+    E: Into<Error>,
 {
     fn into_response(self) -> Response<B> {
         match self {
             Self::Ok(ret) => ret.into_response(),
-            Self::Err(err) => err.into_response(),
+            Self::Err(err) => err.into().into_response(),
         }
     }
 }
