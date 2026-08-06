@@ -1,4 +1,4 @@
-use crate::{Error, error::BoxError};
+use crate::Error;
 use bycat::Work;
 use core::{
     marker::PhantomData,
@@ -47,7 +47,6 @@ impl<B, C, T, I, M> Work<C, Request<B>> for FuncHandler<T, I, B, C, M>
 where
     T: Func<B, C, I>,
     <T::Future as Future>::Output: IntoResponse<B>,
-    <<T::Future as Future>::Output as IntoResponse<B>>::Error: Into<BoxError>,
     I: FromRequest<C, B, M>,
 {
     type Output = Response<B>;
@@ -164,7 +163,6 @@ where
     T: FromRequest<C, B, M>,
     H: Func<B, C, T>,
     <H::Future as Future>::Output: IntoResponse<B>,
-    <<H::Future as Future>::Output as IntoResponse<B>>::Error: Into<BoxError>,
 {
     type Output = Result<Response<B>, Error>;
 
@@ -185,7 +183,7 @@ where
                 }
                 HandlerFnFutureStateProj::Handler { future } => {
                     let ret = ready!(future.poll(cx));
-                    return Poll::Ready(ret.into_response().map_err(Error::custom));
+                    return Poll::Ready(Ok(ret.into_response()));
                 }
             }
         }

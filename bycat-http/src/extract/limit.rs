@@ -162,11 +162,9 @@ impl<T, B> IntoResponse<B> for RequestBodyLimitWorkResponse<T, B>
 where
     T: IntoResponse<B>,
 {
-    type Error = T::Error;
-
-    fn into_response(self) -> Result<Response<B>, T::Error> {
+    fn into_response(self) -> Response<B> {
         match self {
-            Self::Error(err) => Ok(err),
+            Self::Error(err) => err,
             Self::Ok(ret) => ret.into_response(),
         }
     }

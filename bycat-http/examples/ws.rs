@@ -13,7 +13,7 @@ use futures::{SinkExt, StreamExt};
 use http::{Request, Response, header::CONTENT_TYPE};
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> bycat_error::Result<()> {
+async fn main() -> bycat_http::error::Result<()> {
     bycat_http::serve(
         ("localhost", 3000),
         (),

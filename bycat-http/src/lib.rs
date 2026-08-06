@@ -1,7 +1,7 @@
 // TODO: Fix this
 extern crate std as alloc;
 
-mod error;
+pub mod error;
 mod ext;
 
 #[cfg(feature = "std")]
@@ -43,3 +43,16 @@ pub use self::{
 pub use http::{
     self, HeaderMap, HeaderName, HeaderValue, Request, Response, StatusCode, Uri, header,
 };
+
+pub mod prelude {
+    pub use crate::{
+        body::HttpBody,
+        extract::{from_request::FromRequest, from_request_parts::FromRequestParts},
+        handler::handler,
+        into_response::*,
+    };
+
+    pub use bycat::prelude::*;
+
+    pub use http::{self, HeaderMap, HeaderName, HeaderValue, Request, Response, StatusCode, Uri};
+}

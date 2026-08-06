@@ -174,7 +174,6 @@ where
     T: Work<C, Request<B>>,
     T::Error: Into<BoxError>,
     T::Output: IntoResponse<B>,
-    <T::Output as IntoResponse<B>>::Error: Into<BoxError>,
 {
     type Work = CorsWork<T, C, B>;
 
@@ -217,7 +216,6 @@ where
     T: Work<C, Request<B>>,
     T::Error: Into<BoxError>,
     T::Output: IntoResponse<B>,
-    <T::Output as IntoResponse<B>>::Error: Into<BoxError>,
 {
     type Output = Response<B>;
 
@@ -277,7 +275,6 @@ where
     T: Work<C, Request<B>>,
     T::Error: Into<BoxError>,
     T::Output: IntoResponse<B>,
-    <T::Output as IntoResponse<B>>::Error: Into<BoxError>,
 {
     type Output = Result<Response<B>, Error>;
 
@@ -322,10 +319,7 @@ where
                         Err(err) => return Poll::Ready(Err(Error::custom(err))),
                     };
 
-                    let mut resp = match resp.into_response() {
-                        Ok(ret) => ret,
-                        Err(err) => return Poll::Ready(Err(Error::custom(err))),
-                    };
+                    let mut resp = resp.into_response();
 
                     if *passthrough {
                         return Poll::Ready(Ok(resp));

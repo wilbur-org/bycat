@@ -137,6 +137,19 @@ pub struct Router<T, C, B> {
     context: PhantomData<fn() -> (C, B)>,
 }
 
+impl<T, C, B> Clone for Router<T, C, B>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            routes: self.routes.clone(),
+            fallback: self.fallback.clone(),
+            context: PhantomData,
+        }
+    }
+}
+
 impl<T, C, B> Default for Router<T, C, B> {
     fn default() -> Self {
         Router {

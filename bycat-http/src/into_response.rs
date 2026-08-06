@@ -1,43 +1,35 @@
 use core::{
-    convert::Infallible,
     marker::PhantomData,
     pin::Pin,
     task::{Context, Poll},
 };
 
-use crate::{Error, error::BoxError};
+use crate::Error;
 use alloc::string::String;
 use bycat::Work;
 use bycat_futures::IntoResult;
 use http::{HeaderValue, Request, Response};
 use pin_project_lite::pin_project;
 
-use crate::body::HttpBody;
-
 pub trait IntoResponse<B> {
-    type Error;
-    fn into_response(self) -> Result<Response<B>, Self::Error>;
+    fn into_response(self) -> Response<B>;
 }
 
 impl<B> IntoResponse<B> for Response<B> {
-    type Error = Infallible;
-    fn into_response(self) -> Result<Response<B>, Self::Error> {
-        Ok(self)
+    fn into_response(self) -> Response<B> {
+        self
     }
 }
 
 impl<T, E, B> IntoResponse<B> for Result<T, E>
 where
     T: IntoResponse<B>,
-    T::Error: core::error::Error + Send + Sync + 'static,
     E: IntoResponse<B>,
-    E::Error: core::error::Error + Send + Sync + 'static,
 {
-    type Error = Error;
-    fn into_response(self) -> Result<Response<B>, Self::Error> {
+    fn into_response(self) -> Response<B> {
         match self {
-            Self::Ok(ret) => ret.into_response().map_err(Error::custom),
-            Self::Err(err) => err.into_response().map_err(Error::custom),
+            Self::Ok(ret) => ret.into_response(),
+            Self::Err(err) => err.into_response(),
         }
     }
 }
@@ -46,14 +38,13 @@ impl<'a, B> IntoResponse<B> for &'a str
 where
     B: From<&'a str>,
 {
-    type Error = Infallible;
-    fn into_response(self) -> Result<Response<B>, Self::Error> {
+    fn into_response(self) -> Response<B> {
         let mut resp = Response::new(B::from(self));
         resp.headers_mut().insert(
             http::header::CONTENT_TYPE,
             HeaderValue::from_static("text/plain"),
         );
-        Ok(resp)
+        resp
     }
 }
 
@@ -61,14 +52,13 @@ impl<B> IntoResponse<B> for String
 where
     B: From<String>,
 {
-    type Error = Infallible;
-    fn into_response(self) -> Result<Response<B>, Self::Error> {
+    fn into_response(self) -> Response<B> {
         let mut resp = Response::new(B::from(self));
         resp.headers_mut().insert(
             http::header::CONTENT_TYPE,
             HeaderValue::from_static("text/plain"),
         );
-        Ok(resp)
+        resp
     }
 }
 
@@ -79,14 +69,13 @@ impl<T, B> IntoResponse<B> for Html<T>
 where
     B: From<T>,
 {
-    type Error = Infallible;
-    fn into_response(self) -> Result<Response<B>, Self::Error> {
+    fn into_response(self) -> Response<B> {
         let mut resp = Response::new(B::from(self.0));
         resp.headers_mut().insert(
             http::header::CONTENT_TYPE,
             HeaderValue::from_static("text/html"),
         );
-        Ok(resp)
+        resp
     }
 }
 
@@ -120,7 +109,6 @@ impl<T, C, B> Work<C, Request<B>> for RouteHandler<T>
 where
     T: Work<C, Request<B>>,
     T::Output: IntoResponse<B>,
-    <T::Output as IntoResponse<B>>::Error: Into<BoxError>,
     T::Error: Into<Error>,
 {
     type Error = Error;
@@ -153,7 +141,6 @@ where
     T::Output: IntoResult,
     <T::Output as IntoResult>::Error: Into<Error>,
     <T::Output as IntoResult>::Output: IntoResponse<B>,
-    <<T::Output as IntoResult>::Output as IntoResponse<B>>::Error: Into<BoxError>,
 {
     type Output = Result<Response<B>, Error>;
 
@@ -163,7 +150,7 @@ where
             result
                 .into_result()
                 .map_err(Into::into)
-                .and_then(|resp| resp.into_response().map_err(Error::custom))
+                .and_then(|resp| Ok(resp.into_response()))
         })
     }
 }

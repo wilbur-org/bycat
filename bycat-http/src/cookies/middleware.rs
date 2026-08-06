@@ -14,7 +14,6 @@ where
     H: Work<C, Request<B>>,
     H::Error: Into<Error>,
     H::Output: IntoResponse<B>,
-    <H::Output as IntoResponse<B>>::Error: Into<Error>,
 {
     type Work = CookieWork<H>;
 
@@ -33,7 +32,6 @@ where
     H: Work<C, Request<B>>,
     H::Error: Into<Error>,
     H::Output: IntoResponse<B>,
-    <H::Output as IntoResponse<B>>::Error: Into<Error>,
 {
     type Output = Response<B>;
 
@@ -71,7 +69,6 @@ where
     H: Work<C, Request<B>>,
     H::Error: Into<Error>,
     H::Output: IntoResponse<B>,
-    <H::Output as IntoResponse<B>>::Error: Into<Error>,
 {
     type Output = Result<Response<B>, Error>;
 
@@ -81,13 +78,11 @@ where
     ) -> core::task::Poll<Self::Output> {
         let this = self.project();
         match ready!(this.future.poll(cx)) {
-            Ok(ret) => match ret.into_response() {
-                Ok(mut ret) => {
-                    this.cookie_jar.apply(ret.headers_mut());
-                    Poll::Ready(Ok(ret))
-                }
-                Err(err) => Poll::Ready(Err(err.into())),
-            },
+            Ok(ret) => {
+                let mut ret = ret.into_response();
+                this.cookie_jar.apply(ret.headers_mut());
+                Poll::Ready(Ok(ret))
+            }
             Err(err) => Poll::Ready(Err(err.into())),
         }
     }

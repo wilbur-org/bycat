@@ -5,6 +5,8 @@ use http::{Error as HttpError, Response, StatusCode};
 
 pub type BoxError = alloc::boxed::Box<dyn alloc::error::Error + Send + Sync + 'static>;
 
+pub type Result<T> = core::result::Result<T, Error>;
+
 #[derive(Debug)]
 enum ErrorKind {
     NotFound,
@@ -69,9 +71,7 @@ impl core::error::Error for Error {
 }
 
 impl<B: HttpBody> IntoResponse<B> for Error {
-    type Error = Infallible;
-
-    fn into_response(self) -> Result<http::Response<B>, Self::Error> {
+    fn into_response(self) -> Response<B> {
         let (body, status) = match &self.kind {
             ErrorKind::NotFound => (
                 B::from_bytes(Bytes::from("Not Found")),
@@ -94,7 +94,7 @@ impl<B: HttpBody> IntoResponse<B> for Error {
         let mut resp = Response::new(body);
         *resp.status_mut() = status;
 
-        Ok(resp)
+        resp
     }
 }
 

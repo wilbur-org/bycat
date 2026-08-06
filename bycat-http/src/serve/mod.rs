@@ -11,7 +11,7 @@ pub use hyper::rt::Executor;
 #[cfg(feature = "serve-tokio")]
 use crate::body::Body;
 #[cfg(feature = "serve-tokio")]
-use ::{bycat::Work, bycat_error::Error, http_body_util::BodyExt};
+use ::{bycat::Work, http_body_util::BodyExt};
 
 #[cfg(feature = "serve-tokio")]
 pub async fn serve<T, C, A>(addr: A, context: C, service: T) -> Result<(), tokio::io::Error>
@@ -21,7 +21,7 @@ where
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,
-            Error = Error,
+            Error = crate::Error,
         >
         + Clone
         + 'static
@@ -46,7 +46,7 @@ where
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,
-            Error = Error,
+            Error = crate::Error,
         > + Clone
         + 'static,
     C: Clone + 'static,
@@ -73,7 +73,7 @@ where
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,
-            Error = Error,
+            Error = crate::Error,
         >
         + Clone
         + 'static
@@ -121,7 +121,7 @@ where
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,
-            Error = Error,
+            Error = crate::Error,
         >
         + Clone
         + 'static
@@ -153,7 +153,7 @@ where
                         let context = context.clone();
                         async move {
                             let req = req.map(|body: hyper::body::Incoming| {
-                                Body::from_streaming(body.map_err(Error::new))
+                                Body::from_streaming(body.map_err(crate::Error::custom))
                             });
 
                             match work.call(&context, req).await {
@@ -193,7 +193,7 @@ where
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,
-            Error = Error,
+            Error = crate::Error,
         > + Clone
         + 'static,
     C: Clone + 'static,
@@ -238,7 +238,7 @@ where
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,
-            Error = Error,
+            Error = crate::Error,
         > + Clone
         + 'static,
     C: Clone + 'static,
@@ -267,7 +267,7 @@ where
                         let context = context.clone();
                         async move {
                             let req = req.map(|body: hyper::body::Incoming| {
-                                Body::from_streaming(body.map_err(Error::new))
+                                Body::from_streaming(body.map_err(crate::Error::custom))
                             });
 
                             match work.call(&context, req).await {
