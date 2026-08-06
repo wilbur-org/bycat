@@ -1,15 +1,17 @@
 use bycat::prelude::WorkExt;
 use bycat_http::{
-    WorkIntoResponseExt,
     cookies::Cookies,
     cors::Cors,
+    error::Result,
     extract::RequestBodyLimit,
     handler,
+    prelude::HttpWorkExt,
     session::{MemoryStore, Session, Sessions},
 };
+use http::Request;
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> bycat_error::Result<()> {
+async fn main() -> Result<()> {
     bycat_http::serve(
         ("localhost", 3000),
         (),
@@ -19,13 +21,15 @@ async fn main() -> bycat_error::Result<()> {
 
             session.regenerate_id().await?;
 
-            bycat_error::Result::Ok(format!("Count: {}", value))
+            Result::Ok(format!("Count: {}", value))
         })
         .wrap(RequestBodyLimit(1024))
         .wrap(Sessions::new(MemoryStore::default()))
         .wrap(Cookies)
         .wrap(Cors::default())
-        .into_response(),
+        .with_filter(|req: &Request<_>| req.uri().path() == "/")
+        .or(handler(async || "Other!!")
+            .with_filter(|req: &Request<_>| req.uri().path() == "/other")),
     )
     .await
     .unwrap();

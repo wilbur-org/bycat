@@ -1,25 +1,19 @@
-use bycat::{prelude::WorkExt, work_fn};
 use bycat_http::{
-    FromRequest, WorkIntoResponseExt,
-    body::Body,
-    cookies::Cookies,
-    cors::Cors,
-    extract::RequestBodyLimit,
+    Html,
+    error::Result,
     handler,
-    session::{MemoryStore, Session, Sessions},
+    router::SendRouterBuilder,
     ws::{self, WebSocket},
 };
 use futures::{SinkExt, StreamExt};
-use http::{Request, Response, header::CONTENT_TYPE};
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> bycat_http::error::Result<()> {
-    bycat_http::serve(
-        ("localhost", 3000),
-        (),
-        work_fn(|ctx: (), req: Request<_>| async move {
-            if req.uri().path() == "/ws" {
-                let upgrade = ws::WebSocketUpgrade::from_request(req, &ctx).await?;
+async fn main() -> Result<()> {
+    let router = SendRouterBuilder::new()
+        .with_get("/", Html(include_str!("./ws.html")))?
+        .with_get(
+            "/ws",
+            handler(async |upgrade: ws::WebSocketUpgrade| {
                 let (resp, future) = upgrade.on_upgrade(async |stream: WebSocket| {
                     println!("Socket connected");
                     let (mut write, mut read) = stream.split();
@@ -37,19 +31,14 @@ async fn main() -> bycat_http::error::Result<()> {
 
                 tokio::spawn(future);
 
-                bycat_error::Result::Ok(resp)
-            } else {
-                Ok(Response::builder()
-                    .status(200)
-                    .header(CONTENT_TYPE, "text/html")
-                    .body(Body::from(include_str!("./ws.html")))
-                    .unwrap())
-            }
-        })
-        .into_response(),
-    )
-    .await
-    .unwrap();
+                resp
+            }),
+        )?
+        .build();
+
+    bycat_http::serve(("localhost", 3000), (), router)
+        .await
+        .unwrap();
 
     Ok(())
 }

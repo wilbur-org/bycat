@@ -1,6 +1,5 @@
 use crate::Error;
 use alloc::format;
-use bycat_container::Extensible;
 use core::any::{Any, type_name};
 use core::future::{self, Ready};
 
@@ -12,7 +11,6 @@ pub struct Ext<T>(pub T);
 
 impl<T, C> FromRequestParts<C> for Ext<T>
 where
-    C: Extensible,
     T: Clone + Send + Sync + Any,
 {
     type Future<'a>

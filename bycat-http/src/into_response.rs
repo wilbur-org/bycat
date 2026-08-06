@@ -79,13 +79,27 @@ where
     }
 }
 
-// impl<B: HttpBody> IntoResponse<B> for bycat_error::Error {
-//     type Error = Error;
-//     fn into_response(self) -> Result<Response<B>, Self::Error> {
-//         // let resp = Response::new(B::empty());
-//         Err(self)
-//     }
-// }
+impl<C, B, T> Work<C, Request<B>> for Html<T>
+where
+    B: From<T>,
+    T: Clone,
+{
+    type Output = Response<B>;
+
+    type Error = Error;
+
+    type Future<'a>
+        = core::future::Ready<Result<Self::Output, Self::Error>>
+    where
+        Self: 'a,
+        C: 'a;
+
+    fn call<'a>(&'a self, _context: &'a C, _req: Request<B>) -> Self::Future<'a> {
+        core::future::ready(Ok(<Html<T> as IntoResponse<B>>::into_response(
+            self.clone(),
+        )))
+    }
+}
 
 pub trait WorkIntoResponseExt<C, B>: Work<C, Request<B>> {
     fn into_response(self) -> RouteHandler<Self>

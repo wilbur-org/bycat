@@ -1,24 +1,31 @@
-// use core::marker::PhantomData;
+use bycat::{Matcher, Work};
+use http::Request;
 
-// use bycat_error::Error;
-// use http::Request;
+use crate::{
+    Error, IntoResponse,
+    matcher::{FilterWork, FilteredWork, Or},
+};
 
-// use crate::FromRequestParts;
+pub trait HttpWorkExt<C, B>: Work<C, Request<B>> {
+    fn with_filter<M>(self, matcher: M) -> FilterWork<Self, M>
+    where
+        Self: Sized,
+        M: Matcher<Request<B>>,
+    {
+        FilterWork::new(self, matcher)
+    }
 
-// pub trait RequestExt<B> {
-//     type Extract<'a, C, T>: Future<Output = Result<T, Error>>
-//     where
-//         Self: 'a,
-//         T: FromRequestParts<C>,
-//         C: 'a;
-//     fn extract<'a, C, T: FromRequestParts<C>>(&'a mut self, ctx: &'a C) -> Self::Extract<'a, C, T>;
-// }
+    fn or<T2>(self, other: T2) -> Or<Self, T2>
+    where
+        Self: Sized,
+        T2: FilteredWork<C, B>,
+        Self::Output: IntoResponse<B>,
+        Self::Error: Into<Error>,
+        T2::Output: IntoResponse<B>,
+        T2::Error: Into<Error>,
+    {
+        Or(self, other)
+    }
+}
 
-// struct RequestExtract<'a, T, B, C: 'a>
-// where
-//     T: FromRequestParts<C>,
-// {
-//     future: T::Future<'a>,
-//     ctx: PhantomData<C>,
-//     request: &'a mut Request<B>,
-// }
+impl<T, C, B> HttpWorkExt<C, B> for T where T: Work<C, Request<B>> {}

@@ -8,12 +8,10 @@ use bycat_http::{
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     let router = SendRouterBuilder::new()
-        .with_get("/", handler(async || Result::Ok("Hello, world!")))?
+        .with_get("/", handler(async || "Hello, world!"))?
         .with_get(
             "/:hello",
-            handler(async |params: UrlParams| {
-                Result::Ok(format!("Hello, {}", params.get("hello").unwrap()))
-            }),
+            handler(async |params: UrlParams| format!("Hello, {}", params.get("hello").unwrap())),
         )?
         .with_middleware(middleware(|task: SendWork<_, _>| {
             work_fn(move |ctx: (), req| {

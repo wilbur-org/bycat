@@ -28,6 +28,7 @@ mod statics;
 #[cfg(feature = "ws")]
 pub mod ws;
 
+mod matcher;
 pub mod util;
 
 #[cfg(feature = "serve-tokio")]
@@ -47,6 +48,7 @@ pub use http::{
 pub mod prelude {
     pub use crate::{
         body::HttpBody,
+        ext::*,
         extract::{from_request::FromRequest, from_request_parts::FromRequestParts},
         handler::handler,
         into_response::*,

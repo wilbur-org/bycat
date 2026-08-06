@@ -3,7 +3,8 @@ mod futures;
 mod listener;
 mod server;
 
-pub use self::{connection::Connection, futures::FuturesIo, listener::*, server::*};
+use self::connection::Connection;
+pub use self::{futures::FuturesIo, listener::*, server::*};
 
 pub use bycat_service::Shutdown;
 pub use hyper::rt::Executor;
@@ -61,7 +62,7 @@ where
 }
 
 #[cfg(feature = "serve-tokio")]
-struct TokioServer<T, C>(T, C);
+pub struct TokioServer<T, C>(T, C);
 
 #[cfg(feature = "serve-tokio")]
 impl<T, C, L> Servable<TokioExecutor, L> for TokioServer<T, C>
@@ -86,7 +87,7 @@ where
     where
         Self: 'a;
 
-    fn call(&self, conn: Connection<L, TokioExecutor>) -> Self::Future<'_> {
+    fn call(&self, conn: Conn<L, TokioExecutor>) -> Self::Future<'_> {
         TokioServerFuture::Init {
             work: Some(self.0.clone()),
             conn: Some(conn),
@@ -104,7 +105,7 @@ pin_project_lite::pin_project! {
     {
        Init {
         work: Option<T>,
-        conn: Option<Connection<L, TokioExecutor>>,
+        conn: Option<Conn<L, TokioExecutor>>,
         context: Option<C>
 
        },
@@ -166,7 +167,7 @@ where
                         }
                     });
 
-                    if let Err(err) = conn.serve_connection_with_upgrades(svc).await {
+                    if let Err(err) = conn.serve_connection(svc).await {
                         alloc::eprintln!("server error: {}", err);
                     }
                 });
@@ -181,7 +182,7 @@ where
 }
 
 #[cfg(feature = "serve-tokio")]
-struct LocalTokioServer<T, C>(T, C);
+pub struct LocalTokioServer<T, C>(T, C);
 
 #[cfg(feature = "serve-tokio")]
 impl<T, C, L> Servable<TokioExecutor, L> for LocalTokioServer<T, C>
@@ -203,7 +204,7 @@ where
     where
         Self: 'a;
 
-    fn call(&self, conn: Connection<L, TokioExecutor>) -> Self::Future<'_> {
+    fn call(&self, conn: Conn<L, TokioExecutor>) -> Self::Future<'_> {
         LocalTokioServerFuture::Init {
             work: Some(self.0.clone()),
             conn: Some(conn),
@@ -221,7 +222,7 @@ pin_project_lite::pin_project! {
     {
        Init {
         work: Option<T>,
-        conn: Option<Connection<L, TokioExecutor>>,
+        conn: Option<Conn<L, TokioExecutor>>,
         context: Option<C>
 
        },
