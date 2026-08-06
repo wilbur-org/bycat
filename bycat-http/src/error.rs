@@ -1,42 +1,43 @@
 use crate::{IntoResponse, body::HttpBody};
 use alloc::{convert::Infallible, fmt};
-use bycat_error::{BoxError, Error};
+use bycat_error::BoxError;
 use bytes::Bytes;
-use http::{Response, StatusCode};
+use http::{Error as HttpError, Response, StatusCode};
 
 #[derive(Debug)]
 enum ErrorKind {
     NotFound,
     MaxSizeReached,
-    Internal(Error),
+    Internal(BoxError),
+    Http(HttpError),
 }
 
 #[derive(Debug)]
-pub struct HttpError {
+pub struct Error {
     kind: ErrorKind,
 }
 
-impl HttpError {
-    pub fn not_found() -> HttpError {
-        HttpError {
+impl Error {
+    pub fn not_found() -> Error {
+        Error {
             kind: ErrorKind::NotFound,
         }
     }
 
-    pub fn max_size_reached() -> HttpError {
-        HttpError {
+    pub fn max_size_reached() -> Error {
+        Error {
             kind: ErrorKind::MaxSizeReached,
         }
     }
 
-    pub fn custom<T: Into<BoxError>>(custom: T) -> HttpError {
-        HttpError {
-            kind: ErrorKind::Internal(Error::new(custom)),
+    pub fn custom<T: Into<BoxError>>(custom: T) -> Error {
+        Error {
+            kind: ErrorKind::Internal(custom.into()),
         }
     }
 }
 
-impl fmt::Display for HttpError {
+impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.kind {
             ErrorKind::NotFound => {
@@ -45,6 +46,9 @@ impl fmt::Display for HttpError {
             ErrorKind::MaxSizeReached => {
                 write!(f, "Maximum Size Reached")
             }
+            ErrorKind::Http(err) => {
+                write!(f, "HTTP Error: {err}")
+            }
             ErrorKind::Internal(error) => {
                 write!(f, "{error}")
             }
@@ -52,17 +56,18 @@ impl fmt::Display for HttpError {
     }
 }
 
-impl core::error::Error for HttpError {
+impl core::error::Error for Error {
     fn source(&self) -> Option<&(dyn alloc::error::Error + 'static)> {
         match &self.kind {
             ErrorKind::NotFound => None,
             ErrorKind::MaxSizeReached => None,
-            ErrorKind::Internal(error) => Some(&*error),
+            ErrorKind::Http(error) => Some(&*error),
+            ErrorKind::Internal(error) => Some(&**error),
         }
     }
 }
 
-impl<B: HttpBody> IntoResponse<B> for HttpError {
+impl<B: HttpBody> IntoResponse<B> for Error {
     type Error = Infallible;
 
     fn into_response(self) -> Result<http::Response<B>, Self::Error> {
@@ -75,6 +80,10 @@ impl<B: HttpBody> IntoResponse<B> for HttpError {
                 B::from_bytes(Bytes::from("Maximum Size Reached")),
                 StatusCode::PAYLOAD_TOO_LARGE,
             ),
+            ErrorKind::Http(http) => {
+                let body = B::from_bytes(Bytes::from(format!("HTTP Error: {}", http)));
+                (body, StatusCode::INTERNAL_SERVER_ERROR)
+            }
             ErrorKind::Internal(_) => (
                 B::from_bytes(Bytes::from("Internal Server Error")),
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -88,17 +97,17 @@ impl<B: HttpBody> IntoResponse<B> for HttpError {
     }
 }
 
-impl From<Error> for HttpError {
-    fn from(value: Error) -> Self {
-        HttpError {
-            kind: ErrorKind::Internal(value),
+impl From<HttpError> for Error {
+    fn from(value: HttpError) -> Self {
+        Error {
+            kind: ErrorKind::Http(value),
         }
     }
 }
 
-impl From<Infallible> for HttpError {
+impl From<Infallible> for Error {
     fn from(value: Infallible) -> Self {
-        HttpError {
+        Error {
             kind: ErrorKind::Internal(value.into()),
         }
     }

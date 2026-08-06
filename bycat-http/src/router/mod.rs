@@ -7,7 +7,7 @@ pub use self::{
     error::*,
     params::*,
     router::*,
-    send::{SendRouter, SendRouterBuilder},
+    send::{SendRouter, SendRouterBuilder, SendWork},
 };
 
 pub use routing::router::MethodFilter;

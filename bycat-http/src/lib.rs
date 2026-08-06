@@ -34,7 +34,7 @@ pub mod util;
 pub use self::serve::serve;
 
 pub use self::{
-    error::HttpError,
+    error::Error,
     extract::{from_request::FromRequest, from_request_parts::FromRequestParts},
     handler::handler,
     into_response::*,

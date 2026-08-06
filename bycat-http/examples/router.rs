@@ -1,11 +1,11 @@
-use bycat::prelude::WorkExt;
+use bycat::{Work, middleware, prelude::WorkExt, work_fn};
 use bycat_http::{
     WorkIntoResponseExt,
     cookies::Cookies,
     cors::Cors,
     extract::RequestBodyLimit,
     handler,
-    router::SendRouterBuilder,
+    router::{SendRouterBuilder, SendWork, UrlParams},
     session::{MemoryStore, Session, Sessions},
 };
 
@@ -16,6 +16,21 @@ async fn main() -> bycat_error::Result<()> {
             "/",
             handler(async || bycat_error::Result::Ok("Hello, world!")),
         )
+        .get(
+            "/:hello",
+            handler(async |params: UrlParams| {
+                bycat_error::Result::Ok(format!("Hello, {}", params.get("hello").unwrap()))
+            }),
+        )
+        .middleware(middleware(|task: SendWork<_, _>| {
+            work_fn(move |ctx: (), req| {
+                let task = task.clone();
+                async move {
+                    println!("Hello, from middleware!");
+                    task.call(&ctx, req).await
+                }
+            })
+        }))
         .build();
 
     bycat_http::serve(("localhost", 3000), (), router)
