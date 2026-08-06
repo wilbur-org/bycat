@@ -1,4 +1,5 @@
-use hyper::rt::ReadBufCursor;
+use futures::ready;
+use hyper::rt::{ReadBuf, ReadBufCursor};
 
 use std::io;
 use std::pin::Pin;
@@ -64,7 +65,7 @@ impl<T: ?Sized> AsMut<T> for FuturesIo<T> {
     }
 }
 
-impl<T: futures_io::AsyncRead + ?Sized> hyper::rt::Read for FuturesIo<T> {
+impl<T: futures::io::AsyncRead + ?Sized> hyper::rt::Read for FuturesIo<T> {
     #[inline]
     fn poll_read(
         self: Pin<&mut Self>,
@@ -94,7 +95,7 @@ impl<T: futures_io::AsyncRead + ?Sized> hyper::rt::Read for FuturesIo<T> {
     }
 }
 
-impl<T: futures_io::AsyncWrite + ?Sized> hyper::rt::Write for FuturesIo<T> {
+impl<T: futures::io::AsyncWrite + ?Sized> hyper::rt::Write for FuturesIo<T> {
     #[inline]
     fn poll_write(
         self: Pin<&mut Self>,
@@ -121,5 +122,41 @@ impl<T: futures_io::AsyncWrite + ?Sized> hyper::rt::Write for FuturesIo<T> {
         bufs: &[io::IoSlice<'_>],
     ) -> Poll<io::Result<usize>> {
         self.get_pin_mut().poll_write_vectored(cx, bufs)
+    }
+}
+
+impl<T: hyper::rt::Read + Unpin + ?Sized> futures::io::AsyncRead for FuturesIo<T> {
+    #[inline]
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<io::Result<usize>> {
+        let mut read_buf = ReadBuf::new(buf);
+        match ready!(self.get_pin_mut().poll_read(cx, read_buf.unfilled())) {
+            Ok(_) => Poll::Ready(Ok(read_buf.filled().len())),
+            Err(e) => Poll::Ready(Err(e)),
+        }
+    }
+}
+
+impl<T: hyper::rt::Write + ?Sized> futures::io::AsyncWrite for FuturesIo<T> {
+    #[inline]
+    fn poll_write(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        self.get_pin_mut().poll_write(cx, buf)
+    }
+
+    #[inline]
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.get_pin_mut().poll_flush(cx)
+    }
+
+    #[inline]
+    fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        self.get_pin_mut().poll_shutdown(cx)
     }
 }

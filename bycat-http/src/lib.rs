@@ -21,12 +21,14 @@ pub mod cors;
 pub mod multipart;
 #[cfg(feature = "serve")]
 pub mod serve;
-
 #[cfg(feature = "session")]
 pub mod session;
-
 #[cfg(feature = "statics")]
 mod statics;
+#[cfg(feature = "ws")]
+pub mod ws;
+
+pub mod util;
 
 #[cfg(feature = "serve-tokio")]
 pub use self::serve::serve;

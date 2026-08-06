@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["serve", "router", "statics", "session"]
+default = ["serve", "router", "statics", "session", "ws"]
 std = ["http/std", "http-body", "http-body-util", "routing/std", "bytes"]
 
 serde = ["dep:serde", "serde_json", "multer?/json", "std"]
@@ -19,6 +19,9 @@ serve-tokio = ["serve", "tokio", "hyper-util"]
 serve-smol = ["serve", "smol"]
 
 client = ["bycat-package", "dep:reqwest", "dep:mime", "relative-path"]
+ws = ["dep:tungstenite", "futures", "sha1", "base64", "serve"]
+
+http2 = []
 
 
 [dependencies]
@@ -81,6 +84,11 @@ reqwest = { version = "0.12", optional = true }
 mime = { version = "0.3", optional = true }
 # relative-path = { workspace = true, features = ["serde"], optional = true }
 
+## Websocket
+tungstenite = { version = "0.30", optional = true }
+sha1 = { version = "0.11", optional = true }
+base64 = { version = "0.23", optional = true }
+
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
@@ -89,4 +97,15 @@ tokio = { version = "1", features = ["rt", "macros"] }
 [[example]]
 name = "http"
 path = "examples/http.rs"
+required-features = ["serve-tokio"]
+
+
+[[example]]
+name = "ws"
+path = "examples/ws.rs"
+required-features = ["serve-tokio", "ws"]
+
+[[example]]
+name = "router"
+path = "examples/router.rs"
 required-features = ["serve-tokio"]

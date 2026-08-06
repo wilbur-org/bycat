@@ -1,10 +1,9 @@
 mod connection;
-#[cfg(feature = "smol")]
 mod futures;
 mod listener;
 mod server;
 
-pub use self::{connection::Connection, listener::*, server::*};
+pub use self::{connection::Connection, futures::FuturesIo, listener::*, server::*};
 
 pub use bycat_service::Shutdown;
 pub use hyper::rt::Executor;
@@ -167,7 +166,7 @@ where
                         }
                     });
 
-                    if let Err(err) = conn.serve_connection(svc).await {
+                    if let Err(err) = conn.serve_connection_with_upgrades(svc).await {
                         alloc::eprintln!("server error: {}", err);
                     }
                 });
