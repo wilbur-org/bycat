@@ -5,7 +5,10 @@ use bytes::Bytes;
 use http::{Request, Response, StatusCode, header::CONTENT_LENGTH};
 use pin_project_lite::pin_project;
 
-use crate::{IntoResponse, body::HttpBody};
+use crate::{
+    IntoResponse,
+    body::{FromStreaming, HttpBody},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RequestBodyLimit(pub u64);
@@ -14,9 +17,10 @@ impl<C, B, T> Middleware<C, Request<B>, T> for RequestBodyLimit
 where
     T: Work<C, Request<B>>,
     T::Output: IntoResponse<B>,
-    B: HttpBody + Send + Sync + 'static,
+    B: HttpBody + 'static,
     B::Data: AsRef<[u8]> + Into<Bytes>,
     B::Error: core::error::Error + Send + Sync + 'static,
+    B: FromStreaming<RequestBodyLimitBody<B>>,
 {
     type Work = RequestBodyLimitWork<T>;
 
@@ -32,9 +36,10 @@ impl<T, C, B> Work<C, Request<B>> for RequestBodyLimitWork<T>
 where
     T: Work<C, Request<B>>,
     T::Output: IntoResponse<B>,
-    B: HttpBody + Send + Sync + 'static,
+    B: HttpBody + 'static,
     B::Data: AsRef<[u8]> + Into<Bytes>,
     B::Error: core::error::Error + Send + Sync + 'static,
+    B: FromStreaming<RequestBodyLimitBody<B>>,
 {
     type Output = RequestBodyLimitWorkResponse<T::Output, B>;
 
@@ -92,9 +97,10 @@ impl<'a, T, C, B> Future for RequestBodyLimitWorkFuture<'a, T, C, B>
 where
     T: Work<C, Request<B>>,
     T::Output: IntoResponse<B>,
-    B: HttpBody + Send + Sync + 'static,
+    B: HttpBody + 'static,
     B::Data: AsRef<[u8]> + Into<Bytes>,
     B::Error: core::error::Error + Send + Sync + 'static,
+    B: FromStreaming<RequestBodyLimitBody<B>>,
 {
     type Output = Result<RequestBodyLimitWorkResponse<T::Output, B>, T::Error>;
 

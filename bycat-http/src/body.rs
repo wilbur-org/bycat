@@ -14,11 +14,15 @@ pub trait HttpBody: http_body::Body + Sized {
 
     fn from_bytes(bytes: Bytes) -> Self;
 
-    fn from_streaming<B>(inner: B) -> Self
-    where
-        B: http_body::Body + Send + Sync + 'static,
-        B::Error: core::error::Error + Send + Sync + 'static,
-        B::Data: Into<Bytes>;
+    // fn from_streaming<B>(inner: B) -> Self
+    // where
+    //     B: http_body::Body + Send + Sync + 'static,
+    //     B::Error: core::error::Error + Send + Sync + 'static,
+    //     B::Data: Into<Bytes>;
+}
+
+pub trait FromStreaming<S>: HttpBody {
+    fn from_streaming(inner: S) -> Self;
 }
 
 pub fn to_bytes<T: http_body::Body>(body: T) -> ToBytes<T>
@@ -64,6 +68,17 @@ impl Body {
         Body {
             inner: Inner::Streaming(boxed),
         }
+    }
+}
+
+impl<S> FromStreaming<S> for Body
+where
+    S: http_body::Body + Send + Sync + 'static,
+    S::Error: Into<Error>,
+    S::Data: Into<Bytes>,
+{
+    fn from_streaming(inner: S) -> Self {
+        Body::from_streaming(inner)
     }
 }
 
@@ -119,23 +134,23 @@ impl HttpBody for Body {
         }
     }
 
-    fn from_streaming<B>(inner: B) -> Self
-    where
-        B: http_body::Body + Send + Sync + 'static,
-        B::Error: core::error::Error + Send + Sync + 'static,
-        B::Data: Into<Bytes>,
-    {
-        use http_body_util::BodyExt;
+    // fn from_streaming<B>(inner: B) -> Self
+    // where
+    //     B: http_body::Body + Send + Sync + 'static,
+    //     B::Error: core::error::Error + Send + Sync + 'static,
+    //     B::Data: Into<Bytes>,
+    // {
+    //     use http_body_util::BodyExt;
 
-        let boxed = inner
-            .map_frame(|f| f.map_data(Into::into))
-            .map_err(Error::custom)
-            .boxed();
+    //     let boxed = inner
+    //         .map_frame(|f| f.map_data(Into::into))
+    //         .map_err(Error::custom)
+    //         .boxed();
 
-        Body {
-            inner: Inner::Streaming(boxed),
-        }
-    }
+    //     Body {
+    //         inner: Inner::Streaming(boxed),
+    //     }
+    // }
 }
 
 impl<'a> From<&'a str> for Body {

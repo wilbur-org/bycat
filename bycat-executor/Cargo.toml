@@ -3,4 +3,9 @@ name = "bycat-executor"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["hyper", "tokio"]
+
 [dependencies]
+hyper = { version = "0.14", features = ["runtime"], optional = true }
+tokio = { version = "1", features = ["rt"], optional = true }

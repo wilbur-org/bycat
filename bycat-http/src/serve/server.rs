@@ -34,6 +34,14 @@ where
             self.conn.serve_connection(service).await
         }
     }
+
+    pub fn local_address(&self) -> &L::Addr {
+        self.conn.local_address()
+    }
+
+    pub fn socket(&self) -> &L::Io {
+        self.conn.socket()
+    }
 }
 
 pub trait Servable<E, L>

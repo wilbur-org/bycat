@@ -65,6 +65,13 @@ where
 pub struct TokioServer<T, C>(T, C);
 
 #[cfg(feature = "serve-tokio")]
+impl<T, C> TokioServer<T, C> {
+    pub fn new(work: T, context: C) -> Self {
+        Self(work, context)
+    }
+}
+
+#[cfg(feature = "serve-tokio")]
 impl<T, C, L> Servable<TokioExecutor, L> for TokioServer<T, C>
 where
     L: Listener + 'static,
@@ -183,6 +190,13 @@ where
 
 #[cfg(feature = "serve-tokio")]
 pub struct LocalTokioServer<T, C>(T, C);
+
+#[cfg(feature = "serve-tokio")]
+impl<T, C> LocalTokioServer<T, C> {
+    pub fn new(work: T, context: C) -> Self {
+        Self(work, context)
+    }
+}
 
 #[cfg(feature = "serve-tokio")]
 impl<T, C, L> Servable<TokioExecutor, L> for LocalTokioServer<T, C>
