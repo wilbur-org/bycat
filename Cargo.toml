@@ -14,7 +14,7 @@ members = [
     "bycat-img",
     "bycat-cli",
     "bycat-config",
-    "bycat-value", "bycat-cmd", "bycat-geenie",
+    "bycat-value", "bycat-cmd", "bycat-geenie", "bycat-executor",
 ]
 
 resolver = "3"
