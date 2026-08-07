@@ -28,7 +28,7 @@ http2 = []
 bycat = { path = "../bycat", features = ["alloc"] }
 bycat-futures = { path = "../bycat-futures" }
 bycat-container = { path = "../bycat-container" }
-bycat-executor = { path = "../bycat-executor" }
+bycat-executor = { path = "../bycat-executor", features = ["hyper"] }
 routing = { git = "https://github.com/kildevaeld/router-rs", features = [
   "router",
 ], optional = true, default-features = false }
