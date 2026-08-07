@@ -14,6 +14,7 @@ use alloc::{
     task::{Poll, ready},
 };
 use bytes::Bytes;
+use http::Request;
 use http::{HeaderValue, Method, Response, StatusCode, Version, header, request::Parts};
 use hyper::upgrade::{OnUpgrade, Upgraded};
 use pin_project_lite::pin_project;
@@ -222,7 +223,7 @@ impl<F> WebSocketUpgrade<F> {
 }
 
 impl WebSocketUpgrade {
-    fn from_request_parts_inner<S>(parts: &mut Parts, _state: &S) -> Result<Self, Error> {
+    pub fn from_request_parts(parts: &mut Parts) -> Result<Self, Error> {
         let sec_websocket_key = if parts.version <= Version::HTTP_11 {
             if parts.method != Method::GET {
                 return Err(WebsocketError::MethodNotGet.into());
@@ -302,8 +303,8 @@ where
     where
         S: 'a;
 
-    fn from_request_parts<'a>(parts: &'a mut Parts, state: &'a S) -> Self::Future<'a> {
-        core::future::ready(Self::from_request_parts_inner(parts, state))
+    fn from_request_parts<'a>(parts: &'a mut Parts, _state: &'a S) -> Self::Future<'a> {
+        core::future::ready(Self::from_request_parts(parts))
     }
 }
 
