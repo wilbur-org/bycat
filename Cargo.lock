@@ -587,6 +587,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bycat-task"
+version = "0.1.0"
+dependencies = [
+ "either",
+ "futures-core",
+ "pin-project-lite",
+ "tokio",
+ "tower",
+]
+
+[[package]]
 name = "bycat-value"
 version = "0.1.0"
 dependencies = [
