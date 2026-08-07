@@ -8,6 +8,7 @@ mod upgrade;
 mod websocket;
 
 pub use self::{
+    callback::Callback,
     error::WebsocketError,
     upgrade::{OnFailedUpgrade, WebSocketUpgrade},
     websocket::WebSocket,
