@@ -10,7 +10,7 @@ mod websocket;
 pub use self::{
     callback::Callback,
     error::WebsocketError,
-    upgrade::{OnFailedUpgrade, WebSocketUpgrade},
+    upgrade::{OnFailedUpgrade, WebSocketHandlerFuture, WebSocketUpgrade},
     websocket::WebSocket,
 };
 
