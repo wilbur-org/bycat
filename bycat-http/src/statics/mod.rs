@@ -1,9 +1,9 @@
 use core::task::{Poll, ready};
 
 use alloc::path::PathBuf;
-use bycat::Work;
 use bycat_fs::VirtualFS;
 use bycat_package::Package;
+use bycat_task::Work;
 use http::Request;
 use pin_project_lite::pin_project;
 
@@ -30,7 +30,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, _context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, _context: &'a C, req: Request<B>) -> Self::Future<'a> {
         AssetFuture {
             fs: &self.fs,
             state: AssetFutureState::Exists {

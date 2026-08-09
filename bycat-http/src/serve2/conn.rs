@@ -1,3 +1,4 @@
+use crate::serve::{Listener, Socket};
 use alloc::boxed::Box;
 use bycat_service::{GracefulShutdown, Shutdown};
 use core::error::Error as StdError;
@@ -9,7 +10,93 @@ use hyper::{
 };
 use pin_project_lite::pin_project;
 
-use crate::serve::Socket;
+// pub struct Connection<L, E>
+// where
+//     L: Listener,
+// {
+//     builder: Builder,
+//     shutdown: Shutdown,
+//     socket: L::Io,
+//     local_address: L::Addr,
+//     // Should be used for http2
+//     #[allow(unused)]
+//     executor: E,
+// }
+
+// impl<L, E> Connection<L, E>
+// where
+//     L: Listener,
+// {
+//     pub(crate) fn new(
+//         executor: E,
+//         builder: Builder,
+//         shutdown: Shutdown,
+//         socket: L::Io,
+//         local_address: L::Addr,
+//     ) -> Connection<L, E> {
+//         Connection {
+//             builder,
+//             local_address,
+//             shutdown,
+//             socket,
+//             executor,
+//         }
+//     }
+// }
+
+// impl<L, E> Connection<L, E>
+// where
+//     L: Listener,
+// {
+//     pub fn local_address(&self) -> &L::Addr {
+//         &self.local_address
+//     }
+
+//     pub fn socket(&self) -> &L::Io {
+//         &self.socket
+//     }
+
+//     pub async fn serve_connection<S, B>(
+//         self,
+//         service: S,
+//     ) -> Result<(), Box<dyn StdError + Send + Sync + 'static>>
+//     where
+//         S: Service<Request<Incoming>, Response = Response<B>>,
+//         S::Error: Into<Box<dyn StdError + Send + Sync>>,
+//         B: Body + 'static,
+//         B::Error: Into<Box<dyn StdError + Send + Sync>>,
+//         L::Io: 'static,
+//     {
+//         let conn = self.builder.serve_connection(self.socket, service);
+//         self.shutdown
+//             .watch(HyperConn { conn })
+//             .await
+//             .map_err(|e| Box::new(e) as _)
+//     }
+
+//     pub async fn serve_connection_with_upgrades<S, B>(
+//         self,
+//         service: S,
+//     ) -> Result<(), Box<dyn StdError + Send + Sync + 'static>>
+//     where
+//         S: Service<Request<Incoming>, Response = Response<B>>,
+//         S::Error: Into<Box<dyn StdError + Send + Sync>>,
+//         B: Body + 'static,
+//         B::Error: Into<Box<dyn StdError + Send + Sync>>,
+//         L::Io: Send + 'static,
+//         // I: Socket + Unpin + Send + 'static,
+//     {
+//         let conn = self
+//             .builder
+//             .serve_connection(self.socket, service)
+//             .with_upgrades();
+//         self.shutdown
+//             .watch(HyperConn { conn })
+//             .await
+//             .map_err(|e| Box::new(e) as _)
+//     }
+// }
+
 pin_project! {
     pub struct HyperConn<T: ?Sized> {
        #[pin]

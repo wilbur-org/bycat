@@ -1,6 +1,6 @@
 use core::task::{Poll, ready};
 
-use bycat::{Middleware, Work};
+use bycat_task::{Middleware, Work};
 use bytes::Bytes;
 use http::{Request, Response, StatusCode, header::CONTENT_LENGTH};
 use pin_project_lite::pin_project;
@@ -51,7 +51,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
         RequestBodyLimitWorkFuture {
             state: RequestBodyLimitWorkState::Init {
                 context,

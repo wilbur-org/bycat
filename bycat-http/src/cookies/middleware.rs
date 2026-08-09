@@ -1,5 +1,5 @@
 use crate::Error;
-use bycat::{Middleware, Work};
+use bycat_task::{Middleware, Work};
 use core::task::{Poll, ready};
 use http::{Request, Response};
 use pin_project_lite::pin_project;
@@ -43,7 +43,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, mut req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, context: &'a C, mut req: Request<B>) -> Self::Future<'a> {
         let cookie_jar = CookieJar::from_headers(req.headers());
         req.extensions_mut().insert(cookie_jar.clone());
         CookieWorkFuture {

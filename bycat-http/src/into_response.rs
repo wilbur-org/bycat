@@ -6,8 +6,8 @@ use core::{
 
 use crate::{Error, body::HttpBody};
 use alloc::string::String;
-use bycat::Work;
 use bycat_futures::IntoResult;
+use bycat_task::Work;
 use http::{HeaderValue, Request, Response};
 use pin_project_lite::pin_project;
 
@@ -94,7 +94,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, _context: &'a C, _req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, _context: &'a C, _req: Request<B>) -> Self::Future<'a> {
         core::future::ready(Ok(<Html<T> as IntoResponse<B>>::into_response(
             self.clone(),
         )))
@@ -133,7 +133,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
         RouteHandlerFuture {
             future: self.work.call(context, req),
             body: PhantomData,

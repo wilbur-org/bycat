@@ -1,5 +1,5 @@
 use alloc::sync::Arc;
-use bycat::{Middleware, Work};
+use bycat_task::{Middleware, Work};
 use futures::future::BoxFuture;
 use http::Request;
 use routing::router::MethodFilter;
@@ -232,7 +232,7 @@ impl<C, B: HttpBody> Work<C, Request<B>> for SendRouter<C, B> {
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
         self.router.call(context, req)
     }
 }
@@ -295,7 +295,7 @@ impl<C, B> Work<C, Request<B>> for SendWork<C, B> {
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
         self.inner.call(context, req)
     }
 }

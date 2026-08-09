@@ -10,7 +10,7 @@ use crate::{
     },
 };
 use alloc::{borrow::Cow, string::ToString, sync::Arc};
-use bycat::{Middleware, Work};
+use bycat_task::{Middleware, Work};
 use cookie::Cookie;
 use core::{
     marker::PhantomData,
@@ -106,7 +106,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
         SessionWorkFuture {
             state: SessionWorkFutureState::Init {
                 req: Some(req),

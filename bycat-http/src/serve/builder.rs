@@ -3,8 +3,12 @@ use bycat_service::Shutdown;
 use http::{Request, Response};
 use hyper::body::Incoming;
 
-use super::{server::Server, server::ServerFuture};
-use crate::{Error, error::BoxError, serve::Listener};
+use crate::{
+    Error,
+    error::BoxError,
+    serve::Listener,
+    serve2::server::{Server, ServerFuture},
+};
 
 pub struct Builder<E> {
     executor: E,

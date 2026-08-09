@@ -25,7 +25,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, _context: &'a C, req: I) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'a self, _context: &'a C, req: I) -> Self::Future<'a> {
         TowerFuture {
             state: State::Init {
                 input: Some(req),

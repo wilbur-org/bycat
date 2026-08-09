@@ -6,7 +6,7 @@ use alloc::{
     task::{Poll, ready},
     time::Duration,
 };
-use bycat::{Middleware, Work};
+use bycat_task::{Middleware, Work};
 use http::{
     HeaderMap, HeaderValue, Method, Request, Response,
     header::{
@@ -227,7 +227,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
         CorsFuture {
             state: CorsFutureState::Init {
                 work: &self.work,

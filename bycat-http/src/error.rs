@@ -113,3 +113,19 @@ impl From<Infallible> for Error {
         }
     }
 }
+
+impl From<hyper::Error> for Error {
+    fn from(value: hyper::Error) -> Self {
+        Error {
+            kind: ErrorKind::Internal(value.into()),
+        }
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(value: std::io::Error) -> Self {
+        Error {
+            kind: ErrorKind::Internal(value.into()),
+        }
+    }
+}

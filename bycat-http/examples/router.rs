@@ -1,9 +1,9 @@
-use bycat::{Work, middleware, work_fn};
 use bycat_http::{
     error::Result,
     handler,
     router::{SendRouterBuilder, SendWork, UrlParams},
 };
+use bycat_task::{Work, middleware, work_fn};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {

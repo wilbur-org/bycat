@@ -1,15 +1,21 @@
+use bycat_executor::TokioExecutor;
 use bycat_http::{
     Html,
+    body::Body,
     error::Result,
     handler,
-    router::SendRouterBuilder,
+    router::{SendRouter, SendRouterBuilder},
     ws::{self, WebSocket},
 };
+use bycat_task::Work;
 use futures::{SinkExt, StreamExt};
+use http::Request;
+use hyper::{body::Incoming, service::service_fn};
+use tokio::net::TcpListener;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
-    let router = SendRouterBuilder::new()
+    let router: SendRouter<(), Body> = SendRouterBuilder::new()
         .with_get("/", Html(include_str!("./ws.html")))?
         .with_get(
             "/ws",
@@ -36,9 +42,24 @@ async fn main() -> Result<()> {
         )?
         .build();
 
-    bycat_http::serve(("localhost", 3000), (), router)
-        .await
-        .unwrap();
+    let listener = TcpListener::bind(("localhost", 3000)).await?;
+    bycat_http::serve2::Builder::new(TokioExecutor)
+        .listen(
+            listener,
+            service_fn(move |req: Request<Incoming>| {
+                let router = router.clone();
+                async move {
+                    let req = req.map(Body::from_streaming);
+                    let resp = router.call(&(), req).await?;
+                    Ok::<_, bycat_http::Error>(resp)
+                }
+            }),
+        )
+        .await;
+
+    // bycat_http::serve(("localhost", 3000), (), router)
+    //     .await
+    //     .unwrap();
 
     Ok(())
 }

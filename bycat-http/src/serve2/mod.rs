@@ -1,2 +1,5 @@
+mod builder;
 mod conn;
-mod server;
+pub mod server;
+
+pub use self::builder::Builder;

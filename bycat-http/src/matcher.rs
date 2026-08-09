@@ -1,6 +1,6 @@
 use alloc::{marker::PhantomData, task::Poll};
-use bycat::{Matcher, Work};
 use bycat_futures::IntoResult;
+use bycat_task::{Matcher, Work};
 use futures::ready;
 use http::{Request, Response};
 use pin_project_lite::pin_project;
@@ -37,7 +37,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, ctx: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, ctx: &'a C, req: Request<B>) -> Self::Future<'a> {
         self.inner.call(ctx, req)
     }
 }
@@ -73,7 +73,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, ctx: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, ctx: &'a C, req: Request<B>) -> Self::Future<'a> {
         let state = if self.0.can_handle(ctx, &req) {
             OrFutureState::Left {
                 future: self.0.call(ctx, req),

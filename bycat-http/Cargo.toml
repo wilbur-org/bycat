@@ -25,7 +25,7 @@ http2 = []
 
 
 [dependencies]
-bycat = { path = "../bycat", features = ["alloc"] }
+bycat-task = { path = "../bycat-task", features = ["alloc"] }
 bycat-futures = { path = "../bycat-futures" }
 bycat-container = { path = "../bycat-container" }
 bycat-executor = { path = "../bycat-executor", features = ["hyper"] }

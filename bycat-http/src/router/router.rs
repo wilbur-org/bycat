@@ -3,7 +3,7 @@ use crate::{
     router::{RouteError, UrlParams},
 };
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
-use bycat::{Middleware, Work};
+use bycat_task::{Middleware, Work};
 use core::{marker::PhantomData, task::Poll};
 use http::{HeaderValue, Method, Request, Response, StatusCode, header::ALLOW};
 use pin_project_lite::pin_project;
@@ -191,7 +191,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
         RouterFuture {
             state: State::Init {
                 context: Some(context),

@@ -1,5 +1,5 @@
 use crate::Error;
-use bycat::Work;
+use bycat_task::Work;
 use core::{
     marker::PhantomData,
     pin::Pin,
@@ -59,7 +59,7 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'a, 'a>(&'this self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
         HandlerFnFuture {
             state: HandlerFnFutureState::Request {
                 future: I::from_request(req, context),

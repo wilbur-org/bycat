@@ -1,4 +1,3 @@
-use bycat::prelude::WorkExt;
 use bycat_http::{
     cookies::Cookies,
     cors::Cors,
@@ -8,6 +7,7 @@ use bycat_http::{
     prelude::HttpWorkExt,
     session::{MemoryStore, Session, Sessions},
 };
+use bycat_task::prelude::WorkExt;
 use http::Request;
 
 #[tokio::main(flavor = "current_thread")]
