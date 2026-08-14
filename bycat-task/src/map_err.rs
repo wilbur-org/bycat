@@ -50,7 +50,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'this: 'a, 'a>(&'this self, context: &'a C, req: I) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        context: &'ctx C,
+        req: I,
+    ) -> Self::Future<'lifetime> {
         MapErrFuture {
             future: self.work.call(context, req),
             map: &self.map,

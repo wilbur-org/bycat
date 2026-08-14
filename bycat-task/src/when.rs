@@ -26,7 +26,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'this: 'a, 'a>(&'this self, ctx: &'a C, package: R) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        ctx: &'ctx C,
+        package: R,
+    ) -> Self::Future<'lifetime> {
         if self.check.is_match(&package) {
             CondFuture::Work {
                 future: self.work.call(ctx, package),

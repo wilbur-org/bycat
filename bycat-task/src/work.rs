@@ -34,7 +34,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'this: 'a, 'a>(&'this self, ctx: &'a C, package: I) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        ctx: &'ctx C,
+        package: I,
+    ) -> Self::Future<'lifetime> {
         match self {
             Self::Left(left) => EitherWorkFuture::T1 {
                 future: left.call(ctx, package),
@@ -110,7 +114,11 @@ impl<C, R, E: 'static> Work<C, R> for NoopWork<E> {
         = core::future::Ready<Result<R, Self::Error>>
     where
         C: 'a;
-    fn call<'this: 'a, 'a>(&'a self, _ctx: &'a C, package: R) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _ctx: &'ctx C,
+        package: R,
+    ) -> Self::Future<'lifetime> {
         core::future::ready(Ok(package))
     }
 }

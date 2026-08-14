@@ -40,7 +40,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'this: 'a, 'a>(&'this self, ctx: &'a C, package: T) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        ctx: &'ctx C,
+        package: T,
+    ) -> Self::Future<'lifetime> {
         SplitFuture::Init {
             future: self.splitter.call(ctx, package),
             left: &self.left,
