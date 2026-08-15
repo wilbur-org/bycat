@@ -12,9 +12,9 @@ multipart = ["dep:multer"]
 cookies = ["dep:cookie", "dep:parking_lot"]
 session = ["cookies", "uuid", "arc-swap", "bycat-value"]
 statics = ["relative-path", "tokio/fs", "bycat-fs", "bycat-package"]
-router = ["routing"]
+router = ["routing", "std"]
 
-serve = ["dep:hyper", "bycat-server", "futures", "std"]
+serve = ["hyper/server", "hyper/http1", "bycat-server", "futures", "std"]
 serve-tokio = ["serve", "tokio", "hyper-util", "bycat-executor/tokio"]
 serve-smol = ["serve", "smol"]
 serve-compio = ["serve", "compio", "cyper-core", "socket2", "bycat-executor/compio"]
@@ -70,7 +70,7 @@ bycat-fs = { path = "../bycat-fs", optional = true }
 multer = { version = "3", optional = true }
 
 ## Serve
-hyper = { version = "1", features = ["http1", "server"], optional = true }
+hyper = { version = "1", features = [] }
 bycat-server = { path = "../bycat-server", optional = true }
 futures = { version = "0.3", optional = true }
 tokio = { version = "1", features = ["net"], default-features = false, optional = true }

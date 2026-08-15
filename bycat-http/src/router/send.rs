@@ -1,6 +1,6 @@
 use alloc::sync::Arc;
+use bycat_executor::BoxFuture;
 use bycat_service::{Middleware, Work};
-use futures::future::BoxFuture;
 use http::Request;
 use routing::router::MethodFilter;
 
