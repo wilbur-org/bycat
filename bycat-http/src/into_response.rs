@@ -7,7 +7,7 @@ use core::{
 use crate::{Error, body::HttpBody};
 use alloc::string::String;
 use bycat_futures::IntoResult;
-use bycat_task::Work;
+use bycat_service::Work;
 use http::{HeaderValue, Request, Response};
 use pin_project_lite::pin_project;
 

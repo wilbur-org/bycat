@@ -5,7 +5,7 @@ use std::{
 
 use bycat_config::Config;
 
-use bycat_service::Shutdown;
+use bycat_server::Shutdown;
 
 use crate::{Builder, paths::Paths};
 

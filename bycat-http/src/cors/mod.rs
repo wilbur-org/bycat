@@ -6,7 +6,7 @@ use alloc::{
     task::{Poll, ready},
     time::Duration,
 };
-use bycat_task::{Middleware, Work};
+use bycat_service::{Middleware, Work};
 use http::{
     HeaderMap, HeaderValue, Method, Request, Response,
     header::{

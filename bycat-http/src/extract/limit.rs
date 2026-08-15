@@ -1,6 +1,6 @@
 use core::task::{Poll, ready};
 
-use bycat_task::{Middleware, Work};
+use bycat_service::{Middleware, Work};
 use bytes::Bytes;
 use http::{Request, Response, StatusCode, header::CONTENT_LENGTH};
 use pin_project_lite::pin_project;

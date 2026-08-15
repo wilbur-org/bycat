@@ -2,7 +2,7 @@ use core::{pin::Pin, task::Poll};
 
 use bycat_error::Error;
 use bycat_package::{IntoPackage, Package, StreamContent};
-use bycat_task::Work;
+use bycat_service::Work;
 use bytes::Bytes;
 use futures::{Future, FutureExt, Stream, future::BoxFuture};
 use http_body::Body as _;

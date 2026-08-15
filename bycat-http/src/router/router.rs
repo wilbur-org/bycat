@@ -3,7 +3,7 @@ use crate::{
     router::{RouteError, UrlParams},
 };
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
-use bycat_task::{Middleware, Work};
+use bycat_service::{Middleware, Work};
 use core::{marker::PhantomData, task::Poll};
 use http::{HeaderValue, Method, Request, Response, StatusCode, header::ALLOW};
 use pin_project_lite::pin_project;

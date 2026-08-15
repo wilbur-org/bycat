@@ -14,7 +14,7 @@ session = ["cookies", "uuid", "arc-swap", "bycat-value"]
 statics = ["relative-path", "tokio/fs", "bycat-fs", "bycat-package"]
 router = ["routing"]
 
-serve = ["dep:hyper", "bycat-service", "futures", "std"]
+serve = ["dep:hyper", "bycat-server", "futures", "std"]
 serve-tokio = ["serve", "tokio", "hyper-util"]
 serve-smol = ["serve", "smol"]
 
@@ -25,7 +25,7 @@ http2 = []
 
 
 [dependencies]
-bycat-task = { path = "../bycat-task", features = ["alloc"] }
+bycat-service = { path = "../bycat-service", features = ["alloc"] }
 bycat-futures = { path = "../bycat-futures" }
 bycat-container = { path = "../bycat-container" }
 bycat-executor = { path = "../bycat-executor", features = ["hyper"] }
@@ -69,7 +69,7 @@ multer = { version = "3", optional = true }
 
 ## Serve
 hyper = { version = "1", features = ["http1", "server"], optional = true }
-bycat-service = { path = "../bycat-service", optional = true }
+bycat-server = { path = "../bycat-server", optional = true }
 futures = { version = "0.3", optional = true }
 tokio = { version = "1", features = ["net"], default-features = false, optional = true }
 hyper-util = { version = "0.1", features = ["tokio"], optional = true }

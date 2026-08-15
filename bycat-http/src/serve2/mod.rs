@@ -3,7 +3,7 @@ mod conn;
 pub mod server;
 
 use bycat_executor::{LocalTokioExecutor, TokioExecutor};
-use bycat_task::Work;
+use bycat_service::Work;
 use http::Request;
 use hyper::{body::Incoming, service::service_fn};
 use tokio::net::{TcpListener, ToSocketAddrs};

@@ -3,7 +3,7 @@ use core::task::{Poll, ready};
 use alloc::path::PathBuf;
 use bycat_fs::VirtualFS;
 use bycat_package::Package;
-use bycat_task::Work;
+use bycat_service::Work;
 use http::Request;
 use pin_project_lite::pin_project;
 

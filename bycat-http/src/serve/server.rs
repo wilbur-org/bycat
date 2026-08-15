@@ -1,4 +1,4 @@
-use bycat_service::Shutdown;
+use bycat_server::Shutdown;
 use futures::FutureExt;
 use http::{Request, Response};
 use http_body::Body;

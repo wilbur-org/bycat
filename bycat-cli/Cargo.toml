@@ -8,7 +8,7 @@ edition = "2024"
 [dependencies]
 bycat = { path = "../bycat" }
 bycat-fs = { path = "../bycat-fs" }
-bycat-service = { path = "../bycat-service" }
+bycat-server = { path = "../bycat-server" }
 bycat-package = { path = "../bycat-package" }
 bycat-source = { path = "../bycat-source" }
 bycat-error = { path = "../bycat-error" }

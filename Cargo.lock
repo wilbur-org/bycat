@@ -373,7 +373,7 @@ dependencies = [
  "bycat-error",
  "bycat-fs",
  "bycat-package",
- "bycat-service",
+ "bycat-server",
  "bycat-source",
  "directories",
  "futures",
@@ -498,8 +498,8 @@ dependencies = [
  "bycat-fs",
  "bycat-futures",
  "bycat-package",
+ "bycat-server",
  "bycat-service",
- "bycat-task",
  "bycat-value",
  "bytes",
  "cookie",
@@ -564,12 +564,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "bycat-service"
+name = "bycat-server"
 version = "0.1.0"
 dependencies = [
  "event-listener",
  "futures",
  "pin-project-lite",
+]
+
+[[package]]
+name = "bycat-service"
+version = "0.1.0"
+dependencies = [
+ "either",
+ "futures-core",
+ "pin-project-lite",
+ "tokio",
+ "tower",
 ]
 
 [[package]]
@@ -584,17 +595,6 @@ dependencies = [
  "futures",
  "pin-project-lite",
  "tokio",
-]
-
-[[package]]
-name = "bycat-task"
-version = "0.1.0"
-dependencies = [
- "either",
- "futures-core",
- "pin-project-lite",
- "tokio",
- "tower",
 ]
 
 [[package]]

@@ -3,13 +3,24 @@ name = "bycat-service"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["alloc", "tower"]
+alloc = []
+tower = ["dep:tower"]
+
 [dependencies]
-event-listener = { version = "5.4", default-features = false }
-futures = { version = "0.3", default-features = false, features = ["alloc"] }
+futures-core = { version = "0.3", default-features = false }
 pin-project-lite = { version = "0.2" }
+either = { version = "1", default-features = false }
+
+
+tower = { version = "0.5", default-features = false, features = ["util"], optional = true }
+
 
 [dev-dependencies]
-futures = { version = "0.3", default-features = false, features = [
-    "alloc",
-    "executor",
-] }
+tokio = { version = "1", features = ["rt", "macros"] }
+
+[[example]]
+name = "bycat"
+path = "./examples/bycat.rs"
+required-features = ["alloc"]

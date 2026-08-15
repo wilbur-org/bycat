@@ -1,6 +1,6 @@
 use alloc::{marker::PhantomData, task::Poll};
 use bycat_futures::IntoResult;
-use bycat_task::{Matcher, Work};
+use bycat_service::{Matcher, Work};
 use futures::ready;
 use http::{Request, Response};
 use pin_project_lite::pin_project;

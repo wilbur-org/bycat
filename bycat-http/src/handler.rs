@@ -1,5 +1,5 @@
 use crate::Error;
-use bycat_task::Work;
+use bycat_service::Work;
 use core::{
     marker::PhantomData,
     pin::Pin,

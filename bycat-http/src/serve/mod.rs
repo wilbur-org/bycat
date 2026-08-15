@@ -7,7 +7,7 @@ mod server;
 use self::connection::Connection;
 pub use self::{futures::FuturesIo, listener::*, server::*};
 
-pub use bycat_service::Shutdown;
+pub use bycat_server::Shutdown;
 pub use hyper::rt::Executor;
 
 #[cfg(feature = "serve-tokio")]
@@ -19,7 +19,7 @@ pub use tokio_impl::Tokio;
 // #[cfg(feature = "serve-tokio")]
 // use crate::body::Body;
 // #[cfg(feature = "serve-tokio")]
-// use ::{bycat_task::Work, http_body_util::BodyExt};
+// use ::{bycat_service::Work, http_body_util::BodyExt};
 
 // #[cfg(feature = "serve-tokio")]
 // pub async fn serve<T, C, A>(addr: A, context: C, service: T) -> Result<(), tokio::io::Error>

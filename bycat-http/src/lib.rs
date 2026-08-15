@@ -53,7 +53,7 @@ pub mod prelude {
         into_response::*,
     };
 
-    pub use bycat_task::prelude::*;
+    pub use bycat_service::prelude::*;
 
     pub use http::{self, HeaderMap, HeaderName, HeaderValue, Request, Response, StatusCode, Uri};
 }

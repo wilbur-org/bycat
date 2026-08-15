@@ -7,7 +7,7 @@ use std::{
 use bycat::Work;
 use bycat_config::ConfigFactory;
 use bycat_error::Error;
-use bycat_service::Shutdown;
+use bycat_server::Shutdown;
 use pin_project_lite::pin_project;
 
 use crate::{App, AppInner, ConfigBuilder, paths::Paths, req::CliRequest};

@@ -1,23 +1,30 @@
 [workspace]
 
 members = [
-    "bycat",
-    "bycat-error",
-    "bycat-container",
-    "bycat-service",
-    "bycat-http",
-    "bycat-futures",
-    "bycat-cache",
-    "bycat-package",
-    "bycat-source",
-    "bycat-fs",
-    "bycat-img",
-    "bycat-cli",
-    "bycat-config",
-    "bycat-value", "bycat-cmd", "bycat-geenie", "bycat-executor", "bycat-task",
+  "bycat",
+  "bycat-error",
+  "bycat-container",
+  "bycat-server",
+  "bycat-http",
+  "bycat-futures",
+  "bycat-cache",
+  "bycat-package",
+  "bycat-source",
+  "bycat-fs",
+  "bycat-img",
+  "bycat-cli",
+  "bycat-config",
+  "bycat-value",
+  "bycat-cmd",
+  "bycat-geenie",
+  "bycat-executor",
+  "bycat-service",
 ]
 
 resolver = "3"
+
+[workspace.package]
+edition = "2024"
 
 
 [workspace.dependencies]
@@ -27,7 +34,5 @@ bytes = { version = "1", default-features = false }
 futures = { version = "0.3", default-features = false }
 pin-project-lite = { version = "0.2" }
 either = { version = "1", default-features = false }
-heather = { git = "https://github.com/kildevaeld/heather", default-features = false, features = [
-
-] }
+heather = { git = "https://github.com/kildevaeld/heather", default-features = false, features = [] }
 serde = { version = "1", default-features = false }

@@ -1,5 +1,5 @@
 use alloc::boxed::Box;
-use bycat_service::{GracefulShutdown, Shutdown};
+use bycat_server::{GracefulShutdown, Shutdown};
 use core::error::Error as StdError;
 use http::{Request, Response};
 use hyper::{

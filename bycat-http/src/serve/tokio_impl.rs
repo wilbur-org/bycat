@@ -1,7 +1,7 @@
 pub use super::{listener::*, server::*};
-use ::bycat_task::Work;
+use ::bycat_service::Work;
 use bycat_executor::{LocalTokioExecutor, TokioExecutor};
-pub use bycat_service::Shutdown;
+pub use bycat_server::Shutdown;
 use tokio::net::ToSocketAddrs;
 
 #[derive(Debug, Clone)]

@@ -1,5 +1,5 @@
 use bycat_error::Error;
-use bycat_task::{Middleware, Work};
+use bycat_service::{Middleware, Work};
 use heather::{HBoxFuture, HSend, HSendSync, Hrc};
 use http::{Request, Response};
 use std::future::Future;

@@ -1,21 +1,30 @@
 #![no_std]
 
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
-mod builder;
-mod service;
-mod shutdown;
+pub mod and;
+pub mod map;
+pub mod map_err;
+mod matcher;
+mod middleware;
+mod middleware_fn;
+pub mod split;
+pub mod then;
+#[cfg(feature = "tower")]
+mod tower;
+mod util;
+pub mod when;
+mod work;
+mod work_ext;
+mod work_fn;
+pub use self::{
+    matcher::Matcher, middleware::*, middleware_fn::*, util::*, when::when, work::*, work_fn::*,
+};
 
-pub use self::{builder::*, service::*, shutdown::*};
+#[cfg(feature = "tower")]
+pub use self::tower::{Tower, TowerFuture};
 
-pub trait ServiceFactory<C> {
-    type Error;
-    type Service;
-    type Options;
-    type Future<'b>: Future<Output = Result<Self::Service, Self::Error>>
-    where
-        Self: 'b,
-        C: 'b;
-
-    fn create<'b>(&'b self, ctx: C, options: Self::Options) -> Self::Future<'b>;
+pub mod prelude {
+    pub use super::work_ext::*;
 }
