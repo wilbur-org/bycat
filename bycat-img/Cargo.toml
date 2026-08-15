@@ -9,6 +9,7 @@ webp = ["image/webp", "dep:webp"]
 [dependencies]
 bycat-service = { path = "../bycat-service" }
 bycat-package = { path = "../bycat-package" }
+bycat-executor = { path = "../bycat-executor" }
 bycat-error = { path = "../bycat-error" }
 
 heather = { workspace = true }

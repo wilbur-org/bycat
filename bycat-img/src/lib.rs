@@ -7,6 +7,7 @@ use std::{
 };
 
 use bycat_error::Error;
+use bycat_executor::{BlockingSpawner, HasBlockingSpawner};
 use bycat_package::{Content, Package};
 use bycat_service::Work;
 use bytes::Bytes;
@@ -36,21 +37,25 @@ impl<C> Clone for ImageOp<C> {
     }
 }
 
-impl<C> Work<C, ImagePackage> for ImageOp<C> {
+impl<C> Work<C, ImagePackage> for ImageOp<C>
+where
+    C: HasBlockingSpawner,
+    <C::Spawner as BlockingSpawner>::Error: Into<Error>,
+{
     type Output = ImagePackage;
     type Error = Error;
     type Future<'a>
-        = SpawnBlockFuture<ImagePackage>
+        = SpawnBlockFuture<C::Spawner, ImagePackage>
     where
         C: 'a;
     fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
         &'this self,
-        _ctx: &'ctx C,
+        ctx: &'ctx C,
         mut image: ImagePackage,
     ) -> Self::Future<'lifetime> {
         let ops = self.0.clone();
         SpawnBlockFuture {
-            future: tokio::task::spawn_blocking(move || {
+            future: ctx.blocking_spawner().spawn_blocking(move || {
                 let mut img = image.replace_content(DynamicImage::new(1, 1, ColorType::Rgb8));
 
                 for op in &*ops {
@@ -167,22 +172,26 @@ impl<C> Clone for Save<C> {
 
 impl<C> Copy for Save<C> {}
 
-impl<C> Work<C, ImagePackage> for Save<C> {
+impl<C> Work<C, ImagePackage> for Save<C>
+where
+    C: HasBlockingSpawner,
+    <C::Spawner as BlockingSpawner>::Error: Into<Error>,
+{
     type Output = Package<Bytes>;
     type Error = Error;
 
     type Future<'a>
-        = SpawnBlockFuture<Package<Bytes>>
+        = SpawnBlockFuture<C::Spawner, Package<Bytes>>
     where
         C: 'a;
     fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
         &'this self,
-        _ctx: &'ctx C,
+        ctx: &'ctx C,
         mut pkg: ImagePackage,
     ) -> Self::Future<'lifetime> {
         let format = self.format;
         SpawnBlockFuture {
-            future: tokio::task::spawn_blocking(move || {
+            future: ctx.blocking_spawner().spawn_blocking(move || {
                 let bytes: Bytes = format.encode(pkg.content())?.into();
 
                 pkg.path_mut().set_extension(format.ext());
@@ -194,13 +203,17 @@ impl<C> Work<C, ImagePackage> for Save<C> {
 }
 
 pin_project! {
-    pub struct SpawnBlockFuture<T> {
+    pub struct SpawnBlockFuture<E, T> where E: BlockingSpawner {
         #[pin]
-        future: tokio::task::JoinHandle<Result<T, Error>>
+        future: E::Future<Result<T, Error>>
     }
 }
 
-impl<T> Future for SpawnBlockFuture<T> {
+impl<E, T> Future for SpawnBlockFuture<E, T>
+where
+    E: BlockingSpawner,
+    E::Error: Into<Error>,
+{
     type Output = Result<T, Error>;
 
     fn poll(
@@ -211,7 +224,7 @@ impl<T> Future for SpawnBlockFuture<T> {
 
         match ready!(this.future.poll(cx)) {
             Ok(ret) => Poll::Ready(ret),
-            Err(err) => Poll::Ready(Err(Error::new(err))),
+            Err(err) => Poll::Ready(Err(err.into())),
         }
     }
 }

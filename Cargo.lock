@@ -534,6 +534,7 @@ name = "bycat-img"
 version = "0.1.0"
 dependencies = [
  "bycat-error",
+ "bycat-executor",
  "bycat-package",
  "bycat-service",
  "bytes",
