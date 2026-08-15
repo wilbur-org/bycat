@@ -1,4 +1,5 @@
 use alloc::io;
+use bycat_executor::LocalBoxFuture;
 
 use crate::serve::Listener;
 
@@ -6,13 +7,17 @@ impl Listener for compio::net::TcpListener {
     type Io = cyper_core::HyperStream<compio::net::TcpStream>;
 
     type Addr = core::net::SocketAddr;
+    type Future<'a>
+        = LocalBoxFuture<'a, (Self::Io, Self::Addr)>
+    where
+        Self: 'a;
 
-    fn accept(&mut self) -> impl Future<Output = (Self::Io, Self::Addr)> + Send {
+    fn accept<'a>(&'a mut self) -> Self::Future<'a> {
         // async move {
         //     let (socket, addr) = compio::net::TcpListener::accept(&self).await?;
         //     Ok((cyper_core::HyperStream::new_plain(socket), addr))
         // }
-        async move {
+        Box::pin(async move {
             loop {
                 match compio::net::TcpListener::accept(&self).await {
                     Ok((socket, addr)) => {
@@ -21,7 +26,7 @@ impl Listener for compio::net::TcpListener {
                     Err(e) => handle_accept_error(e).await,
                 }
             }
-        }
+        })
     }
 
     fn local_addr(&self) -> io::Result<Self::Addr> {
@@ -34,18 +39,26 @@ impl Listener for compio::net::UnixListener {
 
     type Addr = socket2::SockAddr;
 
-    type Error = std::io::Error;
+    type Future<'a>
+        = LocalBoxFuture<'a, (Self::Io, Self::Addr)>
+    where
+        Self: 'a;
 
-    fn accept(&mut self) -> impl Future<Output = Result<(Self::Io, Self::Addr), Self::Error>> {
-        async move {
-            let (socket, addr) = compio::net::UnixListener::accept(&self).await?;
-
-            Ok((cyper_core::HyperStream::new_plain(socket), addr))
-        }
+    fn accept<'a>(&'a mut self) -> Self::Future<'a> {
+        Box::pin(async move {
+            loop {
+                match compio::net::UnixListener::accept(&self).await {
+                    Ok((socket, addr)) => {
+                        return (cyper_core::HyperStream::new_plain(socket), addr);
+                    }
+                    Err(e) => handle_accept_error(e).await,
+                }
+            }
+        })
     }
 
-    fn local_addr(&self) -> Option<Self::Addr> {
-        compio::net::UnixListener::local_addr(&self).ok()
+    fn local_addr(&self) -> io::Result<Self::Addr> {
+        compio::net::UnixListener::local_addr(&self)
     }
 }
 

@@ -1,10 +1,17 @@
+#[cfg(unix)]
+use bycat_executor::BoxFuture;
+
 use crate::serve::Listener;
 use std::io;
 impl Listener for tokio::net::TcpListener {
     type Io = hyper_util::rt::TokioIo<tokio::net::TcpStream>;
     type Addr = alloc::net::SocketAddr;
+    type Future<'a>
+        = BoxFuture<'a, (Self::Io, Self::Addr)>
+    where
+        Self: 'a;
 
-    async fn accept(&mut self) -> (Self::Io, Self::Addr) {
+    fn accept<'a>(&'a mut self) -> Self::Future<'a> {
         Box::pin(async move {
             loop {
                 match Self::accept(self).await {
@@ -13,7 +20,6 @@ impl Listener for tokio::net::TcpListener {
                 }
             }
         })
-        .await
     }
 
     #[inline]
@@ -26,14 +32,20 @@ impl Listener for tokio::net::TcpListener {
 impl Listener for tokio::net::UnixListener {
     type Io = hyper_util::rt::TokioIo<tokio::net::UnixStream>;
     type Addr = tokio::net::unix::SocketAddr;
+    type Future<'a>
+        = BoxFuture<'a, (Self::Io, Self::Addr)>
+    where
+        Self: 'a;
 
-    async fn accept(&mut self) -> (Self::Io, Self::Addr) {
-        loop {
-            match Self::accept(self).await {
-                Ok((socket, addr)) => return (hyper_util::rt::TokioIo::new(socket), addr),
-                Err(e) => handle_accept_error(e).await,
+    fn accept<'a>(&'a mut self) -> Self::Future<'a> {
+        Box::pin(async move {
+            loop {
+                match Self::accept(self).await {
+                    Ok((socket, addr)) => return (hyper_util::rt::TokioIo::new(socket), addr),
+                    Err(e) => handle_accept_error(e).await,
+                }
             }
-        }
+        })
     }
 
     #[inline]

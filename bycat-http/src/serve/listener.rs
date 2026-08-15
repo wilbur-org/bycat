@@ -8,12 +8,15 @@ pub trait Listener {
     /// The listener's address type.
     type Addr;
 
+    type Future<'a>: Future<Output = (Self::Io, Self::Addr)> + 'a
+    where
+        Self: 'a;
+
     /// Accept a new incoming connection to this listener.
     ///
     /// If the underlying accept call can return an error, this function must
     /// take care of logging and retrying.
-    fn accept(&mut self) -> impl Future<Output = (Self::Io, Self::Addr)> + Send;
-
+    fn accept<'a>(&'a mut self) -> Self::Future<'a>;
     /// Returns the local address that this listener is bound to.
     fn local_addr(&self) -> io::Result<Self::Addr>;
 }
