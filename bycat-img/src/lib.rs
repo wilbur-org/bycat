@@ -6,9 +6,9 @@ use std::{
     task::Poll,
 };
 
-use bycat::Work;
 use bycat_error::Error;
 use bycat_package::{Content, Package};
+use bycat_service::Work;
 use bytes::Bytes;
 use futures::ready;
 use heather::{HBoxFuture, HSend};
@@ -43,7 +43,11 @@ impl<C> Work<C, ImagePackage> for ImageOp<C> {
         = SpawnBlockFuture<ImagePackage>
     where
         C: 'a;
-    fn call<'a>(&'a self, _ctx: &'a C, mut image: ImagePackage) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _ctx: &'ctx C,
+        mut image: ImagePackage,
+    ) -> Self::Future<'lifetime> {
         let ops = self.0.clone();
         SpawnBlockFuture {
             future: tokio::task::spawn_blocking(move || {
@@ -171,7 +175,11 @@ impl<C> Work<C, ImagePackage> for Save<C> {
         = SpawnBlockFuture<Package<Bytes>>
     where
         C: 'a;
-    fn call<'a>(&'a self, _ctx: &'a C, mut pkg: ImagePackage) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _ctx: &'ctx C,
+        mut pkg: ImagePackage,
+    ) -> Self::Future<'lifetime> {
         let format = self.format;
         SpawnBlockFuture {
             future: tokio::task::spawn_blocking(move || {
@@ -240,7 +248,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, _ctx: &'a C, mut pkg: Package<B>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _ctx: &'ctx C,
+        mut pkg: Package<B>,
+    ) -> Self::Future<'lifetime> {
         Box::pin(async move {
             let bytes = pkg.content_mut().bytes().await.map_err(Into::into)?;
 

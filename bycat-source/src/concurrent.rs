@@ -1,6 +1,6 @@
 use core::task::{ready, Poll};
 
-use bycat::Work;
+use bycat_service::Work;
 use futures::{
     stream::{Fuse, FuturesUnordered},
     Stream, StreamExt,

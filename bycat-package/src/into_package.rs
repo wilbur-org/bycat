@@ -1,5 +1,5 @@
 use crate::{IntoPackage, Package};
-use bycat::Work;
+use bycat_service::Work;
 
 use core::marker::PhantomData;
 
@@ -38,7 +38,11 @@ where
     where
         Self: 'a;
 
-    fn call<'a>(&'a self, _ctx: &'a C, package: R) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _ctx: &'ctx C,
+        package: R,
+    ) -> Self::Future<'lifetime> {
         package.into_package()
     }
 }

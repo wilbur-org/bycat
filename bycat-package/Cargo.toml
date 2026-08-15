@@ -8,7 +8,7 @@ serde = ["dep:serde", "toback", "bycat-error"]
 
 
 [dependencies]
-bycat = { path = "../bycat" }
+bycat-service = { path = "../bycat-service" }
 bycat-futures = { path = "../bycat-futures" }
 bycat-error = { path = "../bycat-error", optional = true }
 pin-project-lite = { workspace = true }

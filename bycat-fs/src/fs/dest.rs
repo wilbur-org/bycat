@@ -1,6 +1,6 @@
-use bycat::Work;
 use bycat_error::Error;
 use bycat_package::Package;
+use bycat_service::Work;
 use futures::future::BoxFuture;
 use mime::Mime;
 use std::{boxed::Box, path::PathBuf, vec::Vec};
@@ -60,7 +60,11 @@ impl<C> Work<C, Package<Body>> for KravlDestination {
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, _ctx: &'a C, mut req: Package<Body>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _ctx: &'ctx C,
+        mut req: Package<Body>,
+    ) -> Self::Future<'lifetime> {
         Box::pin(async move {
             let path = req.path().to_logical_path(&self.root);
 

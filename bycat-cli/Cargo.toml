@@ -6,7 +6,7 @@ edition = "2024"
 [features]
 
 [dependencies]
-bycat = { path = "../bycat" }
+bycat-service = { path = "../bycat-service" }
 bycat-fs = { path = "../bycat-fs" }
 bycat-server = { path = "../bycat-server" }
 bycat-package = { path = "../bycat-package" }

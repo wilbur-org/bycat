@@ -18,7 +18,7 @@ mod source;
 mod then;
 mod unit;
 
-pub use bycat::{work_fn, NoopWork, Work};
+pub use bycat_service::{work_fn, NoopWork, Work};
 
 pub use self::{
     pipeline::{Pipeline, PipelineStream},
@@ -31,7 +31,7 @@ pub use self::serial::*;
 
 pub mod prelude {
     pub use super::{SourceExt, UnitExt};
-    pub use bycat::prelude::*;
+    pub use bycat_service::prelude::*;
 }
 
 pub fn pipe<C, T>(source: T) -> Pipeline<T, NoopWork<T::Error>, C>

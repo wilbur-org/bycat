@@ -1,8 +1,8 @@
 use crate::source::Source;
+use bycat_service::{NoopWork, Work};
 use core::{marker::PhantomData, mem::transmute, task::Poll};
 use futures::{ready, Stream, TryFuture, TryStream};
 use pin_project_lite::pin_project;
-use bycat::{NoopWork, Work};
 
 #[derive(Debug)]
 pub struct Pipeline<S, W, C> {

@@ -1,6 +1,6 @@
 use std::convert::Infallible;
 
-use bycat::work_fn;
+use bycat_service::work_fn;
 use bycat_source::{iter, pipe, prelude::*, Source};
 use futures::TryStreamExt;
 

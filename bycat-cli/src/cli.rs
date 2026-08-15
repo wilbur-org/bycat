@@ -4,10 +4,10 @@ use std::{
     task::{Poll, ready},
 };
 
-use bycat::Work;
 use bycat_config::ConfigFactory;
 use bycat_error::Error;
 use bycat_server::Shutdown;
+use bycat_service::Work;
 use pin_project_lite::pin_project;
 
 use crate::{App, AppInner, ConfigBuilder, paths::Paths, req::CliRequest};
@@ -47,7 +47,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, ctx: &'a C, req: CliRequest) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        ctx: &'ctx C,
+        req: CliRequest,
+    ) -> Self::Future<'lifetime> {
         let factory = self.config.create_factory(&self.paths, &req.cwd);
 
         CliWorkFuture {

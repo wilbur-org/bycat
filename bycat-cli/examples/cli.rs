@@ -1,5 +1,5 @@
-use bycat::work_fn;
 use bycat_cli::{App, Result, config::Mode, prelude::*};
+use bycat_service::work_fn;
 use futures::TryStreamExt;
 use tracing::Level;
 

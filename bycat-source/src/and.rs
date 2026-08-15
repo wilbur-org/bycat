@@ -1,5 +1,5 @@
 use crate::{source::Source, Unit};
-use bycat::and::And;
+use bycat_service::and::And;
 use core::task::Poll;
 use futures::{ready, Future};
 use pin_project_lite::pin_project;

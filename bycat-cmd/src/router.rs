@@ -1,6 +1,6 @@
 use crate::request::Request;
-use bycat::Work;
 use bycat_error::Error;
+use bycat_service::Work;
 use futures_core::future::LocalBoxFuture;
 
 use alloc::{
@@ -75,7 +75,11 @@ impl<'js, C> Work<C, Request> for Router<'js, C> {
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, req: Request) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        context: &'ctx C,
+        req: Request,
+    ) -> Self::Future<'lifetime> {
         Box::pin(async move {
             let Some(first) = req.args().first() else {
                 return Err(Error::new("No command"));

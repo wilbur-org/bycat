@@ -9,7 +9,7 @@ fs = ["async-fs", "futures"]
 process = ["async-process"]
 
 [dependencies]
-bycat = { path = "../bycat" }
+bycat-service = { path = "../bycat-service" }
 bycat-package = { path = "../bycat-package" }
 bycat-source = { path = "../bycat-source" }
 

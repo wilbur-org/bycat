@@ -1,4 +1,4 @@
-use bycat::{Work, and::And};
+use bycat_service::{Work, and::And};
 
 use crate::{IntoPackage, into_package::IntoPackageWork};
 

@@ -1,6 +1,6 @@
-use bycat::Work;
 use bycat_error::Error;
 use bycat_package::{IntoPackage, Package};
+use bycat_service::Work;
 use bycat_source::Source;
 use futures::future::BoxFuture;
 use pin_project_lite::pin_project;
@@ -105,7 +105,11 @@ where
     where
         C: 'a;
 
-    fn call<'a>(&'a self, _ctx: &'a C, req: Package<T>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _ctx: &'ctx C,
+        req: Package<T>,
+    ) -> Self::Future<'lifetime> {
         let package = req.map_sync(|m| m.into());
 
         FsDestFuture {

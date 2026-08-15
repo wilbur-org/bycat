@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bycat = { path = "../bycat" }
+bycat-service = { path = "../bycat-service" }
 bycat-error = { path = "../bycat-error" }
 pin-project = { version = "*" }

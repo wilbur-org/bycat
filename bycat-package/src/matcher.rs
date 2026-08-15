@@ -1,6 +1,6 @@
+use bycat_service::Matcher;
 use mime::Mime;
 use relative_path::{RelativePath, RelativePathBuf};
-use bycat::Matcher;
 
 use crate::Package;
 

@@ -1,6 +1,6 @@
 use alloc::{boxed::Box, format, sync::Arc};
-use bycat::Work;
 use bycat_error::{BoxError, Error};
+use bycat_service::Work;
 use bytes::Bytes;
 use futures::future::BoxFuture;
 use toback::Toback;
@@ -44,7 +44,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, _ctx: &'a C, mut package: Package<B>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _ctx: &'ctx C,
+        mut package: Package<B>,
+    ) -> Self::Future<'lifetime> {
         Box::pin(async move {
             let Some(encoder) = self.0.encoder_from_path(package.path().as_str()) else {
                 return Err(Error::new(format!(
@@ -97,7 +101,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'a>(&'a self, _ctx: &'a C, package: Package<T>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _ctx: &'ctx C,
+        package: Package<T>,
+    ) -> Self::Future<'lifetime> {
         Box::pin(async move {
             let Some(encoder) = self.0.encoder_from_path(package.path().as_str()) else {
                 return Err(Error::new(format!(

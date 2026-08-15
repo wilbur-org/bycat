@@ -9,9 +9,9 @@ use super::{
     Body,
     resolver::{FileResolver, IntoResolverStream, ResolvedPath},
 };
-use bycat::Matcher;
 use bycat_error::Error;
 use bycat_package::{IntoPackage, Package};
+use bycat_service::Matcher;
 use bycat_source::Source;
 use futures::Stream;
 use pin_project_lite::pin_project;

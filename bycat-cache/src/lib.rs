@@ -5,8 +5,8 @@ use std::{
     task::{Poll, ready},
 };
 
-use bycat::Work;
 use bycat_error::Error;
+use bycat_service::Work;
 use pin_project::pin_project;
 
 pub type Bytes = Vec<u8>;
@@ -69,7 +69,11 @@ where
         C: 'a,
         W::Output: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, req: I) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        context: &'ctx C,
+        req: I,
+    ) -> Self::Future<'lifetime> {
         let key = req.key();
 
         CacheWorkFuture {

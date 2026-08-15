@@ -9,10 +9,8 @@ send = ["heather/send"]
 [dependencies]
 bycat-error = { path = "../bycat-error" }
 heather = { workspace = true, features = ["alloc"] }
-futures-core = { version = "0.3", default-features = false, features = [
-    "alloc",
-] }
+futures-core = { version = "0.3", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
-bycat = { path = "../bycat", features = [] }
+bycat-service = { path = "../bycat-service", features = [] }
 futures = { version = "0.3" }

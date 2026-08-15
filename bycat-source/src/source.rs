@@ -1,8 +1,8 @@
 use crate::cloned::AsyncCloned;
 use crate::{concurrent::Concurrent, Pipeline, SourceUnit};
 use crate::{SourceUnitFuture, Unit};
-use bycat::{and::And, then::Then, Work};
 use bycat_futures::{IntoResult, ResultIterator};
+use bycat_service::{and::And, then::Then, Work};
 use core::{mem::transmute, task::Poll};
 use either::Either;
 use futures::{

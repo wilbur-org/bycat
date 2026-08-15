@@ -12,7 +12,7 @@ use std::{
     vec::Vec,
 };
 
-use bycat::Matcher;
+use bycat_service::Matcher;
 use pin_project_lite::pin_project;
 use relative_path::{RelativePath, RelativePathBuf};
 

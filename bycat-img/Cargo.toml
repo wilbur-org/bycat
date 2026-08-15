@@ -7,16 +7,13 @@ edition = "2021"
 webp = ["image/webp", "dep:webp"]
 
 [dependencies]
-bycat = { path = "../bycat" }
+bycat-service = { path = "../bycat-service" }
 bycat-package = { path = "../bycat-package" }
 bycat-error = { path = "../bycat-error" }
 
 heather = { workspace = true }
 
-image = { version = "0.25", default-features = false, features = [
-    "jpeg",
-    "png",
-] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 mime = { workspace = true }
 relative-path = { workspace = true }
 futures = { version = "0.3", default-features = false, features = ["alloc"] }

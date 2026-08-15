@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use bycat::work_fn;
 use bycat_error::Error;
 use bycat_fs::WalkDir;
 use bycat_package::{Decode, Package, match_glob};
+use bycat_service::work_fn;
 use bycat_source::{pipe, prelude::*};
 
 #[derive(serde::Serialize, serde::Deserialize)]

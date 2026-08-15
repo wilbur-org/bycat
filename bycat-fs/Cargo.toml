@@ -5,20 +5,13 @@ edition = "2024"
 
 [features]
 default = ["std"]
-std = [
-    "tokio",
-    "tokio-stream",
-    "async-walkdir",
-    "mime_guess",
-    "pathdiff",
-    "relative-path/std",
-]
+std = ["tokio", "tokio-stream", "async-walkdir", "mime_guess", "pathdiff", "relative-path/std"]
 
 [dependencies]
 bycat-package = { path = "../bycat-package" }
 bycat-source = { path = "../bycat-source", features = ["std"] }
 bycat-futures = { path = "../bycat-futures" }
-bycat = { path = "../bycat" }
+bycat-service = { path = "../bycat-service" }
 bycat-error = { path = "../bycat-error" }
 
 tokio = { version = "1", features = ["fs", "io-util"], optional = true }

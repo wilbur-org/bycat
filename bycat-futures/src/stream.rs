@@ -1,4 +1,4 @@
-use bycat::{IntoEither, map_err::MapErr, split::Split, then::Then};
+use bycat_service::{IntoEither, map_err::MapErr, split::Split, then::Then};
 use core::{
     marker::PhantomData,
     mem::transmute,
@@ -7,7 +7,7 @@ use core::{
 use futures_core::Stream;
 use pin_project_lite::pin_project;
 
-use bycat::{Work, and::And};
+use bycat_service::{Work, and::And};
 
 use crate::IntoResult;
 

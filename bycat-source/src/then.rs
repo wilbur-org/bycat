@@ -1,8 +1,8 @@
 use core::{mem::transmute, task::Poll};
 
+use bycat_service::{then::Then, Work};
 use futures::{ready, Future, Stream};
 use pin_project_lite::pin_project;
-use bycat::{then::Then, Work};
 
 use crate::Source;
 
