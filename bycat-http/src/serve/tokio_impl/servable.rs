@@ -1,4 +1,4 @@
-pub use super::{listener::*, server::*};
+pub use crate::serve::{listener::*, server::*};
 use ::bycat_service::Work;
 use bycat_executor::{LocalTokioExecutor, TokioExecutor};
 pub use bycat_server::Shutdown;
@@ -73,6 +73,7 @@ impl<T> Tokio<T> {
     }
 }
 
+#[derive(Debug, Clone)]
 struct TokioServer<T, C>(T, C);
 
 impl<T, C, L> Servable<TokioExecutor, L> for TokioServer<T, C>

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["serve", "router", "statics", "session", "ws", "serve", "serve-tokio"]
+default = ["serve", "router", "statics", "session", "ws", "serve", "serve-tokio", "serve-compio"]
 std = ["http/std", "http-body", "http-body-util", "routing/std", "bytes"]
 
 serde = ["dep:serde", "serde_json", "multer?/json", "std"]
@@ -17,6 +17,8 @@ router = ["routing"]
 serve = ["dep:hyper", "bycat-server", "futures", "std"]
 serve-tokio = ["serve", "tokio", "hyper-util"]
 serve-smol = ["serve", "smol"]
+serve-compio = ["serve", "compio", "cyper-core", "socket2"]
+
 
 client = ["bycat-package", "dep:reqwest", "dep:mime", "relative-path"]
 ws = ["dep:tungstenite", "futures", "sha1", "base64", "serve"]
@@ -72,8 +74,17 @@ hyper = { version = "1", features = ["http1", "server"], optional = true }
 bycat-server = { path = "../bycat-server", optional = true }
 futures = { version = "0.3", optional = true }
 tokio = { version = "1", features = ["net"], default-features = false, optional = true }
+
 hyper-util = { version = "0.1", features = ["tokio"], optional = true }
 smol = { version = "2", optional = true }
+
+compio = { version = "0.19", default-features = false, features = [
+  "runtime",
+  "net",
+], optional = true }
+cyper-core = { version = "0.9", optional = true }
+socket2 = { version = "0.6", optional = true }
+
 
 tracing = { version = "0.1", default-features = false }
 
