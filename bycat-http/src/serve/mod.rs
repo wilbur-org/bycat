@@ -17,3 +17,5 @@ pub use tokio_impl::Tokio;
 
 #[cfg(feature = "serve-compio")]
 mod compio_impl;
+#[cfg(feature = "serve-compio")]
+pub use compio_impl::Compio;

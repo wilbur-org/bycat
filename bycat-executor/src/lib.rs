@@ -202,6 +202,7 @@ where
     }
 }
 
+#[cfg(feature = "tokio")]
 impl Spawner<'static> for LocalTokioExecutor {
     fn spawn<T>(&self, work: T)
     where
@@ -211,6 +212,7 @@ impl Spawner<'static> for LocalTokioExecutor {
     }
 }
 
+#[cfg(feature = "tokio")]
 impl LocalSpawner<'static> for LocalTokioExecutor {
     fn spawn<T>(&self, work: T)
     where
@@ -238,5 +240,51 @@ where
 {
     fn execute(&self, work: T) {
         tokio::task::spawn_local(work);
+    }
+}
+
+#[cfg(feature = "compio")]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct CompioExecutor;
+
+#[cfg(feature = "compio")]
+impl<T> Executor<T> for CompioExecutor
+where
+    T: Future + 'static,
+    T::Output: 'static,
+{
+    fn spawn(&self, work: T) {
+        compio::runtime::spawn(work).detach();
+    }
+}
+
+#[cfg(all(feature = "compio", feature = "hyper"))]
+impl<T> hyper::rt::Executor<T> for CompioExecutor
+where
+    T: Future + 'static,
+    T::Output: 'static,
+{
+    fn execute(&self, work: T) {
+        compio::runtime::spawn(work).detach();
+    }
+}
+
+#[cfg(feature = "compio")]
+impl Spawner<'static> for CompioExecutor {
+    fn spawn<T>(&self, work: T)
+    where
+        T: core::future::Future<Output = ()> + Send + 'static,
+    {
+        compio::runtime::spawn(work).detach();
+    }
+}
+
+#[cfg(feature = "compio")]
+impl LocalSpawner<'static> for CompioExecutor {
+    fn spawn<T>(&self, work: T)
+    where
+        T: core::future::Future<Output = ()> + 'static,
+    {
+        compio::runtime::spawn(work).detach();
     }
 }

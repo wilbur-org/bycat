@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["serve", "router", "statics", "session", "ws", "serve", "serve-tokio", "serve-compio"]
+default = ["router"]
 std = ["http/std", "http-body", "http-body-util", "routing/std", "bytes"]
 
 serde = ["dep:serde", "serde_json", "multer?/json", "std"]
@@ -15,9 +15,9 @@ statics = ["relative-path", "tokio/fs", "bycat-fs", "bycat-package"]
 router = ["routing"]
 
 serve = ["dep:hyper", "bycat-server", "futures", "std"]
-serve-tokio = ["serve", "tokio", "hyper-util"]
+serve-tokio = ["serve", "tokio", "hyper-util", "bycat-executor/tokio"]
 serve-smol = ["serve", "smol"]
-serve-compio = ["serve", "compio", "cyper-core", "socket2"]
+serve-compio = ["serve", "compio", "cyper-core", "socket2", "bycat-executor/compio"]
 
 
 client = ["bycat-package", "dep:reqwest", "dep:mime", "relative-path"]
@@ -103,6 +103,7 @@ base64 = { version = "0.23", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
+compio = { version = "0.19", features = ["runtime", "macros"] }
 
 
 [[example]]

@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["hyper", "tokio"]
+# default = ["hyper", "tokio", "compio"]
+compio = ["dep:compio"]
+tokio = ["dep:tokio"]
 
 [dependencies]
 hyper = { version = "0.14", features = ["runtime"], optional = true }
 tokio = { version = "1", features = ["rt"], optional = true }
+compio = { version = "0.19", default-features = false, features = ["runtime"], optional = true }
