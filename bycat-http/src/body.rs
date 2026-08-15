@@ -5,6 +5,7 @@ use bytes::Bytes;
 use core::pin::Pin;
 use core::task::Poll;
 use http_body_util::combinators::BoxBody;
+use hyper::body::Incoming;
 use pin_project_lite::pin_project;
 
 use crate::{Error, error::BoxError};
@@ -39,6 +40,7 @@ where
 enum Inner {
     Reusable(Bytes),
     Streaming(BoxBody<Bytes, Error>),
+    Incoming(Incoming),
 }
 
 pub struct Body {
@@ -100,6 +102,15 @@ impl http_body::Body for Body {
                     Poll::Ready(Some(Ok(http_body::Frame::data(out))))
                 }
             }
+            Inner::Incoming(ref mut incoming) => {
+                let incoming = Pin::new(incoming);
+                match incoming.poll_frame(cx) {
+                    Poll::Ready(Some(Ok(data))) => Poll::Ready(Some(Ok(data))),
+                    Poll::Ready(Some(Err(err))) => Poll::Ready(Some(Err(Error::custom(err)))),
+                    Poll::Ready(None) => Poll::Ready(None),
+                    Poll::Pending => Poll::Pending,
+                }
+            }
             Inner::Streaming(ref mut body) => {
                 Poll::Ready(core::task::ready!(Pin::new(body).poll_frame(cx)))
             }
@@ -110,6 +121,7 @@ impl http_body::Body for Body {
         match self.inner {
             Inner::Reusable(ref bytes) => http_body::SizeHint::with_exact(bytes.len() as u64),
             Inner::Streaming(ref body) => body.size_hint(),
+            Inner::Incoming(ref i) => i.size_hint(),
         }
     }
 
@@ -117,6 +129,7 @@ impl http_body::Body for Body {
         match self.inner {
             Inner::Reusable(ref bytes) => bytes.is_empty(),
             Inner::Streaming(ref body) => body.is_end_stream(),
+            Inner::Incoming(ref i) => i.is_end_stream(),
         }
     }
 }
@@ -177,6 +190,14 @@ impl From<Bytes> for Body {
     fn from(value: Bytes) -> Self {
         Body {
             inner: Inner::Reusable(value),
+        }
+    }
+}
+
+impl From<Incoming> for Body {
+    fn from(value: Incoming) -> Self {
+        Body {
+            inner: Inner::Incoming(value),
         }
     }
 }

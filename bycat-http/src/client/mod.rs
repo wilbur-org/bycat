@@ -70,7 +70,11 @@ impl<C> Work<C, Request> for HttpWork {
     where
         C: 'a;
 
-    fn call<'a>(&'a self, _ctx: &'a C, package: Request) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _ctx: &'ctx C,
+        package: Request,
+    ) -> Self::Future<'lifetime> {
         async move {
             self.client
                 .execute(package)

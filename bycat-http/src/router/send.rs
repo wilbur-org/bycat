@@ -232,7 +232,11 @@ impl<C, B: HttpBody> Work<C, Request<B>> for SendRouter<C, B> {
         Self: 'a,
         C: 'a;
 
-    fn call<'this: 'a, 'a>(&'this self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        context: &'ctx C,
+        req: Request<B>,
+    ) -> Self::Future<'lifetime> {
         self.router.call(context, req)
     }
 }
@@ -295,7 +299,11 @@ impl<C, B> Work<C, Request<B>> for SendWork<C, B> {
         Self: 'a,
         C: 'a;
 
-    fn call<'this: 'a, 'a>(&'this self, context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        context: &'ctx C,
+        req: Request<B>,
+    ) -> Self::Future<'lifetime> {
         self.inner.call(context, req)
     }
 }

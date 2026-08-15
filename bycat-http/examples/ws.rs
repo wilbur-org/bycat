@@ -11,7 +11,7 @@ use bycat_task::Work;
 use futures::{SinkExt, StreamExt};
 use http::Request;
 use hyper::{body::Incoming, service::service_fn};
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, task::LocalSet};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -20,20 +20,24 @@ async fn main() -> Result<()> {
         .with_get(
             "/ws",
             handler(async |upgrade: ws::WebSocketUpgrade| {
-                let (resp, future) = upgrade.on_upgrade(async |stream: WebSocket| {
-                    println!("Socket connected");
-                    let (mut write, mut read) = stream.split();
+                let (resp, future) = upgrade
+                    .on_failed_upgrade(|err| {
+                        eprintln!("{err}");
+                    })
+                    .on_upgrade(async |stream: WebSocket| {
+                        println!("Socket connected");
+                        let (mut write, mut read) = stream.split();
 
-                    write
-                        .send(ws::Message::Text("Hello from server".into()))
-                        .await
-                        .expect("Failed to send message");
+                        write
+                            .send(ws::Message::Text("Hello from server".into()))
+                            .await
+                            .expect("Failed to send message");
 
-                    while let Some(msg) = read.next().await {
-                        let msg = msg.expect("Failed to read message");
-                        write.send(msg).await.expect("Failed to send message");
-                    }
-                });
+                        while let Some(msg) = read.next().await {
+                            let msg = msg.expect("Failed to read message");
+                            write.send(msg).await.expect("Failed to send message");
+                        }
+                    });
 
                 tokio::spawn(future);
 
@@ -42,20 +46,16 @@ async fn main() -> Result<()> {
         )?
         .build();
 
-    let listener = TcpListener::bind(("localhost", 3000)).await?;
-    bycat_http::serve2::Builder::new(TokioExecutor)
-        .listen(
-            listener,
-            service_fn(move |req: Request<Incoming>| {
-                let router = router.clone();
-                async move {
-                    let req = req.map(Body::from_streaming);
-                    let resp = router.call(&(), req).await?;
-                    Ok::<_, bycat_http::Error>(resp)
-                }
-            }),
-        )
-        .await;
+    let local_set = LocalSet::new();
+
+    local_set
+        .run_until(async move {
+            bycat_http::serve::Tokio::new(router)
+                .upgradable(true)
+                .serve_local((), ("localhost", 3000))
+                .await
+        })
+        .await?;
 
     // bycat_http::serve(("localhost", 3000), (), router)
     //     .await

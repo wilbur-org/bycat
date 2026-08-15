@@ -30,7 +30,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'this: 'a, 'a>(&'this self, _context: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _context: &'ctx C,
+        req: Request<B>,
+    ) -> Self::Future<'lifetime> {
         AssetFuture {
             fs: &self.fs,
             state: AssetFutureState::Exists {

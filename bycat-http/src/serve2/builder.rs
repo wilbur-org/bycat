@@ -6,18 +6,19 @@ use hyper::body::Incoming;
 use super::{server::Server, server::ServerFuture};
 use crate::{Error, error::BoxError, serve::Listener};
 
-pub struct Builder<E> {
-    executor: E,
+#[derive(Debug, Clone)]
+pub struct Builder {
     http1: hyper::server::conn::http1::Builder,
     shutdown: Option<Shutdown>,
+    upgrade: bool,
 }
 
-impl<E> Builder<E> {
-    pub fn new(executor: E) -> Self {
+impl Builder {
+    pub fn new() -> Self {
         Self {
-            executor,
             http1: hyper::server::conn::http1::Builder::new(),
             shutdown: None,
+            upgrade: false,
         }
     }
 
@@ -29,11 +30,11 @@ impl<E> Builder<E> {
         &mut self.http1
     }
 
-    pub fn executor(&self) -> &E {
-        &self.executor
+    pub fn upgradable(&mut self, upgrade: bool) {
+        self.upgrade = upgrade;
     }
 
-    pub async fn listen<L, W, B>(self, listener: L, service: W)
+    pub async fn listen<L, W, B, E>(self, executor: E, listener: L, service: W)
     where
         E: Executor<ServerFuture<L, W, B>>,
         L: Listener,
@@ -45,8 +46,15 @@ impl<E> Builder<E> {
     {
         let shutdown = self.shutdown.unwrap_or_else(|| Shutdown::new());
 
-        Server::new(listener, self.executor, self.http1, service, shutdown)
-            .serve()
-            .await;
+        Server::new(
+            listener,
+            executor,
+            self.http1,
+            service,
+            shutdown,
+            self.upgrade,
+        )
+        .serve()
+        .await;
     }
 }

@@ -14,3 +14,14 @@ impl<L, R> IntoEither for Either<L, R> {
         self
     }
 }
+
+impl<L, T> IntoEither for Result<L, T> {
+    type Left = L;
+    type Right = T;
+    fn into_either(self) -> Either<L, T> {
+        match self {
+            Ok(l) => Either::Left(l),
+            Err(r) => Either::Right(r),
+        }
+    }
+}

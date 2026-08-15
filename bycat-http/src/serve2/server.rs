@@ -9,14 +9,28 @@ use alloc::{
 use bycat_executor::Executor;
 use bycat_futures::IntoResult;
 use bycat_service::{GracefulWatchFuture, Shutdown};
-use futures::FutureExt;
+use futures::{FutureExt, future::Either};
 use http::{Request, Response};
-use hyper::{body::Incoming, server::conn::http1::Builder};
+use hyper::{
+    body::Incoming,
+    server::conn::http1::{Builder, UpgradeableConnection},
+};
 use pin_project_lite::pin_project;
 
 pub type ServerFuture<L, W, B> = GracefulWatchFuture<
     HyperConn<hyper::server::conn::http1::Connection<<L as Listener>::Io, ServerService<W, B>>>,
 >;
+
+pub type UpgradeServerFuture<L, W, B> = GracefulWatchFuture<
+    HyperConn<
+        UpgradeableConnection<
+            hyper::server::conn::http1::Connection<<L as Listener>::Io, ServerService<W, B>>,
+            ServerService<W, B>,
+        >,
+    >,
+>;
+
+pub type UnifiedServerFuture<L, W, B> = Either<ServerFuture<L, W, B>, UpgradeServerFuture<L, W, B>>;
 
 pin_project! {
     pub struct Server<L, E, W, B>
@@ -27,20 +41,28 @@ pin_project! {
         builder: Builder,
         service: W,
         shutdown: Shutdown,
-        body: PhantomData<B>
+        body: PhantomData<B>,
+        upgrade: bool,
     }
 }
 
 impl<L, E, W, B> Server<L, E, W, B>
 where
     L: Listener,
-    L::Io: 'static,
+    L::Io: Send + 'static,
     W: hyper::service::Service<Request<Incoming>, Response = Response<B>, Error = Error> + Clone,
     B: http_body::Body + 'static,
     B::Error: Into<BoxError>,
-    E: Executor<ServerFuture<L, W, B>>,
+    E: Executor<UpgradeServerFuture<L, W, B>>,
 {
-    pub fn new(listener: L, executor: E, builder: Builder, service: W, shutdown: Shutdown) -> Self {
+    pub fn new(
+        listener: L,
+        executor: E,
+        builder: Builder,
+        service: W,
+        shutdown: Shutdown,
+        upgrade: bool,
+    ) -> Self {
         Server {
             listener,
             executor,
@@ -48,6 +70,7 @@ where
             service,
             shutdown,
             body: PhantomData,
+            upgrade,
         }
     }
 
@@ -70,9 +93,19 @@ where
 
 
                     let conn = builder.serve_connection(socket, ServerService { service: service.clone(), body: PhantomData });
-                    let future = shutdown.watch(HyperConn { conn });
+                    if self.upgrade {
+                        let conn = conn.with_upgrades();
+                        let future = shutdown.watch(HyperConn { conn });
+                        executor.spawn(Either::Right(future));
 
-                    executor.spawn(future);
+                    } else {
+                        let future = shutdown.watch(HyperConn { conn });
+                        executor.spawn(Either::Left(future));
+                    }
+                    // let conn = builder.serve_connection(socket, ServerService { service: service.clone(), body: PhantomData });
+                    // let future = shutdown.watch(HyperConn { conn });
+
+                    // executor.spawn(future);
                 }
                 _ = &mut wait => {
                     break;
@@ -86,6 +119,10 @@ pub struct ServerService<S, B> {
     service: S,
     body: PhantomData<B>,
 }
+
+unsafe impl<S: Send, B> Send for ServerService<S, B> {}
+
+unsafe impl<S: Sync, B> Sync for ServerService<S, B> {}
 
 impl<S, B> hyper::service::Service<Request<Incoming>> for ServerService<S, B>
 where

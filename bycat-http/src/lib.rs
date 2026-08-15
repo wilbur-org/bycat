@@ -4,7 +4,7 @@ extern crate std as alloc;
 pub mod error;
 mod ext;
 
-pub mod serve2;
+// pub mod serve2;
 
 #[cfg(feature = "std")]
 pub mod body;
@@ -32,9 +32,6 @@ pub mod ws;
 
 mod matcher;
 pub mod util;
-
-#[cfg(feature = "serve-tokio")]
-pub use self::serve::serve;
 
 pub use self::{
     error::Error,

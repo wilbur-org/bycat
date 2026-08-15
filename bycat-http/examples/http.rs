@@ -12,9 +12,7 @@ use http::Request;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
-    bycat_http::serve(
-        ("localhost", 3000),
-        (),
+    bycat_http::serve::Tokio::new(
         handler(|mut session: Session| async move {
             let value: u64 = session.get("counter").map(|m| m.unwrap_or_default())?;
             session.set("counter", value + 1);
@@ -31,6 +29,7 @@ async fn main() -> Result<()> {
         .or(handler(async || "Other!!")
             .with_filter(|req: &Request<_>| req.uri().path() == "/other")),
     )
+    .serve((), ("localhost", 3000))
     .await
     .unwrap();
 

@@ -37,7 +37,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'this: 'a, 'a>(&'this self, ctx: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        ctx: &'ctx C,
+        req: Request<B>,
+    ) -> Self::Future<'lifetime> {
         self.inner.call(ctx, req)
     }
 }
@@ -73,7 +77,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'this: 'a, 'a>(&'this self, ctx: &'a C, req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        ctx: &'ctx C,
+        req: Request<B>,
+    ) -> Self::Future<'lifetime> {
         let state = if self.0.can_handle(ctx, &req) {
             OrFutureState::Left {
                 future: self.0.call(ctx, req),

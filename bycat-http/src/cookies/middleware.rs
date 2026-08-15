@@ -43,7 +43,11 @@ where
         Self: 'a,
         C: 'a;
 
-    fn call<'this: 'a, 'a>(&'this self, context: &'a C, mut req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        context: &'ctx C,
+        mut req: Request<B>,
+    ) -> Self::Future<'lifetime> {
         let cookie_jar = CookieJar::from_headers(req.headers());
         req.extensions_mut().insert(cookie_jar.clone());
         CookieWorkFuture {

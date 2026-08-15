@@ -92,23 +92,6 @@ fn is_connection_error(e: &io::Error) -> bool {
     )
 }
 
-#[cfg(feature = "serve-tokio")]
-#[derive(Debug, Clone, Default)]
-pub struct LocalTokioExecutor;
-
-#[cfg(feature = "serve-tokio")]
-impl<T> hyper::rt::Executor<T> for LocalTokioExecutor
-where
-    T: Future + 'static,
-{
-    fn execute(&self, fut: T) {
-        tokio::task::spawn_local(fut);
-    }
-}
-
-#[cfg(feature = "serve-tokio")]
-pub use hyper_util::rt::TokioExecutor;
-
 #[cfg(feature = "serve-smol")]
 #[derive(Debug, Clone, Default)]
 pub struct SmolExecutor;

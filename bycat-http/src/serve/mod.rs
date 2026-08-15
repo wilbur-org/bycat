@@ -1,4 +1,4 @@
-mod builder;
+// mod builder;
 mod connection;
 mod futures;
 mod listener;
@@ -11,301 +11,307 @@ pub use bycat_service::Shutdown;
 pub use hyper::rt::Executor;
 
 #[cfg(feature = "serve-tokio")]
-use crate::body::Body;
-#[cfg(feature = "serve-tokio")]
-use ::{bycat_task::Work, http_body_util::BodyExt};
+mod tokio_impl;
 
 #[cfg(feature = "serve-tokio")]
-pub async fn serve<T, C, A>(addr: A, context: C, service: T) -> Result<(), tokio::io::Error>
-where
-    A: tokio::net::ToSocketAddrs,
-    T: Work<
-            C,
-            http::Request<crate::body::Body>,
-            Output = http::Response<crate::body::Body>,
-            Error = crate::Error,
-        >
-        + Clone
-        + 'static
-        + Send,
-    for<'a> T::Future<'a>: Send,
-    C: Send + Clone + 'static,
-{
-    let server = Server::new(TokioExecutor::default(), TokioServer(service, context));
+pub use tokio_impl::Tokio;
 
-    let listener = tokio::net::TcpListener::bind(addr).await?;
+// #[cfg(feature = "serve-tokio")]
+// use crate::body::Body;
+// #[cfg(feature = "serve-tokio")]
+// use ::{bycat_task::Work, http_body_util::BodyExt};
 
-    server.serve(listener, &Shutdown::new()).await;
+// #[cfg(feature = "serve-tokio")]
+// pub async fn serve<T, C, A>(addr: A, context: C, service: T) -> Result<(), tokio::io::Error>
+// where
+//     A: tokio::net::ToSocketAddrs,
+//     T: Work<
+//             C,
+//             http::Request<crate::body::Body>,
+//             Output = http::Response<crate::body::Body>,
+//             Error = crate::Error,
+//         >
+//         + Clone
+//         + 'static
+//         + Send,
+//     for<'a> T::Future<'a>: Send,
+//     C: Send + Clone + 'static,
+// {
+//     let server = Server::new(TokioExecutor::default(), TokioServer(service, context));
 
-    Ok(())
-}
+//     let listener = tokio::net::TcpListener::bind(addr).await?;
 
-#[cfg(feature = "serve-tokio")]
-pub async fn serve_local<T, C, A>(addr: A, context: C, service: T) -> Result<(), tokio::io::Error>
-where
-    A: tokio::net::ToSocketAddrs,
-    T: Work<
-            C,
-            http::Request<crate::body::Body>,
-            Output = http::Response<crate::body::Body>,
-            Error = crate::Error,
-        > + Clone
-        + 'static,
-    C: Clone + 'static,
-{
-    let server = Server::new(TokioExecutor::default(), LocalTokioServer(service, context));
+//     server.serve(listener, &Shutdown::new()).await;
 
-    let listener = tokio::net::TcpListener::bind(addr).await?;
+//     Ok(())
+// }
 
-    server.serve(listener, &Shutdown::new()).await;
+// #[cfg(feature = "serve-tokio")]
+// pub async fn serve_local<T, C, A>(addr: A, context: C, service: T) -> Result<(), tokio::io::Error>
+// where
+//     A: tokio::net::ToSocketAddrs,
+//     T: Work<
+//             C,
+//             http::Request<crate::body::Body>,
+//             Output = http::Response<crate::body::Body>,
+//             Error = crate::Error,
+//         > + Clone
+//         + 'static,
+//     C: Clone + 'static,
+// {
+//     let server = Server::new(TokioExecutor::default(), LocalTokioServer(service, context));
 
-    Ok(())
-}
+//     let listener = tokio::net::TcpListener::bind(addr).await?;
 
-#[cfg(feature = "serve-tokio")]
-pub struct TokioServer<T, C>(T, C);
+//     server.serve(listener, &Shutdown::new()).await;
 
-#[cfg(feature = "serve-tokio")]
-impl<T, C> TokioServer<T, C> {
-    pub fn new(work: T, context: C) -> Self {
-        Self(work, context)
-    }
-}
+//     Ok(())
+// }
 
-#[cfg(feature = "serve-tokio")]
-impl<T, C, L> Servable<TokioExecutor, L> for TokioServer<T, C>
-where
-    L: Listener + 'static,
-    L::Io: Send,
-    L::Addr: Send,
-    T: Work<
-            C,
-            http::Request<crate::body::Body>,
-            Output = http::Response<crate::body::Body>,
-            Error = crate::Error,
-        >
-        + Clone
-        + 'static
-        + Send,
-    for<'a> T::Future<'a>: Send,
-    C: Send + Clone + 'static,
-{
-    type Future<'a>
-        = TokioServerFuture<L, T, C>
-    where
-        Self: 'a;
+// #[cfg(feature = "serve-tokio")]
+// pub struct TokioServer<T, C>(T, C);
 
-    fn call(&self, conn: Conn<L, TokioExecutor>) -> Self::Future<'_> {
-        TokioServerFuture::Init {
-            work: Some(self.0.clone()),
-            conn: Some(conn),
-            context: Some(self.1.clone()),
-        }
-    }
-}
+// #[cfg(feature = "serve-tokio")]
+// impl<T, C> TokioServer<T, C> {
+//     pub fn new(work: T, context: C) -> Self {
+//         Self(work, context)
+//     }
+// }
 
-#[cfg(feature = "serve-tokio")]
-pin_project_lite::pin_project! {
-    #[project = TokioServerFutureProj]
-    pub enum TokioServerFuture<L, T, C>
-    where
-        L: Listener
-    {
-       Init {
-        work: Option<T>,
-        conn: Option<Conn<L, TokioExecutor>>,
-        context: Option<C>
+// #[cfg(feature = "serve-tokio")]
+// impl<T, C, L> Servable<TokioExecutor, L> for TokioServer<T, C>
+// where
+//     L: Listener + 'static,
+//     L::Io: Send,
+//     L::Addr: Send,
+//     T: Work<
+//             C,
+//             http::Request<crate::body::Body>,
+//             Output = http::Response<crate::body::Body>,
+//             Error = crate::Error,
+//         >
+//         + Clone
+//         + 'static
+//         + Send,
+//     for<'a> T::Future<'a>: Send,
+//     C: Send + Clone + 'static,
+// {
+//     type Future<'a>
+//         = TokioServerFuture<L, T, C>
+//     where
+//         Self: 'a;
 
-       },
-       Done
-    }
-}
-#[cfg(feature = "serve-tokio")]
-impl<L, T, C> Future for TokioServerFuture<L, T, C>
-where
-    L: Listener + 'static,
-    L::Io: Send,
-    L::Addr: Send,
-    T: Work<
-            C,
-            http::Request<crate::body::Body>,
-            Output = http::Response<crate::body::Body>,
-            Error = crate::Error,
-        >
-        + Clone
-        + 'static
-        + Send,
-    for<'a> T::Future<'a>: Send,
-    C: Send + Clone + 'static,
-{
-    type Output = ();
+//     fn call(&self, conn: Conn<L, TokioExecutor>) -> Self::Future<'_> {
+//         TokioServerFuture::Init {
+//             work: Some(self.0.clone()),
+//             conn: Some(conn),
+//             context: Some(self.1.clone()),
+//         }
+//     }
+// }
 
-    fn poll(
-        mut self: core::pin::Pin<&mut Self>,
-        _cx: &mut core::task::Context<'_>,
-    ) -> core::task::Poll<Self::Output> {
-        let this = self.as_mut().project();
+// #[cfg(feature = "serve-tokio")]
+// pin_project_lite::pin_project! {
+//     #[project = TokioServerFutureProj]
+//     pub enum TokioServerFuture<L, T, C>
+//     where
+//         L: Listener
+//     {
+//        Init {
+//         work: Option<T>,
+//         conn: Option<Conn<L, TokioExecutor>>,
+//         context: Option<C>
 
-        match this {
-            TokioServerFutureProj::Init {
-                conn,
-                work,
-                context,
-            } => {
-                let work = work.take().unwrap();
-                let conn = conn.take().unwrap();
-                let context = context.take().unwrap();
+//        },
+//        Done
+//     }
+// }
+// #[cfg(feature = "serve-tokio")]
+// impl<L, T, C> Future for TokioServerFuture<L, T, C>
+// where
+//     L: Listener + 'static,
+//     L::Io: Send,
+//     L::Addr: Send,
+//     T: Work<
+//             C,
+//             http::Request<crate::body::Body>,
+//             Output = http::Response<crate::body::Body>,
+//             Error = crate::Error,
+//         >
+//         + Clone
+//         + 'static
+//         + Send,
+//     for<'a> T::Future<'a>: Send,
+//     C: Send + Clone + 'static,
+// {
+//     type Output = ();
 
-                tokio::spawn(async move {
-                    let svc = hyper::service::service_fn(move |req| {
-                        let work = work.clone();
-                        let context = context.clone();
-                        async move {
-                            let req = req.map(|body: hyper::body::Incoming| {
-                                Body::from_streaming(body.map_err(crate::Error::custom))
-                            });
+//     fn poll(
+//         mut self: core::pin::Pin<&mut Self>,
+//         _cx: &mut core::task::Context<'_>,
+//     ) -> core::task::Poll<Self::Output> {
+//         let this = self.as_mut().project();
 
-                            match work.call(&context, req).await {
-                                Ok(ret) => Ok(ret),
-                                Err(err) => {
-                                    alloc::println!("Error {}", err);
-                                    Err(err)
-                                }
-                            }
-                        }
-                    });
+//         match this {
+//             TokioServerFutureProj::Init {
+//                 conn,
+//                 work,
+//                 context,
+//             } => {
+//                 let work = work.take().unwrap();
+//                 let conn = conn.take().unwrap();
+//                 let context = context.take().unwrap();
 
-                    if let Err(err) = conn.serve_connection(svc).await {
-                        alloc::eprintln!("server error: {}", err);
-                    }
-                });
+//                 tokio::spawn(async move {
+//                     let svc = hyper::service::service_fn(move |req| {
+//                         let work = work.clone();
+//                         let context = context.clone();
+//                         async move {
+//                             let req = req.map(|body: hyper::body::Incoming| {
+//                                 Body::from_streaming(body.map_err(crate::Error::custom))
+//                             });
 
-                self.set(Self::Done);
+//                             match work.call(&context, req).await {
+//                                 Ok(ret) => Ok(ret),
+//                                 Err(err) => {
+//                                     alloc::println!("Error {}", err);
+//                                     Err(err)
+//                                 }
+//                             }
+//                         }
+//                     });
 
-                core::task::Poll::Ready(())
-            }
-            TokioServerFutureProj::Done => panic!("Poll after done"),
-        }
-    }
-}
+//                     if let Err(err) = conn.serve_connection(svc).await {
+//                         alloc::eprintln!("server error: {}", err);
+//                     }
+//                 });
 
-#[cfg(feature = "serve-tokio")]
-pub struct LocalTokioServer<T, C>(T, C);
+//                 self.set(Self::Done);
 
-#[cfg(feature = "serve-tokio")]
-impl<T, C> LocalTokioServer<T, C> {
-    pub fn new(work: T, context: C) -> Self {
-        Self(work, context)
-    }
-}
+//                 core::task::Poll::Ready(())
+//             }
+//             TokioServerFutureProj::Done => panic!("Poll after done"),
+//         }
+//     }
+// }
 
-#[cfg(feature = "serve-tokio")]
-impl<T, C, L> Servable<TokioExecutor, L> for LocalTokioServer<T, C>
-where
-    L: Listener + 'static,
-    L::Io: Send,
-    L::Addr: Send,
-    T: Work<
-            C,
-            http::Request<crate::body::Body>,
-            Output = http::Response<crate::body::Body>,
-            Error = crate::Error,
-        > + Clone
-        + 'static,
-    C: Clone + 'static,
-{
-    type Future<'a>
-        = LocalTokioServerFuture<L, T, C>
-    where
-        Self: 'a;
+// #[cfg(feature = "serve-tokio")]
+// pub struct LocalTokioServer<T, C>(T, C);
 
-    fn call(&self, conn: Conn<L, TokioExecutor>) -> Self::Future<'_> {
-        LocalTokioServerFuture::Init {
-            work: Some(self.0.clone()),
-            conn: Some(conn),
-            context: Some(self.1.clone()),
-        }
-    }
-}
+// #[cfg(feature = "serve-tokio")]
+// impl<T, C> LocalTokioServer<T, C> {
+//     pub fn new(work: T, context: C) -> Self {
+//         Self(work, context)
+//     }
+// }
 
-#[cfg(feature = "serve-tokio")]
-pin_project_lite::pin_project! {
-    #[project = LocalTokioServerFutureProj]
-    pub enum LocalTokioServerFuture<L, T, C>
-    where
-        L: Listener
-    {
-       Init {
-        work: Option<T>,
-        conn: Option<Conn<L, TokioExecutor>>,
-        context: Option<C>
+// #[cfg(feature = "serve-tokio")]
+// impl<T, C, L> Servable<TokioExecutor, L> for LocalTokioServer<T, C>
+// where
+//     L: Listener + 'static,
+//     L::Io: Send,
+//     L::Addr: Send,
+//     T: Work<
+//             C,
+//             http::Request<crate::body::Body>,
+//             Output = http::Response<crate::body::Body>,
+//             Error = crate::Error,
+//         > + Clone
+//         + 'static,
+//     C: Clone + 'static,
+// {
+//     type Future<'a>
+//         = LocalTokioServerFuture<L, T, C>
+//     where
+//         Self: 'a;
 
-       },
-       Done
-    }
-}
-#[cfg(feature = "serve-tokio")]
-impl<L, T, C> Future for LocalTokioServerFuture<L, T, C>
-where
-    L: Listener + 'static,
-    L::Io: Send,
-    L::Addr: Send,
-    T: Work<
-            C,
-            http::Request<crate::body::Body>,
-            Output = http::Response<crate::body::Body>,
-            Error = crate::Error,
-        > + Clone
-        + 'static,
-    C: Clone + 'static,
-{
-    type Output = ();
+//     fn call(&self, conn: Conn<L, TokioExecutor>) -> Self::Future<'_> {
+//         LocalTokioServerFuture::Init {
+//             work: Some(self.0.clone()),
+//             conn: Some(conn),
+//             context: Some(self.1.clone()),
+//         }
+//     }
+// }
 
-    fn poll(
-        mut self: core::pin::Pin<&mut Self>,
-        _cx: &mut core::task::Context<'_>,
-    ) -> core::task::Poll<Self::Output> {
-        let this = self.as_mut().project();
+// #[cfg(feature = "serve-tokio")]
+// pin_project_lite::pin_project! {
+//     #[project = LocalTokioServerFutureProj]
+//     pub enum LocalTokioServerFuture<L, T, C>
+//     where
+//         L: Listener
+//     {
+//        Init {
+//         work: Option<T>,
+//         conn: Option<Conn<L, TokioExecutor>>,
+//         context: Option<C>
 
-        match this {
-            LocalTokioServerFutureProj::Init {
-                conn,
-                work,
-                context,
-            } => {
-                let work = work.take().unwrap();
-                let conn = conn.take().unwrap();
-                let context = context.take().unwrap();
+//        },
+//        Done
+//     }
+// }
+// #[cfg(feature = "serve-tokio")]
+// impl<L, T, C> Future for LocalTokioServerFuture<L, T, C>
+// where
+//     L: Listener + 'static,
+//     L::Io: Send,
+//     L::Addr: Send,
+//     T: Work<
+//             C,
+//             http::Request<crate::body::Body>,
+//             Output = http::Response<crate::body::Body>,
+//             Error = crate::Error,
+//         > + Clone
+//         + 'static,
+//     C: Clone + 'static,
+// {
+//     type Output = ();
 
-                tokio::task::spawn_local(async move {
-                    let svc = hyper::service::service_fn(move |req| {
-                        let work = work.clone();
-                        let context = context.clone();
-                        async move {
-                            let req = req.map(|body: hyper::body::Incoming| {
-                                Body::from_streaming(body.map_err(crate::Error::custom))
-                            });
+//     fn poll(
+//         mut self: core::pin::Pin<&mut Self>,
+//         _cx: &mut core::task::Context<'_>,
+//     ) -> core::task::Poll<Self::Output> {
+//         let this = self.as_mut().project();
 
-                            match work.call(&context, req).await {
-                                Ok(ret) => Ok(ret),
-                                Err(err) => {
-                                    alloc::println!("Error {}", err);
-                                    Err(err)
-                                }
-                            }
-                        }
-                    });
+//         match this {
+//             LocalTokioServerFutureProj::Init {
+//                 conn,
+//                 work,
+//                 context,
+//             } => {
+//                 let work = work.take().unwrap();
+//                 let conn = conn.take().unwrap();
+//                 let context = context.take().unwrap();
 
-                    if let Err(err) = conn.serve_connection(svc).await {
-                        alloc::eprintln!("server error: {}", err);
-                    }
-                });
+//                 tokio::task::spawn_local(async move {
+//                     let svc = hyper::service::service_fn(move |req| {
+//                         let work = work.clone();
+//                         let context = context.clone();
+//                         async move {
+//                             let req = req.map(|body: hyper::body::Incoming| {
+//                                 Body::from_streaming(body.map_err(crate::Error::custom))
+//                             });
 
-                self.set(Self::Done);
+//                             match work.call(&context, req).await {
+//                                 Ok(ret) => Ok(ret),
+//                                 Err(err) => {
+//                                     alloc::println!("Error {}", err);
+//                                     Err(err)
+//                                 }
+//                             }
+//                         }
+//                     });
 
-                core::task::Poll::Ready(())
-            }
-            LocalTokioServerFutureProj::Done => panic!("Poll after done"),
-        }
-    }
-}
+//                     if let Err(err) = conn.serve_connection(svc).await {
+//                         alloc::eprintln!("server error: {}", err);
+//                     }
+//                 });
+
+//                 self.set(Self::Done);
+
+//                 core::task::Poll::Ready(())
+//             }
+//             LocalTokioServerFutureProj::Done => panic!("Poll after done"),
+//         }
+//     }
+// }

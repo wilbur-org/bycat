@@ -141,7 +141,11 @@ where
         B: 'a,
         H: 'a;
 
-    fn call<'a>(&'a self, context: &'a C, mut req: Request<B>) -> Self::Future<'a> {
+    fn call<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        context: &'ctx C,
+        mut req: Request<B>,
+    ) -> Self::Future<'lifetime> {
         let modifiers = self.modifiers.clone();
 
         Box::pin(async move {

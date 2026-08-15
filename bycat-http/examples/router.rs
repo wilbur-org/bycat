@@ -24,7 +24,8 @@ async fn main() -> Result<()> {
         }))
         .build();
 
-    bycat_http::serve(("localhost", 3000), (), router)
+    bycat_http::serve::Tokio::new(router)
+        .serve((), ("localhost", 3000))
         .await
         .unwrap();
 

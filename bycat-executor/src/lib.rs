@@ -25,8 +25,38 @@ where
     }
 }
 
+pub trait Spawner<'a> {
+    fn spawn<T>(&self, work: T)
+    where
+        T: core::future::Future<Output = ()> + Send + 'a;
+}
+
+pub trait LocalSpawner<'a> {
+    fn spawn<T>(&self, work: T)
+    where
+        T: core::future::Future<Output = ()> + 'a;
+}
+
 pub struct LocalExecutor<'js, R = ()> {
     inner: Rc<dyn Executor<LocalBoxFuture<'js, R>> + 'js>,
+}
+
+impl<'js> LocalSpawner<'js> for LocalExecutor<'js> {
+    fn spawn<T>(&self, work: T)
+    where
+        T: core::future::Future<Output = ()> + 'js,
+    {
+        self.inner.spawn(Box::pin(work));
+    }
+}
+
+impl<'js> Spawner<'js> for LocalExecutor<'js> {
+    fn spawn<T>(&self, work: T)
+    where
+        T: core::future::Future<Output = ()> + Send + 'js,
+    {
+        self.inner.spawn(Box::pin(work));
+    }
 }
 
 impl<'js, R> Clone for LocalExecutor<'js, R> {
@@ -64,6 +94,15 @@ impl<'js, R> Clone for SendExecutor<'js, R> {
         SendExecutor {
             inner: self.inner.clone(),
         }
+    }
+}
+
+impl<'js> Spawner<'js> for SendExecutor<'js> {
+    fn spawn<T>(&self, work: T)
+    where
+        T: core::future::Future<Output = ()> + Send + 'js,
+    {
+        self.inner.spawn(Box::pin(work));
     }
 }
 
@@ -124,7 +163,7 @@ where
 }
 
 #[cfg(feature = "tokio")]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct TokioExecutor;
 
 #[cfg(feature = "tokio")]
@@ -139,7 +178,17 @@ where
 }
 
 #[cfg(feature = "tokio")]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+impl Spawner<'static> for TokioExecutor {
+    fn spawn<T>(&self, work: T)
+    where
+        T: core::future::Future<Output = ()> + Send + 'static,
+    {
+        tokio::task::spawn(work);
+    }
+}
+
+#[cfg(feature = "tokio")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct LocalTokioExecutor;
 
 #[cfg(feature = "tokio")]
@@ -149,6 +198,24 @@ where
     T::Output: 'static,
 {
     fn spawn(&self, work: T) {
+        tokio::task::spawn_local(work);
+    }
+}
+
+impl Spawner<'static> for LocalTokioExecutor {
+    fn spawn<T>(&self, work: T)
+    where
+        T: core::future::Future<Output = ()> + 'static,
+    {
+        tokio::task::spawn_local(work);
+    }
+}
+
+impl LocalSpawner<'static> for LocalTokioExecutor {
+    fn spawn<T>(&self, work: T)
+    where
+        T: core::future::Future<Output = ()> + 'static,
+    {
         tokio::task::spawn_local(work);
     }
 }
