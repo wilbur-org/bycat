@@ -37,6 +37,30 @@ pub trait LocalSpawner<'a> {
         T: core::future::Future<Output = ()> + 'a;
 }
 
+pub trait BlockingSpawner {
+    type Future<R>: Future<Output = Result<R, Self::Error>>;
+    type Error;
+    fn spawn_blocking<T, R>(&self, work: T) -> Self::Future<R>
+    where
+        R: Send + 'static,
+        T: FnOnce() -> R + Send + 'static;
+}
+
+pub trait HasSpawner<'a> {
+    type Spawner: Spawner<'a>;
+    fn spawner(&self) -> &Self::Spawner;
+}
+
+pub trait HasLocalSpawner<'a> {
+    type Spawner: LocalSpawner<'a>;
+    fn local_spawner(&self) -> &Self::Spawner;
+}
+
+pub trait HasBlockingSpawner {
+    type Spawner: BlockingSpawner;
+    fn blocking_spawner(&self) -> &Self::Spawner;
+}
+
 pub struct LocalExecutor<'js, R = ()> {
     inner: Rc<dyn Executor<LocalBoxFuture<'js, R>> + 'js>,
 }
@@ -188,6 +212,19 @@ impl Spawner<'static> for TokioExecutor {
 }
 
 #[cfg(feature = "tokio")]
+impl BlockingSpawner for TokioExecutor {
+    type Future<R> = tokio::task::JoinHandle<R>;
+    type Error = tokio::task::JoinError;
+    fn spawn_blocking<T, R>(&self, work: T) -> Self::Future<R>
+    where
+        R: Send + 'static,
+        T: FnOnce() -> R + Send + 'static,
+    {
+        tokio::task::spawn_blocking(work)
+    }
+}
+
+#[cfg(feature = "tokio")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct LocalTokioExecutor;
 
@@ -219,6 +256,19 @@ impl LocalSpawner<'static> for LocalTokioExecutor {
         T: core::future::Future<Output = ()> + 'static,
     {
         tokio::task::spawn_local(work);
+    }
+}
+
+#[cfg(feature = "tokio")]
+impl BlockingSpawner for LocalTokioExecutor {
+    type Error = tokio::task::JoinError;
+    type Future<R> = tokio::task::JoinHandle<R>;
+    fn spawn_blocking<T, R>(&self, work: T) -> Self::Future<R>
+    where
+        R: Send + 'static,
+        T: FnOnce() -> R + Send + 'static,
+    {
+        tokio::task::spawn_blocking(work)
     }
 }
 
@@ -286,5 +336,42 @@ impl LocalSpawner<'static> for CompioExecutor {
         T: core::future::Future<Output = ()> + 'static,
     {
         compio::runtime::spawn(work).detach();
+    }
+}
+
+#[cfg(feature = "compio")]
+impl BlockingSpawner for CompioExecutor {
+    type Error = compio_executor::JoinError;
+    type Future<R> = compio_executor::JoinHandle<R>;
+    fn spawn_blocking<T, R>(&self, work: T) -> Self::Future<R>
+    where
+        R: Send + 'static,
+        T: FnOnce() -> R + Send + 'static,
+    {
+        compio::runtime::spawn_blocking(work)
+    }
+}
+
+#[cfg(feature = "compio")]
+impl HasBlockingSpawner for CompioExecutor {
+    type Spawner = Self;
+    fn blocking_spawner(&self) -> &Self::Spawner {
+        self
+    }
+}
+
+#[cfg(feature = "compio")]
+impl HasLocalSpawner<'static> for CompioExecutor {
+    type Spawner = Self;
+    fn local_spawner(&self) -> &Self::Spawner {
+        self
+    }
+}
+
+#[cfg(feature = "compio")]
+impl HasSpawner<'static> for CompioExecutor {
+    type Spawner = Self;
+    fn spawner(&self) -> &Self::Spawner {
+        self
     }
 }

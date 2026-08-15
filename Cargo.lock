@@ -432,6 +432,7 @@ name = "bycat-executor"
 version = "0.1.0"
 dependencies = [
  "compio",
+ "compio-executor",
  "hyper 0.14.32",
  "tokio",
 ]
