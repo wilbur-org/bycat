@@ -1,7 +1,6 @@
 [workspace]
 
 members = [
-  "bycat",
   "bycat-error",
   "bycat-container",
   "bycat-server",
