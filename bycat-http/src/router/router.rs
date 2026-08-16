@@ -3,7 +3,7 @@ use crate::{
     router::{RouteError, UrlParams},
 };
 use alloc::{collections::BTreeMap, string::String, vec::Vec};
-use bycat_service::{Middleware, Work};
+use bycat_service::{Middleware, Service};
 use core::{marker::PhantomData, task::Poll};
 use http::{HeaderValue, Method, Request, Response, StatusCode, header::ALLOW};
 use pin_project_lite::pin_project;
@@ -89,7 +89,7 @@ impl<T, M, C, B> Builder<T, M, C, B> {
 
 impl<T, M, C, B> Builder<T, M, C, B>
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     M: Middleware<C, Request<B>, T, Work = T>,
 {
     pub fn build(self) -> Router<T, C, B> {
@@ -123,7 +123,7 @@ where
 
 impl<T, M, C, B> From<Builder<T, M, C, B>> for Router<T, C, B>
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     M: Middleware<C, Request<B>, T, Work = T>,
 {
     fn from(value: Builder<T, M, C, B>) -> Self {
@@ -177,9 +177,9 @@ impl<T, C, B> Router<T, C, B> {
     }
 }
 
-impl<T, C, B> Work<C, Request<B>> for Router<T, C, B>
+impl<T, C, B> Service<C, Request<B>> for Router<T, C, B>
 where
-    T: Work<C, Request<B>, Output = Response<B>>,
+    T: Service<C, Request<B>, Output = Response<B>>,
     B: HttpBody,
 {
     type Error = T::Error;
@@ -210,7 +210,7 @@ pin_project! {
     #[project = StateProj]
     enum State<'a, T: 'a, C, B>
     where
-        T: Work<C, Request<B>>
+        T: Service<C, Request<B>>
     {
         Init {
             context: Option<&'a C>,
@@ -226,7 +226,7 @@ pin_project! {
 pin_project! {
     pub struct RouterFuture<'a, T:'a, C, B>
     where
-        T: Work<C, Request<B>>
+        T: Service<C, Request<B>>
     {
         router: &'a Router<T, C, B>,
         #[pin]
@@ -236,7 +236,7 @@ pin_project! {
 
 impl<'a, T, C, B> Future for RouterFuture<'a, T, C, B>
 where
-    T: Work<C, Request<B>, Output = Response<B>>,
+    T: Service<C, Request<B>, Output = Response<B>>,
     B: HttpBody,
 {
     type Output = Result<Response<B>, T::Error>;

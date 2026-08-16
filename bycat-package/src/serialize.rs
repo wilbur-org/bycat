@@ -1,6 +1,6 @@
 use alloc::{boxed::Box, format, sync::Arc};
 use bycat_error::{BoxError, Error};
-use bycat_service::Work;
+use bycat_service::Service;
 use bytes::Bytes;
 use futures::future::BoxFuture;
 use toback::Toback;
@@ -29,7 +29,7 @@ where
     }
 }
 
-impl<C, B, T> Work<C, Package<B>> for Decode<T>
+impl<C, B, T> Service<C, Package<B>> for Decode<T>
 where
     T: serde::de::DeserializeOwned + serde::ser::Serialize + Send,
     B: Content + Send + 'static,
@@ -87,7 +87,7 @@ where
     }
 }
 
-impl<C, T> Work<C, Package<T>> for Encode<T>
+impl<C, T> Service<C, Package<T>> for Encode<T>
 where
     T: serde::de::DeserializeOwned + serde::ser::Serialize + Send,
 {

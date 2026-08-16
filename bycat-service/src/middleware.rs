@@ -1,7 +1,7 @@
-use crate::Work;
+use crate::Service;
 
 pub trait Middleware<C, B, H> {
-    type Work: Work<C, B>;
+    type Work: Service<C, B>;
 
     fn wrap(&self, handle: H) -> Self::Work;
 }
@@ -11,7 +11,7 @@ pub struct Passthrough;
 
 impl<B, C, H> Middleware<C, B, H> for Passthrough
 where
-    H: Work<C, B>,
+    H: Service<C, B>,
 {
     type Work = H;
     fn wrap(&self, handle: H) -> Self::Work {

@@ -2,7 +2,7 @@ use core::task::Poll;
 use futures_core::{Future, ready};
 use pin_project_lite::pin_project;
 
-use crate::Work;
+use crate::Service;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Then<T1, T2> {
@@ -16,10 +16,10 @@ impl<T1, T2> Then<T1, T2> {
     }
 }
 
-impl<T1, T2, C, R> Work<C, R> for Then<T1, T2>
+impl<T1, T2, C, R> Service<C, R> for Then<T1, T2>
 where
-    T1: Work<C, R>,
-    T2: Work<C, Result<T1::Output, T1::Error>> + Clone,
+    T1: Service<C, R>,
+    T2: Service<C, Result<T1::Output, T1::Error>> + Clone,
     C: Clone,
 {
     type Output = T2::Output;
@@ -48,8 +48,8 @@ pin_project! {
     #[project = ThenWorkProject]
     pub enum ThenWorkFuture<'a, T1: 'a , T2: 'a, C, R>
     where
-    T1: Work<C, R>,
-    T2: Work<C,Result<T1::Output, T1::Error>>,
+    T1: Service<C, R>,
+    T2: Service<C,Result<T1::Output, T1::Error>>,
     {
         Left {
             #[pin]
@@ -67,8 +67,8 @@ pin_project! {
 
 impl<'a, T1, T2, C, R> Future for ThenWorkFuture<'a, T1, T2, C, R>
 where
-    T1: Work<C, R>,
-    T2: Work<C, Result<T1::Output, T1::Error>>,
+    T1: Service<C, R>,
+    T2: Service<C, Result<T1::Output, T1::Error>>,
 {
     type Output = Result<T2::Output, T2::Error>;
 

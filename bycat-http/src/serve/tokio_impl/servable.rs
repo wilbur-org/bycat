@@ -1,5 +1,5 @@
 pub use crate::serve::{listener::*, server::*};
-use ::bycat_service::Work;
+use ::bycat_service::Service;
 use bycat_executor::{LocalTokioExecutor, TokioExecutor};
 
 #[derive(Debug, Clone)]
@@ -10,7 +10,7 @@ where
     L: Listener + 'static,
     L::Io: Send,
     L::Addr: Send,
-    T: Work<
+    T: Service<
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,
@@ -57,7 +57,7 @@ where
     L: Listener + 'static,
     L::Io: Send,
     L::Addr: Send,
-    T: Work<
+    T: Service<
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,
@@ -123,7 +123,7 @@ where
     L: Listener + 'static,
     L::Io: Send,
     L::Addr: Send,
-    T: Work<
+    T: Service<
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,
@@ -167,7 +167,7 @@ where
     L: Listener + 'static,
     L::Io: Send,
     L::Addr: Send,
-    T: Work<
+    T: Service<
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,

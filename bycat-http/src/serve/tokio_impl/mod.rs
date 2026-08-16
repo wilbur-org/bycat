@@ -2,7 +2,7 @@ mod listener;
 mod servable;
 use self::servable::*;
 
-use ::bycat_service::Work;
+use ::bycat_service::Service;
 use bycat_executor::{LocalTokioExecutor, TokioExecutor};
 use bycat_server::Shutdown;
 use tokio::net::ToSocketAddrs;
@@ -28,7 +28,7 @@ impl<T> Tokio<T> {
 
     pub async fn serve<C>(self, ctx: C, addr: impl ToSocketAddrs) -> Result<(), tokio::io::Error>
     where
-        T: Work<
+        T: Service<
                 C,
                 http::Request<crate::body::Body>,
                 Output = http::Response<crate::body::Body>,
@@ -56,7 +56,7 @@ impl<T> Tokio<T> {
         addr: impl ToSocketAddrs,
     ) -> Result<(), tokio::io::Error>
     where
-        T: Work<
+        T: Service<
                 C,
                 http::Request<crate::body::Body>,
                 Output = http::Response<crate::body::Body>,

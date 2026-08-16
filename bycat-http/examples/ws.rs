@@ -7,7 +7,7 @@ use bycat_http::{
     router::{SendRouter, SendRouterBuilder},
     ws::{self, WebSocket},
 };
-use bycat_service::Work;
+use bycat_service::Service;
 use futures::{SinkExt, StreamExt};
 use http::Request;
 use hyper::{body::Incoming, service::service_fn};

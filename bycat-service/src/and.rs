@@ -2,7 +2,7 @@ use core::task::Poll;
 use futures_core::{Future, ready};
 use pin_project_lite::pin_project;
 
-use crate::Work;
+use crate::Service;
 
 #[derive(Debug, Clone, Copy)]
 pub struct And<T1, T2> {
@@ -16,10 +16,10 @@ impl<T1, T2> And<T1, T2> {
     }
 }
 
-impl<T1, T2, C, R> Work<C, R> for And<T1, T2>
+impl<T1, T2, C, R> Service<C, R> for And<T1, T2>
 where
-    T1: Work<C, R>,
-    T2: Work<C, T1::Output, Error = T1::Error>,
+    T1: Service<C, R>,
+    T2: Service<C, T1::Output, Error = T1::Error>,
 {
     type Output = T2::Output;
     type Error = T2::Error;
@@ -45,8 +45,8 @@ pin_project! {
     #[project = AndWorkProject]
     pub enum AndWorkFuture<'a, T1: 'a, T2: 'a, C, R>
     where
-    T1: Work<C, R>,
-    T2: Work<C,T1::Output>,
+    T1: Service<C, R>,
+    T2: Service<C,T1::Output>,
     {
         Left {
             #[pin]
@@ -64,8 +64,8 @@ pin_project! {
 
 impl<'a, T1, T2, C, R> Future for AndWorkFuture<'a, T1, T2, C, R>
 where
-    T1: Work<C, R>,
-    T2: Work<C, T1::Output, Error = T1::Error>,
+    T1: Service<C, R>,
+    T2: Service<C, T1::Output, Error = T1::Error>,
 {
     type Output = Result<T2::Output, T2::Error>;
 

@@ -1,13 +1,13 @@
 use core::marker::PhantomData;
 use core::task::{Poll, ready};
 
-use bycat_error::{BoxError, Error};
 use bytes::Bytes;
 use http::Response;
 use pin_project_lite::pin_project;
 
 use crate::body::{HttpBody, ToBytes, to_bytes};
-use crate::{FromRequest, IntoResponse};
+use crate::error::BoxError;
+use crate::{Error, FromRequest, IntoResponse};
 
 pub trait Decoder<T> {
     type Error;
@@ -49,7 +49,7 @@ where
         let this = self.project();
 
         match ready!(this.inner.poll(cx)) {
-            Ok(ret) => Poll::Ready(this.decoder.decode(&ret).map_err(Error::new)),
+            Ok(ret) => Poll::Ready(this.decoder.decode(&ret).map_err(Error::custom)),
             Err(err) => Poll::Ready(Err(err)),
         }
     }
@@ -112,15 +112,28 @@ macro_rules! encoding {
             T: serde::Serialize,
             B: From<Bytes>,
         {
-            type Error = Error;
-            fn into_response(self) -> Result<Response<B>, Self::Error> {
-                let bytes: Bytes = $to_bytes(&self.0).map_err(Error::new)?.into();
+            fn into_response(self) -> Response<B> {
+                let bytes: Bytes = match $to_bytes(&self.0) {
+                    Ok(bytes) => Bytes::from(bytes),
+                    Err(err) => {
+                        tracing::error!("Failed to encode {}: {}", stringify!($extract), err);
+                        return Response::builder()
+                            .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+                            .body(B::from(Bytes::from(err.to_string())))
+                            .unwrap();
+                    }
+                };
                 let resp = Response::builder()
                     .header(http::header::CONTENT_TYPE, $mime)
                     .header(http::header::CONTENT_LENGTH, bytes.len())
                     .body(B::from(bytes));
 
-                resp.map_err(Error::new)
+                resp.unwrap_or_else(|err| {
+                    Response::builder()
+                        .status(http::StatusCode::INTERNAL_SERVER_ERROR)
+                        .body(B::from(Bytes::from(err.to_string())))
+                        .unwrap()
+                })
             }
         }
     };

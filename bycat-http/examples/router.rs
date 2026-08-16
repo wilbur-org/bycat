@@ -3,7 +3,7 @@ use bycat_http::{
     handler,
     router::{SendRouterBuilder, SendWork, UrlParams},
 };
-use bycat_service::{Work, middleware, work_fn};
+use bycat_service::{Service, middleware, work_fn};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {

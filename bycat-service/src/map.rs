@@ -1,4 +1,4 @@
-use crate::work::Work;
+use crate::work::Service;
 use core::{marker::PhantomData, task::Poll};
 use futures_core::ready;
 use pin_project_lite::pin_project;
@@ -35,9 +35,9 @@ impl<W, T, O> Map<W, T, O> {
     }
 }
 
-impl<W, T, O, C, I> Work<C, I> for Map<W, T, O>
+impl<W, T, O, C, I> Service<C, I> for Map<W, T, O>
 where
-    W: Work<C, I>,
+    W: Service<C, I>,
     T: Fn(W::Output) -> O,
 {
     type Output = O;
@@ -66,7 +66,7 @@ where
 pin_project! {
   pub struct MapFuture<'a, W: 'a, C: 'a, I, T, O>
   where
-    W: Work<C, I>
+    W: Service<C, I>
    {
     #[pin]
     future: W::Future<'a>,
@@ -77,7 +77,7 @@ pin_project! {
 
 impl<'a, W, C, I, T, O> Future for MapFuture<'a, W, C, I, T, O>
 where
-    W: Work<C, I> + 'a,
+    W: Service<C, I> + 'a,
     T: Fn(W::Output) -> O,
 {
     type Output = Result<O, W::Error>;

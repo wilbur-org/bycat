@@ -1,7 +1,7 @@
 use core::task::{Poll, ready};
 use pin_project_lite::pin_project;
 
-use crate::Work;
+use crate::Service;
 
 pub struct Tower<T>(T);
 
@@ -11,7 +11,7 @@ impl<T> Tower<T> {
     }
 }
 
-impl<T, C, I> Work<C, I> for Tower<T>
+impl<T, C, I> Service<C, I> for Tower<T>
 where
     T: tower::Service<I> + Clone,
 {

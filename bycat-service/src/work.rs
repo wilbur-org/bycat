@@ -3,7 +3,7 @@ use either::Either;
 use futures_core::{TryFuture, ready};
 use pin_project_lite::pin_project;
 
-pub trait Work<C, I> {
+pub trait Service<C, I> {
     type Output;
     type Error;
     type Future<'a>: Future<Output = Result<Self::Output, Self::Error>>
@@ -20,10 +20,10 @@ pub trait Work<C, I> {
 
 // Either
 
-impl<L, R, I, C> Work<C, I> for Either<L, R>
+impl<L, R, I, C> Service<C, I> for Either<L, R>
 where
-    L: Work<C, I>,
-    R: Work<C, I>,
+    L: Service<C, I>,
+    R: Service<C, I>,
 {
     type Output = Either<L::Output, R::Output>;
     type Error = Either<L::Error, R::Error>;
@@ -52,7 +52,7 @@ where
 
 pin_project! {
     #[project = EitherFutureProj]
-    pub enum EitherWorkFuture<'a, T1:'a, T2: 'a, C: 'a, T> where T1: Work<C, T>, T2: Work<C, T> {
+    pub enum EitherWorkFuture<'a, T1:'a, T2: 'a, C: 'a, T> where T1: Service<C, T>, T2: Service<C, T> {
         T1 {
             #[pin]
             future: T1::Future<'a>
@@ -66,8 +66,8 @@ pin_project! {
 
 impl<'a, T1, T2, C, T> Future for EitherWorkFuture<'a, T1, T2, C, T>
 where
-    T1: Work<C, T> + 'a,
-    T2: Work<C, T> + 'a,
+    T1: Service<C, T> + 'a,
+    T2: Service<C, T> + 'a,
 {
     type Output = Result<Either<T1::Output, T2::Output>, Either<T1::Error, T2::Error>>;
 
@@ -107,7 +107,7 @@ impl<E> Clone for NoopWork<E> {
 
 impl<E> Copy for NoopWork<E> {}
 
-impl<C, R, E: 'static> Work<C, R> for NoopWork<E> {
+impl<C, R, E: 'static> Service<C, R> for NoopWork<E> {
     type Output = R;
     type Error = E;
     type Future<'a>

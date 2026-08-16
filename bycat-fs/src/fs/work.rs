@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use bycat_error::Error;
 use bycat_package::Package;
-use bycat_service::Work;
+use bycat_service::Service;
 use relative_path::RelativePathBuf;
 
 use super::Body;
@@ -17,7 +17,7 @@ impl FsWork {
     }
 }
 
-impl<C> Work<C, RelativePathBuf> for FsWork {
+impl<C> Service<C, RelativePathBuf> for FsWork {
     type Output = Package<Body>;
 
     type Error = Error;

@@ -1,5 +1,5 @@
 use bycat_executor::CompioExecutor;
-use bycat_service::Work;
+use bycat_service::Service;
 
 use crate::serve::{Conn, Listener, Servable};
 
@@ -10,7 +10,7 @@ where
     L: Listener + 'static,
     L::Io: Send,
     L::Addr: Send,
-    T: Work<
+    T: Service<
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,
@@ -57,7 +57,7 @@ where
     L: Listener + 'static,
     L::Io: Send,
     L::Addr: Send,
-    T: Work<
+    T: Service<
             C,
             http::Request<crate::body::Body>,
             Output = http::Response<crate::body::Body>,

@@ -1,5 +1,5 @@
 use crate::Error;
-use bycat_service::Work;
+use bycat_service::Service;
 use core::{
     marker::PhantomData,
     pin::Pin,
@@ -43,7 +43,7 @@ unsafe impl<T, I, B, C, M> Send for FuncHandler<T, I, B, C, M> where T: Send {}
 
 unsafe impl<T, I, B, C, M> Sync for FuncHandler<T, I, B, C, M> where T: Sync {}
 
-impl<B, C, T, I, M> Work<C, Request<B>> for FuncHandler<T, I, B, C, M>
+impl<B, C, T, I, M> Service<C, Request<B>> for FuncHandler<T, I, B, C, M>
 where
     T: Func<B, C, I>,
     <T::Future as Future>::Output: IntoResponse<B>,

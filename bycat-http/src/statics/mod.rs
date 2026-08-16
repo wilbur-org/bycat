@@ -3,7 +3,7 @@ use core::task::{Poll, ready};
 use alloc::path::PathBuf;
 use bycat_fs::VirtualFS;
 use bycat_package::Package;
-use bycat_service::Work;
+use bycat_service::Service;
 use http::Request;
 use pin_project_lite::pin_project;
 
@@ -16,7 +16,7 @@ pub struct Assets<T> {
     fs: T,
 }
 
-impl<T, C, B> Work<C, Request<B>> for Assets<T>
+impl<T, C, B> Service<C, Request<B>> for Assets<T>
 where
     T: VirtualFS,
 {

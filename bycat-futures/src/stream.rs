@@ -7,7 +7,7 @@ use core::{
 use futures_core::Stream;
 use pin_project_lite::pin_project;
 
-use bycat_service::{Work, and::And};
+use bycat_service::{Service, and::And};
 
 use crate::IntoResult;
 
@@ -38,11 +38,11 @@ impl<C, I, T> StreamBuilder<C, I, T> {
 
 impl<C, I, T> StreamBuilder<C, I, T>
 where
-    T: Work<C, I>,
+    T: Service<C, I>,
 {
     pub fn pipe<W>(self, work: W) -> StreamBuilder<C, I, And<T, W>>
     where
-        W: Work<C, T::Output, Error = T::Error>,
+        W: Service<C, T::Output, Error = T::Error>,
     {
         StreamBuilder {
             work: And::new(self.work, work),
@@ -52,7 +52,7 @@ where
 
     pub fn then<W>(self, work: W) -> StreamBuilder<C, I, Then<T, W>>
     where
-        W: Work<C, Result<T::Output, T::Error>, Error = T::Error>,
+        W: Service<C, Result<T::Output, T::Error>, Error = T::Error>,
     {
         StreamBuilder {
             work: Then::new(self.work, work),
@@ -63,8 +63,9 @@ where
     pub fn split<L, R>(self, left: L, right: R) -> StreamBuilder<C, I, Split<T, L, R>>
     where
         T::Output: IntoEither,
-        L: Work<C, <T::Output as IntoEither>::Left, Error = T::Error> + Clone,
-        R: Work<C, <T::Output as IntoEither>::Right, Output = L::Output, Error = T::Error> + Clone,
+        L: Service<C, <T::Output as IntoEither>::Left, Error = T::Error> + Clone,
+        R: Service<C, <T::Output as IntoEither>::Right, Output = L::Output, Error = T::Error>
+            + Clone,
         C: Clone,
     {
         StreamBuilder {
@@ -89,8 +90,8 @@ where
         S: Stream,
         S::Item: IntoResult,
         <S::Item as IntoResult>::Error:
-            Into<<T as Work<C, <S::Item as IntoResult>::Output>>::Error>,
-        T: Work<C, <S::Item as IntoResult>::Output>,
+            Into<<T as Service<C, <S::Item as IntoResult>::Output>>::Error>,
+        T: Service<C, <S::Item as IntoResult>::Output>,
         S: Stream,
     {
         WorkStream {
@@ -117,7 +118,7 @@ pin_project! {
 where
     S: Stream,
     S::Item: IntoResult,
-    T: Work<C, <S::Item as IntoResult>::Output>
+    T: Service<C, <S::Item as IntoResult>::Output>
 {
     #[pin]
     stream: S,
@@ -133,7 +134,7 @@ where
     S: Stream,
     S::Item: IntoResult,
     <S::Item as IntoResult>::Error: Into<T::Error>,
-    T: Work<C, <S::Item as IntoResult>::Output> + 'static,
+    T: Service<C, <S::Item as IntoResult>::Output> + 'static,
     C: 'static,
     S: Stream,
 {

@@ -10,7 +10,7 @@ use crate::{
     },
 };
 use alloc::{borrow::Cow, string::ToString, sync::Arc};
-use bycat_service::{Middleware, Work};
+use bycat_service::{Middleware, Service};
 use cookie::Cookie;
 use core::{
     marker::PhantomData,
@@ -55,7 +55,7 @@ impl Sessions {
 
 impl<C, B, T> Middleware<C, Request<B>, T> for Sessions
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     T::Error: Into<BoxError>,
 {
     type Work = SessionsWork<C, B, T>;
@@ -91,9 +91,9 @@ impl<C, B, T: Clone> Clone for SessionsWork<C, B, T> {
     }
 }
 
-impl<C, B, T> Work<C, Request<B>> for SessionsWork<C, B, T>
+impl<C, B, T> Service<C, Request<B>> for SessionsWork<C, B, T>
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     T::Error: Into<BoxError>,
 {
     type Output = T::Output;
@@ -128,7 +128,7 @@ pin_project! {
     #[project = SessionFutureStateProj]
     enum SessionWorkFutureState<'a, C, B, T: 'a>
     where
-        T: Work<C, Request<B>>
+        T: Service<C, Request<B>>
     {
         Init {
             req: Option<Request<B>>,
@@ -147,7 +147,7 @@ pin_project! {
 pin_project! {
     pub struct SessionWorkFuture<'a, C, B, T>
     where
-        T: Work<C, Request<B>>
+        T: Service<C, Request<B>>
     {
         #[pin]
         state: SessionWorkFutureState<'a, C, B, T>,
@@ -160,7 +160,7 @@ pin_project! {
 
 impl<'a, C, B, T> Future for SessionWorkFuture<'a, C, B, T>
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     T::Error: Into<BoxError>,
 {
     type Output = Result<T::Output, Error>;

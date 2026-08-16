@@ -1,5 +1,5 @@
 use crate::{IntoPackage, Package};
-use bycat_service::Work;
+use bycat_service::Service;
 
 use core::marker::PhantomData;
 
@@ -26,7 +26,7 @@ unsafe impl<C, B> Send for IntoPackageWork<C, B> {}
 
 unsafe impl<C, B> Sync for IntoPackageWork<C, B> {}
 
-impl<C, B, R> Work<C, R> for IntoPackageWork<C, B>
+impl<C, B, R> Service<C, R> for IntoPackageWork<C, B>
 where
     R: IntoPackage<B>,
 {

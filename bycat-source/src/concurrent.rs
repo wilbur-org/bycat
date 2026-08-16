@@ -1,6 +1,6 @@
 use core::task::{ready, Poll};
 
-use bycat_service::Work;
+use bycat_service::Service;
 use futures::{
     stream::{Fuse, FuturesUnordered},
     Stream, StreamExt,
@@ -24,7 +24,7 @@ impl<S, T, C> Source<C> for Concurrent<S, T>
 where
     S: Source<C>,
 
-    T: Work<C, S::Item>,
+    T: Service<C, S::Item>,
     T::Error: Into<S::Error>,
 {
     type Error = S::Error;
@@ -48,7 +48,7 @@ where
 }
 
 pin_project! {
-  pub struct ConcurrentStream<'a, C: 'a, S: Source<C>, T: Work<C, S::Item>>
+  pub struct ConcurrentStream<'a, C: 'a, S: Source<C>, T: Service<C, S::Item>>
   where
     T: 'a,
     S: 'a
@@ -62,7 +62,7 @@ pin_project! {
 }
 }
 
-impl<'a, C: 'a, S: Source<C> + 'a, T: Work<C, S::Item> + 'a> Stream
+impl<'a, C: 'a, S: Source<C> + 'a, T: Service<C, S::Item> + 'a> Stream
     for ConcurrentStream<'a, C, S, T>
 where
     T::Error: Into<S::Error>,

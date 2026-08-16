@@ -1,8 +1,8 @@
-use bycat_service::{Work, and::And};
+use bycat_service::{Service, and::And};
 
 use crate::{IntoPackage, into_package::IntoPackageWork};
 
-pub trait WorkExt<C, T>: Work<C, T> {
+pub trait WorkExt<C, T>: Service<C, T> {
     fn into_package<B>(self) -> And<Self, IntoPackageWork<C, B>>
     where
         Self: Sized,
@@ -12,7 +12,7 @@ pub trait WorkExt<C, T>: Work<C, T> {
     }
 }
 
-impl<C, T, W> WorkExt<C, T> for W where W: Work<C, T> {}
+impl<C, T, W> WorkExt<C, T> for W where W: Service<C, T> {}
 
 // pub struct ContentIntoBytes<T> {
 //     work: T,

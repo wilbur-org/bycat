@@ -1,5 +1,5 @@
 use crate::source::Source;
-use bycat_service::{NoopWork, Work};
+use bycat_service::{NoopWork, Service};
 use core::{marker::PhantomData, mem::transmute, task::Poll};
 use futures::{ready, Stream, TryFuture, TryStream};
 use pin_project_lite::pin_project;
@@ -70,7 +70,7 @@ impl<S, W, C> Pipeline<S, W, C> {
 impl<S, W, C> Source<C> for Pipeline<S, W, C>
 where
     S: Source<C> + 'static,
-    W: Work<C, S::Item, Error = S::Error>,
+    W: Service<C, S::Item, Error = S::Error>,
 {
     type Item = W::Output;
     type Error = W::Error;
@@ -92,7 +92,7 @@ where
 
 pin_project! {
     #[project(!Unpin)]
-    pub struct PipelineStream<'a, T: 'a, W: 'a, C> where W: Work<C, T::Item>, T: Source<C> {
+    pub struct PipelineStream<'a, T: 'a, W: 'a, C> where W: Service<C, T::Item>, T: Source<C> {
         #[pin]
         stream: T::Stream<'a>,
         work: W,
@@ -104,7 +104,7 @@ pin_project! {
 
 impl<'a, T: 'a, W: 'a, C> Stream for PipelineStream<'a, T, W, C>
 where
-    W: Work<C, T::Item, Error = T::Error>,
+    W: Service<C, T::Item, Error = T::Error>,
     T: Source<C>,
     Self: 'a,
 {

@@ -1,6 +1,6 @@
 use core::task::{Poll, ready};
 
-use bycat_service::{Middleware, Work};
+use bycat_service::{Middleware, Service};
 use bytes::Bytes;
 use http::{Request, Response, StatusCode, header::CONTENT_LENGTH};
 use pin_project_lite::pin_project;
@@ -15,7 +15,7 @@ pub struct RequestBodyLimit(pub u64);
 
 impl<C, B, T> Middleware<C, Request<B>, T> for RequestBodyLimit
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     T::Output: IntoResponse<B>,
     B: HttpBody + 'static,
     B::Data: AsRef<[u8]> + Into<Bytes>,
@@ -32,9 +32,9 @@ where
 #[derive(Debug, Clone, Copy)]
 pub struct RequestBodyLimitWork<T>(T, u64);
 
-impl<T, C, B> Work<C, Request<B>> for RequestBodyLimitWork<T>
+impl<T, C, B> Service<C, Request<B>> for RequestBodyLimitWork<T>
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     T::Output: IntoResponse<B>,
     B: HttpBody + 'static,
     B::Data: AsRef<[u8]> + Into<Bytes>,
@@ -71,7 +71,7 @@ pin_project! {
     #[project = RequestBodyLimitWorkStateProj]
     enum RequestBodyLimitWorkState<'a, T, C, B>
     where
-        T: Work<C, Request<B>>,
+        T: Service<C, Request<B>>,
     {
         Init {
             context: &'a C,
@@ -90,7 +90,7 @@ pin_project! {
 pin_project! {
     pub struct RequestBodyLimitWorkFuture<'a, T, C, B>
     where
-        T: Work<C, Request<B>>,
+        T: Service<C, Request<B>>,
     {
         #[pin]
         state: RequestBodyLimitWorkState<'a, T, C, B>
@@ -99,7 +99,7 @@ pin_project! {
 
 impl<'a, T, C, B> Future for RequestBodyLimitWorkFuture<'a, T, C, B>
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     T::Output: IntoResponse<B>,
     B: HttpBody + 'static,
     B::Data: AsRef<[u8]> + Into<Bytes>,

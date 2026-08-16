@@ -3,7 +3,7 @@ use core::{
     task::{ready, Poll},
 };
 
-use crate::{Source, Work};
+use crate::{Source, Service};
 use futures::{Stream, TryFuture};
 
 use pin_project_lite::pin_project;
@@ -29,9 +29,9 @@ impl<S, T1, T2, C> Source<C> for AsyncCloned<S, T1, T2>
 where
     S: Source<C>,
     S::Item: Clone,
-    T1: Work<C, S::Item>,
+    T1: Service<C, S::Item>,
     T1::Error: Into<S::Error>,
-    T2: Work<C, S::Item, Output = T1::Output, Error = T1::Error>,
+    T2: Service<C, S::Item, Output = T1::Output, Error = T1::Error>,
 {
     type Item = T1::Output;
     type Error = S::Error;
@@ -68,9 +68,9 @@ pin_project! {
     pub struct AsyncCloneFuture<'a, C: 'a, S: 'a, T1: 'a, T2: 'a>
 where
     S: Source<C>,
-    T1: Work<C, S::Item>,
+    T1: Service<C, S::Item>,
     T1::Error: Into<S::Error>,
-    T2: Work<C, S::Item, Output = T1::Output, Error = T1::Error>,
+    T2: Service<C, S::Item, Output = T1::Output, Error = T1::Error>,
 {
     #[pin]
     source: S::Stream<'a>,
@@ -87,9 +87,9 @@ impl<'a, C: 'a, S: 'a, T1: 'a, T2: 'a> Stream for AsyncCloneFuture<'a, C, S, T1,
 where
     S: Source<C>,
     S::Item: Clone,
-    T1: Work<C, S::Item>,
+    T1: Service<C, S::Item>,
     T1::Error: Into<S::Error>,
-    T2: Work<C, S::Item, Output = T1::Output, Error = T1::Error>,
+    T2: Service<C, S::Item, Output = T1::Output, Error = T1::Error>,
 {
     type Item = Result<T1::Output, S::Error>;
 

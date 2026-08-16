@@ -1,4 +1,4 @@
-use crate::Work;
+use crate::Service;
 use core::task::Poll;
 use futures_core::{TryFuture, ready};
 use pin_project_lite::pin_project;
@@ -15,7 +15,7 @@ where
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WorkFn<T>(pub(crate) T);
 
-impl<T, U, C, R> Work<C, R> for WorkFn<T>
+impl<T, U, C, R> Service<C, R> for WorkFn<T>
 where
     T: Fn(C, R) -> U,
     U: TryFuture,

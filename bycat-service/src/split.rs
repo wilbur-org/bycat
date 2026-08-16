@@ -3,7 +3,7 @@ use either::Either;
 use futures_core::{Future, ready};
 use pin_project_lite::pin_project;
 
-use crate::{Work, util::IntoEither};
+use crate::{Service, util::IntoEither};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Split<S, L, R> {
@@ -22,12 +22,12 @@ impl<S, L, R> Split<S, L, R> {
     }
 }
 
-impl<S, L, R, C, T> Work<C, T> for Split<S, L, R>
+impl<S, L, R, C, T> Service<C, T> for Split<S, L, R>
 where
-    S: Work<C, T>,
+    S: Service<C, T>,
     S::Output: IntoEither,
-    L: Work<C, <S::Output as IntoEither>::Left, Error = S::Error> + Clone,
-    R: Work<C, <S::Output as IntoEither>::Right, Output = L::Output, Error = S::Error> + Clone,
+    L: Service<C, <S::Output as IntoEither>::Left, Error = S::Error> + Clone,
+    R: Service<C, <S::Output as IntoEither>::Right, Output = L::Output, Error = S::Error> + Clone,
     C: Clone,
 {
     type Output = L::Output;
@@ -58,10 +58,10 @@ pin_project! {
     #[project = SplitFutureProj]
     pub enum SplitFuture<'a, S: 'a, L: 'a, R: 'a, C, T>
     where
-    S: Work<C, T>,
+    S: Service<C, T>,
     S::Output: IntoEither,
-    L: Work<C, <S::Output as IntoEither>::Left, Error = S::Error>,
-    R: Work<C, <S::Output as IntoEither>::Right, Output = L::Output, Error = S::Error>,
+    L: Service<C, <S::Output as IntoEither>::Left, Error = S::Error>,
+    R: Service<C, <S::Output as IntoEither>::Right, Output = L::Output, Error = S::Error>,
     {
         Init {
             #[pin]
@@ -79,10 +79,10 @@ pin_project! {
 
 impl<'a, S, L, R, C, T> Future for SplitFuture<'a, S, L, R, C, T>
 where
-    S: Work<C, T>,
+    S: Service<C, T>,
     S::Output: IntoEither,
-    L: Work<C, <S::Output as IntoEither>::Left, Error = S::Error>,
-    R: Work<C, <S::Output as IntoEither>::Right, Output = L::Output, Error = L::Error>,
+    L: Service<C, <S::Output as IntoEither>::Left, Error = S::Error>,
+    R: Service<C, <S::Output as IntoEither>::Right, Output = L::Output, Error = L::Error>,
 {
     type Output = Result<L::Output, L::Error>;
 

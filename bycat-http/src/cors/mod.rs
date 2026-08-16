@@ -6,7 +6,7 @@ use alloc::{
     task::{Poll, ready},
     time::Duration,
 };
-use bycat_service::{Middleware, Work};
+use bycat_service::{Middleware, Service};
 use http::{
     HeaderMap, HeaderValue, Method, Request, Response,
     header::{
@@ -171,7 +171,7 @@ impl Cors {
 
 impl<T, C, B> Middleware<C, Request<B>, T> for Cors
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     T::Error: Into<BoxError>,
     T::Output: IntoResponse<B>,
 {
@@ -211,9 +211,9 @@ impl<T: Debug, C, B> fmt::Debug for CorsWork<T, C, B> {
     }
 }
 
-impl<T, C, B> Work<C, Request<B>> for CorsWork<T, C, B>
+impl<T, C, B> Service<C, Request<B>> for CorsWork<T, C, B>
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     T::Error: Into<BoxError>,
     T::Output: IntoResponse<B>,
 {
@@ -247,7 +247,7 @@ pin_project! {
     #[project = CorsFutureStateProj]
     enum CorsFutureState<'a, C: 'a, T, B>
     where
-        T: Work<C, Request<B>>,
+        T: Service<C, Request<B>>,
     {
         Init {
             work: &'a T,
@@ -266,7 +266,7 @@ pin_project! {
 pin_project! {
     pub struct CorsFuture<'a, C, T, B>
     where
-        T: Work<C, Request<B>>,
+        T: Service<C, Request<B>>,
     {
         #[pin]
         state: CorsFutureState<'a, C, T, B>,
@@ -276,7 +276,7 @@ pin_project! {
 
 impl<'a, C, T, B> Future for CorsFuture<'a, C, T, B>
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     T::Error: Into<BoxError>,
     T::Output: IntoResponse<B>,
 {

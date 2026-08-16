@@ -1,9 +1,8 @@
-use bycat_error::{BoxError, Error};
 use bytes::Bytes;
 use http::header::CONTENT_TYPE;
 pub use multer::{Field, Multipart};
 
-use crate::FromRequest;
+use crate::{Error, FromRequest, error::BoxError};
 
 impl<'ctx, C, B> FromRequest<C, B> for Multipart<'ctx>
 where
@@ -22,7 +21,7 @@ where
             .and_then(|ct| ct.to_str().ok())
             .and_then(|ct| multer::parse_boundary(ct).ok())
         else {
-            return core::future::ready(Err(Error::new("Bad request")));
+            return core::future::ready(Err(Error::custom("Bad request")));
         };
 
         let stream = http_body_util::BodyDataStream::new(req.into_body());

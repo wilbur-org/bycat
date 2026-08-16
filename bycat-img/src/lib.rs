@@ -9,7 +9,7 @@ use std::{
 use bycat_error::Error;
 use bycat_executor::{BlockingSpawner, HasBlockingSpawner};
 use bycat_package::{Content, Package};
-use bycat_service::Work;
+use bycat_service::Service;
 use bytes::Bytes;
 use futures::ready;
 use heather::{HBoxFuture, HSend};
@@ -37,7 +37,7 @@ impl<C> Clone for ImageOp<C> {
     }
 }
 
-impl<C> Work<C, ImagePackage> for ImageOp<C>
+impl<C> Service<C, ImagePackage> for ImageOp<C>
 where
     C: HasBlockingSpawner,
     <C::Spawner as BlockingSpawner>::Error: Into<Error>,
@@ -172,7 +172,7 @@ impl<C> Clone for Save<C> {
 
 impl<C> Copy for Save<C> {}
 
-impl<C> Work<C, ImagePackage> for Save<C>
+impl<C> Service<C, ImagePackage> for Save<C>
 where
     C: HasBlockingSpawner,
     <C::Spawner as BlockingSpawner>::Error: Into<Error>,
@@ -246,7 +246,7 @@ impl<C> Default for ImageWork<C> {
     }
 }
 
-impl<C, B> Work<C, Package<B>> for ImageWork<C>
+impl<C, B> Service<C, Package<B>> for ImageWork<C>
 where
     B: Content + HSend,
     for<'a> B: 'a,

@@ -1,4 +1,4 @@
-use crate::work::Work;
+use crate::work::Service;
 use core::{marker::PhantomData, task::Poll};
 use futures_core::ready;
 use pin_project_lite::pin_project;
@@ -35,9 +35,9 @@ impl<W, T, E> MapErr<W, T, E> {
     }
 }
 
-impl<W, T, E, C, I> Work<C, I> for MapErr<W, T, E>
+impl<W, T, E, C, I> Service<C, I> for MapErr<W, T, E>
 where
-    W: Work<C, I>,
+    W: Service<C, I>,
     T: Fn(W::Error) -> E,
 {
     type Output = W::Output;
@@ -66,7 +66,7 @@ where
 pin_project! {
   pub struct MapErrFuture<'a, W: 'a, C: 'a, I, T, E>
   where
-    W: Work<C, I>
+    W: Service<C, I>
    {
     #[pin]
     future: W::Future<'a>,
@@ -77,7 +77,7 @@ pin_project! {
 
 impl<'a, W, C, I, T, E> Future for MapErrFuture<'a, W, C, I, T, E>
 where
-    W: Work<C, I> + 'a,
+    W: Service<C, I> + 'a,
     T: Fn(W::Error) -> E,
 {
     type Output = Result<W::Output, E>;

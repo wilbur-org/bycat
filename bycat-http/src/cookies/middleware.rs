@@ -1,5 +1,5 @@
 use crate::Error;
-use bycat_service::{Middleware, Work};
+use bycat_service::{Middleware, Service};
 use core::task::{Poll, ready};
 use http::{Request, Response};
 use pin_project_lite::pin_project;
@@ -11,7 +11,7 @@ pub struct Cookies;
 
 impl<C, B, H> Middleware<C, Request<B>, H> for Cookies
 where
-    H: Work<C, Request<B>>,
+    H: Service<C, Request<B>>,
     H::Error: Into<Error>,
     H::Output: IntoResponse<B>,
 {
@@ -27,9 +27,9 @@ pub struct CookieWork<H> {
     handler: H,
 }
 
-impl<H, C, B> Work<C, Request<B>> for CookieWork<H>
+impl<H, C, B> Service<C, Request<B>> for CookieWork<H>
 where
-    H: Work<C, Request<B>>,
+    H: Service<C, Request<B>>,
     H::Error: Into<Error>,
     H::Output: IntoResponse<B>,
 {
@@ -60,7 +60,7 @@ where
 pin_project! {
     pub struct CookieWorkFuture<'a, H: 'a, C: 'a, B>
     where
-        H: Work<C, Request<B>>,
+        H: Service<C, Request<B>>,
     {
         #[pin]
         future: H::Future<'a>,
@@ -70,7 +70,7 @@ pin_project! {
 
 impl<'a, H: 'a, C: 'a, B> Future for CookieWorkFuture<'a, H, C, B>
 where
-    H: Work<C, Request<B>>,
+    H: Service<C, Request<B>>,
     H::Error: Into<Error>,
     H::Output: IntoResponse<B>,
 {

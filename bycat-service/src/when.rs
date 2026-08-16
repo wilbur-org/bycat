@@ -3,7 +3,7 @@ use either::Either;
 use futures_core::{Future, ready};
 use pin_project_lite::pin_project;
 
-use crate::{Work, matcher::Matcher};
+use crate::{Service, matcher::Matcher};
 
 #[derive(Debug, Clone, Copy)]
 pub struct When<T, W> {
@@ -11,9 +11,9 @@ pub struct When<T, W> {
     work: W,
 }
 
-impl<T, W, C, R> Work<C, R> for When<T, W>
+impl<T, W, C, R> Service<C, R> for When<T, W>
 where
-    W: Work<C, R>,
+    W: Service<C, R>,
     T: Matcher<R>,
 {
     type Output = Either<R, W::Output>;
@@ -44,7 +44,7 @@ where
 pin_project! {
 
   #[project = CondFutureProj]
-  pub enum CondFuture<'a, W: 'a, C: 'a, R> where W: Work<C, R> {
+  pub enum CondFuture<'a, W: 'a, C: 'a, R> where W: Service<C, R> {
     Ready {
       ret: Option<R>,
     },
@@ -57,7 +57,7 @@ pin_project! {
 
 impl<'a, W, C, R> Future for CondFuture<'a, W, C, R>
 where
-    W: Work<C, R>,
+    W: Service<C, R>,
 {
     type Output = Result<Either<R, W::Output>, W::Error>;
 

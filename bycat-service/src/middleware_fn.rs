@@ -1,4 +1,4 @@
-use crate::{Middleware, Work};
+use crate::{Middleware, Service};
 use core::marker::PhantomData;
 
 pub fn middleware<T, B, C, H, U>(func: T) -> MiddlewareFn<T, B, C, H, U> {
@@ -20,7 +20,7 @@ impl<T: Clone, B, C, H, U> Clone for MiddlewareFn<T, B, C, H, U> {
 impl<T, B, C, H, U> Middleware<C, B, H> for MiddlewareFn<T, B, C, H, U>
 where
     T: Fn(H) -> U,
-    U: Work<C, B>,
+    U: Service<C, B>,
 {
     type Work = U;
 

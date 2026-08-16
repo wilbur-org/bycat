@@ -1,6 +1,6 @@
 use bycat_error::Error;
 use bycat_package::{IntoPackage, Package};
-use bycat_service::Work;
+use bycat_service::Service;
 use bycat_source::Source;
 use futures::future::BoxFuture;
 use pin_project_lite::pin_project;
@@ -91,7 +91,7 @@ impl<C> Source<C> for Fs {
 
 // Work
 
-impl<C, T> Work<C, Package<T>> for Fs
+impl<C, T> Service<C, Package<T>> for Fs
 where
     T: Into<Body>,
     for<'a> T: 'a,

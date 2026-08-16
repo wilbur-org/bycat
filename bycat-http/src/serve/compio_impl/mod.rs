@@ -4,7 +4,7 @@ use crate::serve::Server;
 
 use self::servable::*;
 
-use ::bycat_service::Work;
+use ::bycat_service::Service;
 use bycat_executor::CompioExecutor;
 use bycat_server::Shutdown;
 use compio::net::ToSocketAddrsAsync;
@@ -34,7 +34,7 @@ impl<T> Compio<T> {
         addr: impl ToSocketAddrsAsync,
     ) -> Result<(), tokio::io::Error>
     where
-        T: Work<
+        T: Service<
                 C,
                 http::Request<crate::body::Body>,
                 Output = http::Response<crate::body::Body>,

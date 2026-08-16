@@ -7,7 +7,7 @@ use std::{
 use bycat_config::ConfigFactory;
 use bycat_error::Error;
 use bycat_server::Shutdown;
-use bycat_service::Work;
+use bycat_service::Service;
 use pin_project_lite::pin_project;
 
 use crate::{App, AppInner, ConfigBuilder, paths::Paths, req::CliRequest};
@@ -21,7 +21,7 @@ pub struct Cli<C, T> {
 
 impl<T> Cli<(), T>
 where
-    T: Work<(), App>,
+    T: Service<(), App>,
     T::Error: Into<Error>,
 {
     pub async fn run_with(&self, req: CliRequest) -> Result<T::Output, Error> {
@@ -33,9 +33,9 @@ where
     }
 }
 
-impl<C, T> Work<C, CliRequest> for Cli<C, T>
+impl<C, T> Service<C, CliRequest> for Cli<C, T>
 where
-    T: Work<C, App>,
+    T: Service<C, App>,
     T::Error: Into<Error>,
 {
     type Error = Error;
@@ -86,7 +86,7 @@ enum CliWorkState<T> {
 pin_project! {
     pub struct CliWorkFuture<'a, C, T>
 where
-    T: Work<C, App>,
+    T: Service<C, App>,
 {
     task: &'a T,
     ctx: &'a C,
@@ -99,7 +99,7 @@ where
 
 impl<'a, C, T> Future for CliWorkFuture<'a, C, T>
 where
-    T: Work<C, App>,
+    T: Service<C, App>,
     T::Error: Into<Error>,
 {
     type Output = Result<T::Output, Error>;

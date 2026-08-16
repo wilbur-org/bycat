@@ -1,13 +1,13 @@
 use alloc::{marker::PhantomData, task::Poll};
 use bycat_futures::IntoResult;
-use bycat_service::{Matcher, Work};
+use bycat_service::{Matcher, Service};
 use core::task::ready;
 use http::{Request, Response};
 use pin_project_lite::pin_project;
 
 use crate::{Error, IntoResponse};
 
-pub trait FilteredWork<C, B>: Work<C, Request<B>> {
+pub trait FilteredWork<C, B>: Service<C, Request<B>> {
     fn can_handle(&self, ctx: &C, req: &Request<B>) -> bool;
 }
 
@@ -23,9 +23,9 @@ impl<T, M> FilterWork<T, M> {
     }
 }
 
-impl<T, M, C, B> Work<C, Request<B>> for FilterWork<T, M>
+impl<T, M, C, B> Service<C, Request<B>> for FilterWork<T, M>
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     M: Matcher<Request<B>>,
 {
     type Output = T::Output;
@@ -48,7 +48,7 @@ where
 
 impl<T, M, C, B> FilteredWork<C, B> for FilterWork<T, M>
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     M: Matcher<Request<B>>,
 {
     fn can_handle(&self, _ctx: &C, req: &Request<B>) -> bool {
@@ -59,7 +59,7 @@ where
 #[derive(Debug, Clone, Copy)]
 pub struct Or<T1, T2>(pub T1, pub T2);
 
-impl<T1, T2, C, B> Work<C, Request<B>> for Or<T1, T2>
+impl<T1, T2, C, B> Service<C, Request<B>> for Or<T1, T2>
 where
     T1: FilteredWork<C, B>,
     T1::Output: IntoResponse<B>,

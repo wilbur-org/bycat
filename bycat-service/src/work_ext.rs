@@ -1,13 +1,13 @@
 use crate::{
-    Middleware, Work, and::And, map::Map, map_err::MapErr, split::Split, then::Then,
+    Middleware, Service, and::And, map::Map, map_err::MapErr, split::Split, then::Then,
     util::IntoEither,
 };
 
-pub trait WorkExt<C, I>: Work<C, I> {
+pub trait WorkExt<C, I>: Service<C, I> {
     fn pipe<T>(self, next: T) -> And<Self, T>
     where
         Self: Sized,
-        T: Work<C, Self::Output>,
+        T: Service<C, Self::Output>,
     {
         And::new(self, next)
     }
@@ -15,7 +15,7 @@ pub trait WorkExt<C, I>: Work<C, I> {
     fn then<T>(self, next: T) -> Then<Self, T>
     where
         Self: Sized,
-        T: Work<C, Result<Self::Output, Self::Error>>,
+        T: Service<C, Result<Self::Output, Self::Error>>,
     {
         Then::new(self, next)
     }
@@ -24,8 +24,8 @@ pub trait WorkExt<C, I>: Work<C, I> {
     where
         Self: Sized,
         Self::Output: IntoEither,
-        L: Work<C, <Self::Output as IntoEither>::Left, Error = Self::Error> + Clone,
-        R: Work<C, <Self::Output as IntoEither>::Right, Output = L::Output, Error = Self::Error>
+        L: Service<C, <Self::Output as IntoEither>::Left, Error = Self::Error> + Clone,
+        R: Service<C, <Self::Output as IntoEither>::Right, Output = L::Output, Error = Self::Error>
             + Clone,
         C: Clone,
     {
@@ -57,4 +57,4 @@ pub trait WorkExt<C, I>: Work<C, I> {
     }
 }
 
-impl<C, I, T> WorkExt<C, I> for T where T: Work<C, I> {}
+impl<C, I, T> WorkExt<C, I> for T where T: Service<C, I> {}

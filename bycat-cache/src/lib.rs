@@ -6,7 +6,7 @@ use std::{
 };
 
 use bycat_error::Error;
-use bycat_service::Work;
+use bycat_service::Service;
 use pin_project::pin_project;
 
 pub type Bytes = Vec<u8>;
@@ -50,10 +50,10 @@ pub struct CacheWork<T, W> {
     work: W,
 }
 
-impl<T, W, C, I> Work<C, I> for CacheWork<T, W>
+impl<T, W, C, I> Service<C, I> for CacheWork<T, W>
 where
     T: CacheStore,
-    W: Work<C, I>,
+    W: Service<C, I>,
     W::Output: Cached,
     for<'a> W::Output: 'a,
     I: CacheKey,
@@ -161,7 +161,7 @@ where
 enum SetState<'a, T: 'a, W: 'a, C: 'a, I>
 where
     T: CacheStore,
-    W: Work<C, I>,
+    W: Service<C, I>,
     W::Output: Cached + 'a,
 {
     Work {
@@ -182,7 +182,7 @@ where
 struct SetFuture<'a, T: 'a, W: 'a, C: 'a, I>
 where
     T: CacheStore,
-    W: Work<C, I>,
+    W: Service<C, I>,
     W::Output: Cached + 'a,
 {
     #[pin]
@@ -193,7 +193,7 @@ where
 impl<'a, T: 'a, W: 'a, C: 'a, I> Future for SetFuture<'a, T, W, C, I>
 where
     T: CacheStore,
-    W: Work<C, I>,
+    W: Service<C, I>,
     W::Output: Cached + 'a,
 {
     type Output = Result<W::Output, Error>;
@@ -218,7 +218,7 @@ where
 enum CacheState<'a, T, W, C, I>
 where
     T: CacheStore,
-    W: Work<C, I>,
+    W: Service<C, I>,
     W::Output: Cached,
 {
     Start,
@@ -230,7 +230,7 @@ where
 pub struct CacheWorkFuture<'a, T, W, C, I>
 where
     T: CacheStore,
-    W: Work<C, I>,
+    W: Service<C, I>,
     W::Output: Cached,
 {
     state: CacheState<'a, T, W, C, I>,
@@ -243,7 +243,7 @@ where
 impl<'a, T, W, C, I> Future for CacheWorkFuture<'a, T, W, C, I>
 where
     T: CacheStore,
-    W: Work<C, I>,
+    W: Service<C, I>,
     W::Output: Cached,
 {
     type Output = Result<W::Output, Error>;

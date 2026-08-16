@@ -1,6 +1,6 @@
 use crate::request::Request;
 use bycat_error::Error;
-use bycat_service::Work;
+use bycat_service::Service;
 use futures_core::future::LocalBoxFuture;
 
 use alloc::{
@@ -18,7 +18,7 @@ struct CommandImpl<T>(T);
 
 impl<'js, T, C> Command<'js, C> for CommandImpl<T>
 where
-    T: Work<C, Request, Output = (), Error = Error>,
+    T: Service<C, Request, Output = (), Error = Error>,
 {
     fn call<'a>(&'a self, ctx: &'a C, req: Request) -> LocalBoxFuture<'a, Result<(), Error>> {
         Box::pin(async move {
@@ -51,7 +51,7 @@ impl<'js, C> Default for Router<'js, C> {
 impl<'js, C> Router<'js, C> {
     pub fn add_command<W>(&mut self, name: &str, cmd: W) -> &mut Self
     where
-        W: Work<C, Request, Output = (), Error = Error> + 'js,
+        W: Service<C, Request, Output = (), Error = Error> + 'js,
     {
         Rc::make_mut(&mut self.entries).insert(name.to_string(), Rc::new(CommandImpl(cmd)));
         self
@@ -64,7 +64,7 @@ impl<'js, C> Router<'js, C> {
     }
 }
 
-impl<'js, C> Work<C, Request> for Router<'js, C> {
+impl<'js, C> Service<C, Request> for Router<'js, C> {
     type Output = ();
 
     type Error = Error;

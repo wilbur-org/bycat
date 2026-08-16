@@ -1,6 +1,6 @@
 use bycat_error::Error;
 use bycat_package::Package;
-use bycat_service::Work;
+use bycat_service::Service;
 use futures::future::BoxFuture;
 use mime::Mime;
 use std::{boxed::Box, path::PathBuf, vec::Vec};
@@ -51,7 +51,7 @@ impl KravlDestination {
     }
 }
 
-impl<C> Work<C, Package<Body>> for KravlDestination {
+impl<C> Service<C, Package<Body>> for KravlDestination {
     type Output = Package<Body>;
     type Error = Error;
     type Future<'a>

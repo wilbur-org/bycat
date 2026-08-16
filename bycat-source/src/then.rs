@@ -1,6 +1,6 @@
 use core::{mem::transmute, task::Poll};
 
-use bycat_service::{then::Then, Work};
+use bycat_service::{then::Then, Service};
 use futures::{ready, Future, Stream};
 use pin_project_lite::pin_project;
 
@@ -9,7 +9,7 @@ use crate::Source;
 impl<T1, T2, C> Source<C> for Then<T1, T2>
 where
     T1: Source<C> + 'static,
-    T2: Work<C, Result<T1::Item, T1::Error>> + 'static + Clone,
+    T2: Service<C, Result<T1::Item, T1::Error>> + 'static + Clone,
     C: Clone,
 {
     type Item = T2::Output;
@@ -32,7 +32,7 @@ where
 
 pin_project! {
     #[project(!Unpin)]
-    pub struct ThenStream<'a, T: 'static, W: 'static , C> where W: Work<C,Result<T::Item, T::Error>>, T: Source<C> {
+    pub struct ThenStream<'a, T: 'static, W: 'static , C> where W: Service<C,Result<T::Item, T::Error>>, T: Source<C> {
         #[pin]
         stream: T::Stream<'a>,
         work: W,
@@ -44,7 +44,7 @@ pin_project! {
 
 impl<'a, T: 'static, W: 'static, C> Stream for ThenStream<'a, T, W, C>
 where
-    W: Work<C, Result<T::Item, T::Error>>,
+    W: Service<C, Result<T::Item, T::Error>>,
     T: Source<C>,
 {
     type Item = Result<W::Output, W::Error>;

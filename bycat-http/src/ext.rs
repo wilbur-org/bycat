@@ -1,4 +1,4 @@
-use bycat_service::{Matcher, Work};
+use bycat_service::{Matcher, Service};
 use http::Request;
 
 use crate::{
@@ -6,7 +6,7 @@ use crate::{
     matcher::{FilterWork, FilteredWork, Or},
 };
 
-pub trait HttpWorkExt<C, B>: Work<C, Request<B>> {
+pub trait HttpWorkExt<C, B>: Service<C, Request<B>> {
     fn with_filter<M>(self, matcher: M) -> FilterWork<Self, M>
     where
         Self: Sized,
@@ -28,4 +28,4 @@ pub trait HttpWorkExt<C, B>: Work<C, Request<B>> {
     }
 }
 
-impl<T, C, B> HttpWorkExt<C, B> for T where T: Work<C, Request<B>> {}
+impl<T, C, B> HttpWorkExt<C, B> for T where T: Service<C, Request<B>> {}

@@ -7,7 +7,7 @@ use core::{
 use crate::{Error, body::HttpBody};
 use alloc::string::String;
 use bycat_futures::IntoResult;
-use bycat_service::Work;
+use bycat_service::Service;
 use http::{HeaderValue, Request, Response};
 use pin_project_lite::pin_project;
 
@@ -79,7 +79,7 @@ where
     }
 }
 
-impl<C, B, T> Work<C, Request<B>> for Html<T>
+impl<C, B, T> Service<C, Request<B>> for Html<T>
 where
     B: From<T>,
     T: Clone,
@@ -105,7 +105,7 @@ where
     }
 }
 
-pub trait WorkIntoResponseExt<C, B>: Work<C, Request<B>> {
+pub trait WorkIntoResponseExt<C, B>: Service<C, Request<B>> {
     fn into_response(self) -> RouteHandler<Self>
     where
         Self: Sized,
@@ -116,16 +116,16 @@ pub trait WorkIntoResponseExt<C, B>: Work<C, Request<B>> {
     }
 }
 
-impl<T, C, B> WorkIntoResponseExt<C, B> for T where T: Work<C, Request<B>> {}
+impl<T, C, B> WorkIntoResponseExt<C, B> for T where T: Service<C, Request<B>> {}
 
 #[derive(Debug, Clone, Copy)]
 pub struct RouteHandler<T> {
     work: T,
 }
 
-impl<T, C, B> Work<C, Request<B>> for RouteHandler<T>
+impl<T, C, B> Service<C, Request<B>> for RouteHandler<T>
 where
-    T: Work<C, Request<B>>,
+    T: Service<C, Request<B>>,
     T::Output: IntoResponse<B>,
     T::Error: Into<Error>,
 {

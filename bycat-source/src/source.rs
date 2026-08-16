@@ -2,7 +2,7 @@ use crate::cloned::AsyncCloned;
 use crate::{concurrent::Concurrent, Pipeline, SourceUnit};
 use crate::{SourceUnitFuture, Unit};
 use bycat_futures::{IntoResult, ResultIterator};
-use bycat_service::{and::And, then::Then, Work};
+use bycat_service::{and::And, then::Then, Service};
 use core::{mem::transmute, task::Poll};
 use either::Either;
 use futures::{
@@ -86,7 +86,7 @@ pub trait SourceExt<C>: Source<C> {
     fn filter<W>(self, work: W) -> Filter<Self, W>
     where
         Self: Sized,
-        W: Work<C, Self::Item, Output = Option<Self::Item>>,
+        W: Service<C, Self::Item, Output = Option<Self::Item>>,
     {
         Filter::new(self, work)
     }
@@ -94,7 +94,7 @@ pub trait SourceExt<C>: Source<C> {
     fn pipe<W>(self, work: W) -> Pipeline<Self, W, C>
     where
         Self: Sized,
-        W: Work<C, Self::Item>,
+        W: Service<C, Self::Item>,
     {
         Pipeline::new_with(self, work)
     }
@@ -128,7 +128,7 @@ pub trait SourceExt<C>: Source<C> {
     fn then<W>(self, work: W) -> Then<Self, W>
     where
         Self: Sized,
-        W: Work<C, Result<Self::Item, Self::Error>>,
+        W: Service<C, Result<Self::Item, Self::Error>>,
     {
         Then::new(self, work)
     }
@@ -151,7 +151,7 @@ pub trait SourceExt<C>: Source<C> {
     fn concurrent<W>(self, work: W) -> Concurrent<Self, W>
     where
         Self: Sized,
-        W: Work<C, Self::Item>,
+        W: Service<C, Self::Item>,
     {
         Concurrent::new(self, work)
     }
@@ -244,7 +244,7 @@ impl<T, W> Filter<T, W> {
 impl<T, W: 'static, C> Source<C> for Filter<T, W>
 where
     T: Source<C>,
-    W: Work<C, T::Item, Output = Option<T::Item>, Error = T::Error>,
+    W: Service<C, T::Item, Output = Option<T::Item>, Error = T::Error>,
 {
     type Item = T::Item;
 
@@ -269,7 +269,7 @@ where
 
 pin_project! {
     #[project(!Unpin)]
-    pub struct FilterStream<'a, T: 'a, W: 'a, C: 'a> where T: Source<C>, W: Work<C,T::Item, Output = Option<T::Item>> {
+    pub struct FilterStream<'a, T: 'a, W: 'a, C: 'a> where T: Source<C>, W: Service<C,T::Item, Output = Option<T::Item>> {
         #[pin]
         stream: T::Stream<'a>,
         work: W,
@@ -281,7 +281,7 @@ pin_project! {
 
 impl<'a, T, W, C> Stream for FilterStream<'a, T, W, C>
 where
-    W: Work<C, T::Item, Output = Option<T::Item>, Error = T::Error>,
+    W: Service<C, T::Item, Output = Option<T::Item>, Error = T::Error>,
     T: Source<C>,
 {
     type Item = Result<T::Item, T::Error>;

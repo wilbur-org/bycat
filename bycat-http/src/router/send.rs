@@ -1,6 +1,6 @@
 use alloc::sync::Arc;
 use bycat_executor::BoxFuture;
-use bycat_service::{Middleware, Work};
+use bycat_service::{Middleware, Service};
 use http::Request;
 use routing::router::MethodFilter;
 
@@ -23,7 +23,7 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
 
     pub fn get<T>(&mut self, path: &str, worker: T) -> Result<&mut Self, RouteError>
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -33,7 +33,7 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
 
     pub fn post<T>(&mut self, path: &str, worker: T) -> Result<&mut Self, RouteError>
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -43,7 +43,7 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
 
     pub fn put<T>(&mut self, path: &str, worker: T) -> Result<&mut Self, RouteError>
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -53,7 +53,7 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
 
     pub fn patch<T>(&mut self, path: &str, worker: T) -> Result<&mut Self, RouteError>
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -63,7 +63,7 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
 
     pub fn delete<T>(&mut self, path: &str, worker: T) -> Result<&mut Self, RouteError>
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -78,7 +78,7 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
         worker: T,
     ) -> Result<&mut Self, RouteError>
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -91,10 +91,10 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
     pub fn middleware<T>(&mut self, middleware: T) -> &mut Self
     where
         T: Middleware<C, Request<B>, SendWork<C, B>> + Send + Sync + 'static,
-        T::Work: Work<C, Request<B>> + Send + Sync + 'static,
-        <T::Work as Work<C, Request<B>>>::Error: Into<Error>,
-        <T::Work as Work<C, Request<B>>>::Output: IntoResponse<B>,
-        for<'a> <T::Work as Work<C, Request<B>>>::Future<'a>: Send + 'a,
+        T::Work: Service<C, Request<B>> + Send + Sync + 'static,
+        <T::Work as Service<C, Request<B>>>::Error: Into<Error>,
+        <T::Work as Service<C, Request<B>>>::Output: IntoResponse<B>,
+        for<'a> <T::Work as Service<C, Request<B>>>::Future<'a>: Send + 'a,
     {
         let send_middleware = SendMiddleware::new(middleware);
         self.builder.middleware(send_middleware);
@@ -119,7 +119,7 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
 
     pub fn with_get<T>(mut self, path: &str, worker: T) -> Result<Self, RouteError>
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -130,7 +130,7 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
 
     pub fn with_post<T>(mut self, path: &str, worker: T) -> Result<Self, RouteError>
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -141,7 +141,7 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
 
     pub fn with_put<T>(mut self, path: &str, worker: T) -> Result<Self, RouteError>
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -152,7 +152,7 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
 
     pub fn with_patch<T>(mut self, path: &str, worker: T) -> Result<Self, RouteError>
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -163,7 +163,7 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
 
     pub fn with_delete<T>(mut self, path: &str, worker: T) -> Result<Self, RouteError>
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -175,10 +175,10 @@ impl<C: Send + Sync, B: Send + 'static> SendRouterBuilder<C, B> {
     pub fn with_middleware<T>(mut self, middleware: T) -> Self
     where
         T: Middleware<C, Request<B>, SendWork<C, B>> + Send + Sync + 'static,
-        T::Work: Work<C, Request<B>> + Send + Sync + 'static,
-        <T::Work as Work<C, Request<B>>>::Error: Into<Error>,
-        <T::Work as Work<C, Request<B>>>::Output: IntoResponse<B>,
-        for<'a> <T::Work as Work<C, Request<B>>>::Future<'a>: Send + 'a,
+        T::Work: Service<C, Request<B>> + Send + Sync + 'static,
+        <T::Work as Service<C, Request<B>>>::Error: Into<Error>,
+        <T::Work as Service<C, Request<B>>>::Output: IntoResponse<B>,
+        for<'a> <T::Work as Service<C, Request<B>>>::Future<'a>: Send + 'a,
     {
         self.middleware(middleware);
         self
@@ -223,7 +223,7 @@ impl<C, B> Clone for SendRouter<C, B> {
     }
 }
 
-impl<C, B: HttpBody> Work<C, Request<B>> for SendRouter<C, B> {
+impl<C, B: HttpBody> Service<C, Request<B>> for SendRouter<C, B> {
     type Error = Error;
     type Output = http::Response<B>;
     type Future<'a>
@@ -256,7 +256,7 @@ impl<C, B> Clone for SendWork<C, B> {
 impl<C: Send + Sync, B: Send + 'static> SendWork<C, B> {
     pub fn new<T>(worker: T) -> Self
     where
-        T: Work<C, Request<B>> + Send + Sync + 'static,
+        T: Service<C, Request<B>> + Send + Sync + 'static,
         T::Error: Into<Error>,
         for<'a> T::Future<'a>: Send + 'a,
         T::Output: IntoResponse<B>,
@@ -265,7 +265,7 @@ impl<C: Send + Sync, B: Send + 'static> SendWork<C, B> {
 
         impl<C: Send + Sync, B: Send + 'static, T> Worker<C, B> for Wrapper<T>
         where
-            T: Work<C, Request<B>> + Send + Sync + 'static,
+            T: Service<C, Request<B>> + Send + Sync + 'static,
             T::Error: Into<Error>,
             for<'a> T::Future<'a>: Send + 'a,
             T::Output: IntoResponse<B>,
@@ -290,7 +290,7 @@ impl<C: Send + Sync, B: Send + 'static> SendWork<C, B> {
     }
 }
 
-impl<C, B> Work<C, Request<B>> for SendWork<C, B> {
+impl<C, B> Service<C, Request<B>> for SendWork<C, B> {
     type Error = Error;
     type Output = http::Response<B>;
     type Future<'a>
@@ -328,20 +328,20 @@ impl<C: Send + Sync, B: Send + 'static> SendMiddleware<C, B> {
     pub fn new<T>(middleware: T) -> Self
     where
         T: Middleware<C, Request<B>, SendWork<C, B>> + Send + Sync + 'static,
-        T::Work: Work<C, Request<B>> + Send + Sync + 'static,
-        <T::Work as Work<C, Request<B>>>::Output: IntoResponse<B>,
-        <T::Work as Work<C, Request<B>>>::Error: Into<Error>,
-        for<'a> <T::Work as Work<C, Request<B>>>::Future<'a>: Send + 'a,
+        T::Work: Service<C, Request<B>> + Send + Sync + 'static,
+        <T::Work as Service<C, Request<B>>>::Output: IntoResponse<B>,
+        <T::Work as Service<C, Request<B>>>::Error: Into<Error>,
+        for<'a> <T::Work as Service<C, Request<B>>>::Future<'a>: Send + 'a,
     {
         struct Wrapper<T>(T);
 
         impl<C: Send + Sync, B: Send + 'static, T> Middler<C, B> for Wrapper<T>
         where
             T: Middleware<C, Request<B>, SendWork<C, B>> + Send + Sync + 'static,
-            T::Work: Work<C, Request<B>> + Send + Sync + 'static,
-            <T::Work as Work<C, Request<B>>>::Error: Into<Error>,
-            <T::Work as Work<C, Request<B>>>::Output: IntoResponse<B>,
-            for<'a> <T::Work as Work<C, Request<B>>>::Future<'a>: Send + 'a,
+            T::Work: Service<C, Request<B>> + Send + Sync + 'static,
+            <T::Work as Service<C, Request<B>>>::Error: Into<Error>,
+            <T::Work as Service<C, Request<B>>>::Output: IntoResponse<B>,
+            for<'a> <T::Work as Service<C, Request<B>>>::Future<'a>: Send + 'a,
         {
             fn wrap(&self, future: SendWork<C, B>) -> SendWork<C, B> {
                 let task = self.0.wrap(future);
