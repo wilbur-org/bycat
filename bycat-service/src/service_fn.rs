@@ -3,19 +3,19 @@ use core::task::Poll;
 use futures_core::{TryFuture, ready};
 use pin_project_lite::pin_project;
 
-pub fn work_fn<T, C, R, U>(func: T) -> WorkFn<T>
+pub fn service_fn<T, C, R, U>(func: T) -> ServiceFn<T>
 where
     T: Fn(C, R) -> U,
     U: TryFuture,
     C: Clone,
 {
-    WorkFn(func)
+    ServiceFn(func)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WorkFn<T>(pub(crate) T);
+pub struct ServiceFn<T>(pub(crate) T);
 
-impl<T, U, C, R> Service<C, R> for WorkFn<T>
+impl<T, U, C, R> Service<C, R> for ServiceFn<T>
 where
     T: Fn(C, R) -> U,
     U: TryFuture,
@@ -24,7 +24,7 @@ where
     type Output = U::Ok;
     type Error = U::Error;
     type Future<'a>
-        = WorkFnFuture<U>
+        = ServiceFnFuture<U>
     where
         Self: 'a,
         C: 'a;
@@ -33,20 +33,20 @@ where
         ctx: &'ctx C,
         package: R,
     ) -> Self::Future<'lifetime> {
-        WorkFnFuture {
+        ServiceFnFuture {
             future: (self.0)(ctx.clone(), package),
         }
     }
 }
 
 pin_project! {
-  pub struct WorkFnFuture<U> {
+  pub struct ServiceFnFuture<U> {
     #[pin]
     future: U
   }
 }
 
-impl<U> Future for WorkFnFuture<U>
+impl<U> Future for ServiceFnFuture<U>
 where
     U: TryFuture,
 {

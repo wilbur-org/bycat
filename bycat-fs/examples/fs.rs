@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use bycat_error::Error;
 use bycat_fs::WalkDir;
 use bycat_package::{Decode, Package, match_glob};
-use bycat_service::work_fn;
+use bycat_service::service_fn;
 use bycat_source::{pipe, prelude::*};
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -15,12 +15,12 @@ pub struct Test {
 async fn main() {
     pipe(WalkDir::new(PathBuf::from(".")).pattern(match_glob("**/*.json")))
         .pipe(Decode::new())
-        .pipe(work_fn(|_, pkg: Package<Test>| async move {
+        .pipe(service_fn(|_, pkg: Package<Test>| async move {
             //
             println!("{}", pkg.content().rustc_fingerprint);
             Result::<_, Error>::Ok(())
         }))
-        .then(work_fn(|ctx, ret: Result<(), Error>| async move {
+        .then(service_fn(|ctx, ret: Result<(), Error>| async move {
             if let Err(err) = ret.as_ref() {
                 // println!("{:?}", err);
             }

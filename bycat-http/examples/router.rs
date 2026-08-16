@@ -3,7 +3,7 @@ use bycat_http::{
     handler,
     router::{SendRouterBuilder, SendWork, UrlParams},
 };
-use bycat_service::{Service, middleware, work_fn};
+use bycat_service::{Service, middleware, service_fn};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
             handler(async |params: UrlParams| format!("Hello, {}", params.get("hello").unwrap())),
         )?
         .with_middleware(middleware(|task: SendWork<_, _>| {
-            work_fn(move |ctx: (), req| {
+            service_fn(move |ctx: (), req| {
                 let task = task.clone();
                 async move {
                     println!("Hello, from middleware!");

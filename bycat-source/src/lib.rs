@@ -18,7 +18,7 @@ mod source;
 mod then;
 mod unit;
 
-pub use bycat_service::{work_fn, NoopWork, Service};
+pub use bycat_service::{service_fn, NoopWork, Service};
 
 pub use self::{
     pipeline::{Pipeline, PipelineStream},

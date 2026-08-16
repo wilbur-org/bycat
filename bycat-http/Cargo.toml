@@ -4,16 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = [
-  "router",
-  "serve-tokio",
-  "serve-compio",
-  "serde",
-  "multipart",
-  "cookies",
-  "session",
-  "statics",
-]
+default = ["std"]
 std = ["http/std", "http-body", "http-body-util", "routing/std", "bytes"]
 
 serde = ["dep:serde", "serde_json", "multer?/json", "std"]
@@ -21,6 +12,7 @@ multipart = ["dep:multer"]
 cookies = ["dep:cookie", "dep:parking_lot"]
 session = ["cookies", "uuid", "arc-swap", "bycat-value"]
 statics = ["relative-path", "tokio/fs", "bycat-fs", "bycat-package"]
+cors = ["routing"]
 router = ["routing", "std"]
 
 serve = ["hyper/server", "hyper/http1", "bycat-server", "futures", "std"]
@@ -129,4 +121,14 @@ required-features = ["serve-tokio", "ws"]
 [[example]]
 name = "router"
 path = "examples/router.rs"
+required-features = ["serve-tokio", "router"]
+
+[[example]]
+name = "simple"
+path = "examples/simple.rs"
 required-features = ["serve-tokio"]
+
+[[example]]
+name = "simple-compio"
+path = "examples/simple-compio.rs"
+required-features = ["serve-compio"]

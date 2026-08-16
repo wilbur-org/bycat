@@ -18,6 +18,7 @@ pub mod extract;
 
 #[cfg(feature = "cookies")]
 pub mod cookies;
+#[cfg(feature = "cors")]
 pub mod cors;
 #[cfg(feature = "multipart")]
 pub mod multipart;
@@ -46,7 +47,6 @@ pub use http::{
 
 pub mod prelude {
     pub use crate::{
-        body::HttpBody,
         ext::*,
         extract::{from_request::FromRequest, from_request_parts::FromRequestParts},
         handler::handler,

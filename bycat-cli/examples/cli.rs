@@ -1,5 +1,5 @@
 use bycat_cli::{App, Result, config::Mode, prelude::*};
-use bycat_service::work_fn;
+use bycat_service::service_fn;
 use futures::TryStreamExt;
 use tracing::Level;
 
@@ -13,7 +13,7 @@ async fn main() -> bycat_error::Result<()> {
         .config(|cfg| {
             cfg.set_local(Mode::Single, "test.config.{ext}".to_string());
         })
-        .build(work_fn(|ctx: (), app: App| async move {
+        .build(service_fn(|ctx: (), app: App| async move {
             println!(
                 "App: {:?}",
                 app.paths()

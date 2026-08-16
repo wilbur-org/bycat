@@ -1,4 +1,4 @@
-use crate::work::Service;
+use crate::service::Service;
 use core::{marker::PhantomData, task::Poll};
 use futures_core::ready;
 use pin_project_lite::pin_project;

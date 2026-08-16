@@ -3,7 +3,7 @@ use crate::{
     util::IntoEither,
 };
 
-pub trait WorkExt<C, I>: Service<C, I> {
+pub trait ServiceExt<C, I>: Service<C, I> {
     fn pipe<T>(self, next: T) -> And<Self, T>
     where
         Self: Sized,
@@ -57,4 +57,4 @@ pub trait WorkExt<C, I>: Service<C, I> {
     }
 }
 
-impl<C, I, T> WorkExt<C, I> for T where T: Service<C, I> {}
+impl<C, I, T> ServiceExt<C, I> for T where T: Service<C, I> {}

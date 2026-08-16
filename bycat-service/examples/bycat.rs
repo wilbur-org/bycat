@@ -1,12 +1,12 @@
 use std::{convert::Infallible, fmt::Display};
 
-use bycat_service::{Middleware, Service, prelude::*, when, work_fn};
+use bycat_service::{Middleware, Service, prelude::*, service_fn, when};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     let test = when(
         |v: &u32| *v == 42,
-        work_fn(|ctx: i32, req: u32| async move {
+        service_fn(|ctx: i32, req: u32| async move {
             Result::<_, Infallible>::Ok(format!("Hello, {req}: {ctx}"))
         }),
     )
@@ -16,7 +16,7 @@ async fn main() {
     //     Result::<_, Infallible>::Ok(format!("Hello, {req}: {ctx}"))
     // });
 
-    let handler = test.pipe(work_fn(
+    let handler = test.pipe(service_fn(
         |_ctx, req| async move { Ok(format!("Hello {req}")) },
     ));
 

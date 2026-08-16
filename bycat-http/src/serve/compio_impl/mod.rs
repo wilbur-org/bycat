@@ -28,11 +28,7 @@ impl<T> Compio<T> {
         self
     }
 
-    pub async fn serve<C>(
-        self,
-        ctx: C,
-        addr: impl ToSocketAddrsAsync,
-    ) -> Result<(), tokio::io::Error>
+    pub async fn serve<C>(self, ctx: C, addr: impl ToSocketAddrsAsync) -> Result<(), std::io::Error>
     where
         T: Service<
                 C,

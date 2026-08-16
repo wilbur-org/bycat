@@ -7,7 +7,7 @@ use bycat_http::{
     prelude::HttpWorkExt,
     session::{MemoryStore, Session, Sessions},
 };
-use bycat_service::prelude::WorkExt;
+use bycat_service::prelude::ServiceExt;
 use http::Request;
 
 #[tokio::main(flavor = "current_thread")]

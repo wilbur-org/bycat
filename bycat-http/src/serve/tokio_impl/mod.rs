@@ -5,6 +5,7 @@ use self::servable::*;
 use ::bycat_service::Service;
 use bycat_executor::{LocalTokioExecutor, TokioExecutor};
 use bycat_server::Shutdown;
+use futures::future::BoxFuture;
 use tokio::net::ToSocketAddrs;
 
 #[derive(Debug, Clone)]

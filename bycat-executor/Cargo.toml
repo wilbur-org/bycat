@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = ["hyper", "tokio", "compio"]
 compio = ["dep:compio", "dep:compio-executor"]
 tokio = ["dep:tokio"]
+hyper = ["dep:hyper"]
 
 [dependencies]
 hyper = { version = "0.14", features = ["runtime"], optional = true }
