@@ -1,6 +1,6 @@
 use std::{convert::Infallible, fmt::Display};
 
-use bycat_service::{Middleware, Service, prelude::*, service_fn, when};
+use bycat_service::{Service, prelude::*, service_fn, when};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {

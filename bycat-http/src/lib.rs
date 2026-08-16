@@ -41,6 +41,8 @@ pub use self::{
     into_response::*,
 };
 
+pub use bycat_service as service;
+
 pub use http::{
     self, HeaderMap, HeaderName, HeaderValue, Request, Response, StatusCode, Uri, header,
 };
