@@ -31,7 +31,7 @@ mod statics;
 #[cfg(feature = "ws")]
 pub mod ws;
 
-mod matcher;
+pub mod matcher;
 pub mod util;
 
 pub use self::{

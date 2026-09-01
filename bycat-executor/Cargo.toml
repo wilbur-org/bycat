@@ -4,12 +4,16 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
+default = ["tokio"]
 compio = ["dep:compio", "dep:compio-executor"]
 tokio = ["dep:tokio"]
 hyper = ["dep:hyper"]
 
 [dependencies]
-hyper = { version = "0.14", features = ["runtime"], optional = true }
+hyper = { version = "1.11", features = [], optional = true }
 tokio = { version = "1", features = ["rt"], optional = true }
-compio = { version = "0.19", default-features = false, features = ["runtime"], optional = true }
-compio-executor = { version = "0.1", default-features = false, features = [], optional = true }
+compio = { version = "0.19", default-features = false, features = [
+    "runtime",
+], optional = true }
+compio-executor = { version = "0.1", default-features = false, features = [
+], optional = true }
