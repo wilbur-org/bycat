@@ -105,6 +105,22 @@ pub trait BlockingSpawner {
         T: FnOnce() -> R + Send + 'static;
 }
 
+impl<T> BlockingSpawner for &T
+where
+    T: BlockingSpawner + ?Sized,
+{
+    type Future<R> = T::Future<R>;
+    type Error = T::Error;
+
+    fn spawn_blocking<U, R>(&self, work: U) -> Self::Future<R>
+    where
+        R: Send + 'static,
+        U: FnOnce() -> R + Send + 'static,
+    {
+        (**self).spawn_blocking(work)
+    }
+}
+
 /// Provides access to a [`Spawner`].
 pub trait HasSpawner<'a> {
     /// The spawner type.

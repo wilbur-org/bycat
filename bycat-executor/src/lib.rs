@@ -15,10 +15,12 @@
 
 extern crate alloc;
 
+mod boxed;
 mod executors;
 mod traits;
 mod types;
 
+pub use boxed::*;
 pub use executors::*;
 pub use traits::*;
 pub use types::*;
