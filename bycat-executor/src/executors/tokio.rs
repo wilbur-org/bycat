@@ -2,13 +2,34 @@ use crate::{BlockingSpawner, Executor, LocalSpawner, Spawner, Task};
 
 /// A handle to a Tokio task.
 ///
-/// Implements [`Task`] by allowing the task to be detached (aborted).
+/// Detaching a Tokio task is a no-op; the task continues to run in the
+/// background. If the handle is dropped without being detached, the task is
+/// aborted.
 #[derive(Debug)]
-pub struct TokioTask(pub tokio::task::JoinHandle<()>);
+pub struct TokioTask {
+    handle: Option<tokio::task::JoinHandle<()>>,
+}
+
+impl TokioTask {
+    /// Creates a new `TokioTask` from a Tokio join handle.
+    pub fn new(handle: tokio::task::JoinHandle<()>) -> Self {
+        TokioTask {
+            handle: Some(handle),
+        }
+    }
+}
 
 impl Task for TokioTask {
-    fn detach(self) {
-        self.0.abort();
+    fn detach(mut self) {
+        self.handle.take();
+    }
+}
+
+impl Drop for TokioTask {
+    fn drop(&mut self) {
+        if let Some(handle) = self.handle.take() {
+            handle.abort();
+        }
     }
 }
 
@@ -27,7 +48,7 @@ where
     type Task = TokioTask;
 
     fn spawn(&self, work: T) -> Self::Task {
-        TokioTask(tokio::task::spawn(async move {
+        TokioTask::new(tokio::task::spawn(async move {
             let _ = work.await;
         }))
     }
@@ -40,7 +61,7 @@ impl Spawner<'static> for TokioExecutor {
     where
         T: core::future::Future<Output = ()> + Send + 'static,
     {
-        TokioTask(tokio::task::spawn(work))
+        TokioTask::new(tokio::task::spawn(work))
     }
 }
 
@@ -82,7 +103,7 @@ where
     type Task = TokioTask;
 
     fn spawn(&self, work: T) -> Self::Task {
-        TokioTask(tokio::task::spawn_local(async move {
+        TokioTask::new(tokio::task::spawn_local(async move {
             let _ = work.await;
         }))
     }
@@ -95,7 +116,7 @@ impl Spawner<'static> for LocalTokioExecutor {
     where
         T: core::future::Future<Output = ()> + 'static,
     {
-        TokioTask(tokio::task::spawn_local(work))
+        TokioTask::new(tokio::task::spawn_local(work))
     }
 }
 
@@ -106,7 +127,7 @@ impl LocalSpawner<'static> for LocalTokioExecutor {
     where
         T: core::future::Future<Output = ()> + 'static,
     {
-        TokioTask(tokio::task::spawn_local(work))
+        TokioTask::new(tokio::task::spawn_local(work))
     }
 }
 
