@@ -4,11 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [features]
-default = []
+default = ["compio", "alloc", "hyper"]
 compio = ["dep:compio", "dep:compio-executor"]
 tokio = ["dep:tokio"]
 smol = ["dep:smol"]
 hyper = ["dep:hyper"]
+
+alloc = []
 
 [dependencies]
 hyper = { version = "1.11", features = [], optional = true }

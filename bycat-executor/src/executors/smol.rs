@@ -1,10 +1,22 @@
 use core::pin::Pin;
 
-use crate::{BlockingSpawner, Executor, HasBlockingSpawner, HasSpawner, Spawner};
+use crate::{BlockingSpawner, Executor, HasBlockingSpawner, HasSpawner, Spawner, Task};
+
+/// A handle to a `smol` task.
+///
+/// Implements [`Task`] by detaching the underlying [`smol::Task`].
+#[derive(Debug)]
+pub struct SmolTask(pub smol::Task<()>);
+
+impl Task for SmolTask {
+    fn detach(self) {
+        self.0.detach();
+    }
+}
 
 /// Executor adapter that spawns tasks on the `smol` runtime.
 ///
-/// Detached tasks are spawned with [`smol::spawn`] and run on the global
+/// Tasks are spawned with [`smol::spawn`] and run on the global
 /// `smol` executor. Futures must be `Send` and `'static`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SmolExecutor;
@@ -14,8 +26,12 @@ where
     T: core::future::Future + Send + 'static,
     T::Output: Send + 'static,
 {
-    fn spawn(&self, work: T) {
-        smol::spawn(work).detach();
+    type Task = SmolTask;
+
+    fn spawn(&self, work: T) -> Self::Task {
+        SmolTask(smol::spawn(async move {
+            let _ = work.await;
+        }))
     }
 }
 
@@ -31,11 +47,13 @@ where
 }
 
 impl Spawner<'static> for SmolExecutor {
-    fn spawn<T>(&self, work: T)
+    type Task = SmolTask;
+
+    fn spawn<T>(&self, work: T) -> Self::Task
     where
         T: core::future::Future<Output = ()> + Send + 'static,
     {
-        smol::spawn(work).detach();
+        SmolTask(smol::spawn(work))
     }
 }
 

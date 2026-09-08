@@ -1,4 +1,16 @@
-use crate::{BlockingSpawner, Executor, LocalSpawner, Spawner};
+use crate::{BlockingSpawner, Executor, LocalSpawner, Spawner, Task};
+
+/// A handle to a Tokio task.
+///
+/// Implements [`Task`] by allowing the task to be detached (aborted).
+#[derive(Debug)]
+pub struct TokioTask(pub tokio::task::JoinHandle<()>);
+
+impl Task for TokioTask {
+    fn detach(self) {
+        self.0.abort();
+    }
+}
 
 /// Executor adapter that spawns tasks on the Tokio runtime.
 ///
@@ -12,17 +24,23 @@ where
     T: core::future::Future + Send + 'static,
     T::Output: Send + 'static,
 {
-    fn spawn(&self, work: T) {
-        tokio::task::spawn(work);
+    type Task = TokioTask;
+
+    fn spawn(&self, work: T) -> Self::Task {
+        TokioTask(tokio::task::spawn(async move {
+            let _ = work.await;
+        }))
     }
 }
 
 impl Spawner<'static> for TokioExecutor {
-    fn spawn<T>(&self, work: T)
+    type Task = TokioTask;
+
+    fn spawn<T>(&self, work: T) -> Self::Task
     where
         T: core::future::Future<Output = ()> + Send + 'static,
     {
-        tokio::task::spawn(work);
+        TokioTask(tokio::task::spawn(work))
     }
 }
 
@@ -61,26 +79,34 @@ where
     T: core::future::Future + 'static,
     T::Output: 'static,
 {
-    fn spawn(&self, work: T) {
-        tokio::task::spawn_local(work);
+    type Task = TokioTask;
+
+    fn spawn(&self, work: T) -> Self::Task {
+        TokioTask(tokio::task::spawn_local(async move {
+            let _ = work.await;
+        }))
     }
 }
 
 impl Spawner<'static> for LocalTokioExecutor {
-    fn spawn<T>(&self, work: T)
+    type Task = TokioTask;
+
+    fn spawn<T>(&self, work: T) -> Self::Task
     where
         T: core::future::Future<Output = ()> + 'static,
     {
-        tokio::task::spawn_local(work);
+        TokioTask(tokio::task::spawn_local(work))
     }
 }
 
 impl LocalSpawner<'static> for LocalTokioExecutor {
-    fn spawn<T>(&self, work: T)
+    type Task = TokioTask;
+
+    fn spawn<T>(&self, work: T) -> Self::Task
     where
         T: core::future::Future<Output = ()> + 'static,
     {
-        tokio::task::spawn_local(work);
+        TokioTask(tokio::task::spawn_local(work))
     }
 }
 

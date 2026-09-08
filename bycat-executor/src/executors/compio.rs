@@ -1,11 +1,23 @@
 use crate::{
     BlockingSpawner, Executor, HasBlockingSpawner, HasLocalSpawner, HasSpawner, LocalSpawner,
-    Spawner,
+    Spawner, Task,
 };
+
+/// A handle to a `compio` task.
+///
+/// Implements [`Task`] by detaching the underlying [`compio::runtime::JoinHandle`].
+#[derive(Debug)]
+pub struct CompioTask(pub compio::runtime::JoinHandle<()>);
+
+impl Task for CompioTask {
+    fn detach(self) {
+        self.0.detach();
+    }
+}
 
 /// Executor adapter that spawns tasks on the `compio` runtime.
 ///
-/// Detached tasks are spawned with [`compio::runtime::spawn`]. Both sendable
+/// Tasks are spawned with [`compio::runtime::spawn`]. Both sendable
 /// and local futures are supported.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct CompioExecutor;
@@ -15,8 +27,12 @@ where
     T: core::future::Future + 'static,
     T::Output: 'static,
 {
-    fn spawn(&self, work: T) {
-        compio::runtime::spawn(work).detach();
+    type Task = CompioTask;
+
+    fn spawn(&self, work: T) -> Self::Task {
+        CompioTask(compio::runtime::spawn(async move {
+            let _ = work.await;
+        }))
     }
 }
 
@@ -32,20 +48,24 @@ where
 }
 
 impl Spawner<'static> for CompioExecutor {
-    fn spawn<T>(&self, work: T)
+    type Task = CompioTask;
+
+    fn spawn<T>(&self, work: T) -> Self::Task
     where
         T: core::future::Future<Output = ()> + Send + 'static,
     {
-        compio::runtime::spawn(work).detach();
+        CompioTask(compio::runtime::spawn(work))
     }
 }
 
 impl LocalSpawner<'static> for CompioExecutor {
-    fn spawn<T>(&self, work: T)
+    type Task = CompioTask;
+
+    fn spawn<T>(&self, work: T) -> Self::Task
     where
         T: core::future::Future<Output = ()> + 'static,
     {
-        compio::runtime::spawn(work).detach();
+        CompioTask(compio::runtime::spawn(work))
     }
 }
 

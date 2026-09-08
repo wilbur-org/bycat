@@ -1,19 +1,31 @@
+/// A trait for tasks that can be detached from the executor.
+///
+/// If the task is detached, it will continue to run in the background until it
+/// completes or the task is dropped. This is useful for fire-and-forget tasks
+/// that do not need to be awaited.
+pub trait Task {
+    /// Detaches the task, allowing it to run in the background.
+    fn detach(self);
+}
+
 /// Spawns a single future or task onto an executor.
 ///
 /// This is the low-level trait used by the higher-level [`LocalExecutor`] and
 /// [`SendExecutor`] wrappers. Implementors receive the task directly and are
 /// responsible for driving it to completion.
 pub trait Executor<T> {
+    type Task: Task;
     /// Spawns `work` onto the executor.
-    fn spawn(&self, work: T);
+    fn spawn(&self, work: T) -> Self::Task;
 }
 
 impl<'a, T, V> Executor<T> for &'a V
 where
     V: Executor<T> + ?Sized,
 {
-    fn spawn(&self, work: T) {
-        (**self).spawn(work);
+    type Task = V::Task;
+    fn spawn(&self, work: T) -> V::Task {
+        (**self).spawn(work)
     }
 }
 
@@ -22,8 +34,9 @@ where
 /// This is useful for contexts that only need to fire-and-forget sendable
 /// futures with a unit output, such as background task loops.
 pub trait Spawner<'a> {
+    type Task: Task;
     /// Spawns `work` on the executor.
-    fn spawn<T>(&self, work: T)
+    fn spawn<T>(&self, work: T) -> Self::Task
     where
         T: core::future::Future<Output = ()> + Send + 'a;
 }
@@ -32,11 +45,12 @@ impl<'a, 'b, T> Spawner<'a> for &'b T
 where
     T: Spawner<'a> + ?Sized,
 {
-    fn spawn<U>(&self, work: U)
+    type Task = T::Task;
+    fn spawn<U>(&self, work: U) -> Self::Task
     where
         U: core::future::Future<Output = ()> + Send + 'a,
     {
-        (**self).spawn(work);
+        (**self).spawn(work)
     }
 }
 
@@ -44,11 +58,12 @@ impl<'a, 'b, T> Spawner<'a> for &'b mut T
 where
     T: Spawner<'a> + ?Sized,
 {
-    fn spawn<U>(&self, work: U)
+    type Task = T::Task;
+    fn spawn<U>(&self, work: U) -> Self::Task
     where
         U: core::future::Future<Output = ()> + Send + 'a,
     {
-        (**self).spawn(work);
+        (**self).spawn(work)
     }
 }
 
@@ -57,8 +72,9 @@ where
 /// Like [`Spawner`], but does not require the future to be `Send`, allowing it
 /// to be used with single-threaded executors.
 pub trait LocalSpawner<'a> {
+    type Task: Task;
     /// Spawns `work` on the local executor.
-    fn spawn<T>(&self, work: T)
+    fn spawn<T>(&self, work: T) -> Self::Task
     where
         T: core::future::Future<Output = ()> + 'a;
 }
@@ -67,11 +83,12 @@ impl<'a, 'b, T> LocalSpawner<'a> for &'b T
 where
     T: LocalSpawner<'a> + ?Sized,
 {
-    fn spawn<U>(&self, work: U)
+    type Task = T::Task;
+    fn spawn<U>(&self, work: U) -> Self::Task
     where
         U: core::future::Future<Output = ()> + 'a,
     {
-        (**self).spawn(work);
+        (**self).spawn(work)
     }
 }
 
@@ -79,11 +96,12 @@ impl<'a, 'b, T> LocalSpawner<'a> for &'b mut T
 where
     T: LocalSpawner<'a> + ?Sized,
 {
-    fn spawn<U>(&self, work: U)
+    type Task = T::Task;
+    fn spawn<U>(&self, work: U) -> Self::Task
     where
         U: core::future::Future<Output = ()> + 'a,
     {
-        (**self).spawn(work);
+        (**self).spawn(work)
     }
 }
 

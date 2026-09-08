@@ -13,14 +13,25 @@
 
 #![no_std]
 
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
+#[cfg(feature = "alloc")]
 mod boxed;
 mod executors;
 mod traits;
+#[cfg(feature = "alloc")]
 mod types;
 
+#[cfg(feature = "alloc")]
 pub use boxed::*;
+#[cfg(any(
+    feature = "alloc",
+    feature = "compio",
+    feature = "smol",
+    feature = "tokio"
+))]
 pub use executors::*;
 pub use traits::*;
+#[cfg(feature = "alloc")]
 pub use types::*;

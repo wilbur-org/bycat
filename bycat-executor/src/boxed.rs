@@ -1,7 +1,38 @@
 use alloc::{boxed::Box, rc::Rc, sync::Arc};
 use core::any::Any;
 
-use crate::{BlockingSpawner, BoxError, BoxFuture, LocalBoxFuture, LocalSpawner, Spawner};
+use crate::{BlockingSpawner, BoxError, BoxFuture, LocalBoxFuture, LocalSpawner, Spawner, Task};
+
+/// Object-safe, type-erased task handle.
+///
+/// `DynTask` mirrors [`Task`] but takes `self` by [`Box`], making it possible
+/// to use as a trait object (`dyn DynTask`). Concrete [`Task`] implementations
+/// automatically implement `DynTask`.
+pub trait DynTask {
+    /// Detaches the task, allowing it to run in the background.
+    fn detach(self: Box<Self>);
+}
+
+impl<T> DynTask for T
+where
+    T: Task,
+{
+    fn detach(self: Box<Self>) {
+        (*self).detach();
+    }
+}
+
+/// A boxed, type-erased task handle.
+///
+/// This is the type-erased form of a [`Task`], suitable for storing
+/// heterogeneous task handles in a single container.
+pub type BoxTask = Box<dyn DynTask>;
+
+impl Task for BoxTask {
+    fn detach(self) {
+        DynTask::detach(self);
+    }
+}
 
 /// Object-safe version of [`Spawner`].
 ///
@@ -9,7 +40,7 @@ use crate::{BlockingSpawner, BoxError, BoxFuture, LocalBoxFuture, LocalSpawner, 
 /// which makes it possible to use as a trait object (`dyn DynSpawner`).
 pub trait DynSpawner<'a> {
     /// Spawns a boxed sendable future on the executor.
-    fn spawn_boxed(&self, work: BoxFuture<'a, ()>);
+    fn spawn_boxed(&self, work: BoxFuture<'a, ()>) -> BoxTask;
 }
 
 /// Wraps any [`Spawner`] as a [`DynSpawner`].
@@ -30,6 +61,7 @@ impl<'a> BoxedSpawner<'a> {
     pub fn new<T>(inner: T) -> Self
     where
         T: Spawner<'a> + 'a,
+        T::Task: 'static,
     {
         BoxedSpawner {
             inner: Rc::new(WrapSpawner(inner)),
@@ -38,17 +70,19 @@ impl<'a> BoxedSpawner<'a> {
 }
 
 impl<'a> Spawner<'a> for BoxedSpawner<'a> {
-    fn spawn<T>(&self, work: T)
+    type Task = BoxTask;
+
+    fn spawn<T>(&self, work: T) -> Self::Task
     where
         T: core::future::Future<Output = ()> + Send + 'a,
     {
-        self.inner.spawn_boxed(Box::pin(work));
+        self.inner.spawn_boxed(Box::pin(work))
     }
 }
 
 impl<'a> DynSpawner<'a> for BoxedSpawner<'a> {
-    fn spawn_boxed(&self, work: BoxFuture<'a, ()>) {
-        self.inner.spawn_boxed(work);
+    fn spawn_boxed(&self, work: BoxFuture<'a, ()>) -> BoxTask {
+        self.inner.spawn_boxed(work)
     }
 }
 
@@ -57,9 +91,10 @@ struct WrapSpawner<T>(T);
 impl<'a, T> DynSpawner<'a> for WrapSpawner<T>
 where
     T: Spawner<'a>,
+    T::Task: 'static,
 {
-    fn spawn_boxed(&self, work: BoxFuture<'a, ()>) {
-        self.0.spawn(work);
+    fn spawn_boxed(&self, work: BoxFuture<'a, ()>) -> BoxTask {
+        Box::new(self.0.spawn(work))
     }
 }
 
@@ -69,7 +104,7 @@ where
 /// which makes it possible to use as a trait object (`dyn DynLocalSpawner`).
 pub trait DynLocalSpawner<'a> {
     /// Spawns a boxed local future on the executor.
-    fn spawn_boxed(&self, work: LocalBoxFuture<'a, ()>);
+    fn spawn_boxed(&self, work: LocalBoxFuture<'a, ()>) -> BoxTask;
 }
 
 /// Wraps any [`LocalSpawner`] as a [`DynLocalSpawner`].
@@ -90,6 +125,7 @@ impl<'a> BoxedLocalSpawner<'a> {
     pub fn new<T>(inner: T) -> Self
     where
         T: LocalSpawner<'a> + 'a,
+        T::Task: 'static,
     {
         BoxedLocalSpawner {
             inner: Rc::new(WrapLocalSpawner(inner)),
@@ -98,17 +134,19 @@ impl<'a> BoxedLocalSpawner<'a> {
 }
 
 impl<'a> LocalSpawner<'a> for BoxedLocalSpawner<'a> {
-    fn spawn<T>(&self, work: T)
+    type Task = BoxTask;
+
+    fn spawn<T>(&self, work: T) -> Self::Task
     where
         T: core::future::Future<Output = ()> + 'a,
     {
-        self.inner.spawn_boxed(Box::pin(work));
+        self.inner.spawn_boxed(Box::pin(work))
     }
 }
 
 impl<'a> DynLocalSpawner<'a> for BoxedLocalSpawner<'a> {
-    fn spawn_boxed(&self, work: LocalBoxFuture<'a, ()>) {
-        self.inner.spawn_boxed(work);
+    fn spawn_boxed(&self, work: LocalBoxFuture<'a, ()>) -> BoxTask {
+        self.inner.spawn_boxed(work)
     }
 }
 
@@ -117,9 +155,10 @@ struct WrapLocalSpawner<T>(T);
 impl<'a, T> DynLocalSpawner<'a> for WrapLocalSpawner<T>
 where
     T: LocalSpawner<'a>,
+    T::Task: 'static,
 {
-    fn spawn_boxed(&self, work: LocalBoxFuture<'a, ()>) {
-        self.0.spawn(work);
+    fn spawn_boxed(&self, work: LocalBoxFuture<'a, ()>) -> BoxTask {
+        Box::new(self.0.spawn(work))
     }
 }
 

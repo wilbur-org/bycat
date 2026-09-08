@@ -1,9 +1,13 @@
 //! Concrete executor adapters and boxed executor wrappers.
 
+#[cfg(feature = "alloc")]
 mod local;
+#[cfg(feature = "alloc")]
 mod send;
 
+#[cfg(feature = "alloc")]
 pub use local::LocalExecutor;
+#[cfg(feature = "alloc")]
 pub use send::SendExecutor;
 
 #[cfg(feature = "tokio")]
