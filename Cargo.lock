@@ -434,6 +434,7 @@ dependencies = [
  "compio",
  "compio-executor",
  "hyper",
+ "smol",
  "tokio",
 ]
 

@@ -7,6 +7,7 @@ edition = "2024"
 default = ["tokio"]
 compio = ["dep:compio", "dep:compio-executor"]
 tokio = ["dep:tokio"]
+smol = ["dep:smol"]
 hyper = ["dep:hyper"]
 
 [dependencies]
@@ -17,3 +18,4 @@ compio = { version = "0.19", default-features = false, features = [
 ], optional = true }
 compio-executor = { version = "0.1", default-features = false, features = [
 ], optional = true }
+smol = { version = "2", default-features = false, optional = true }

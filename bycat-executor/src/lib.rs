@@ -293,6 +293,86 @@ where
     }
 }
 
+#[cfg(feature = "smol")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct SmolExecutor;
+
+#[cfg(feature = "smol")]
+impl<T> Executor<T> for SmolExecutor
+where
+    T: Future + Send + 'static,
+    T::Output: Send + 'static,
+{
+    fn spawn(&self, work: T) {
+        smol::spawn(work).detach();
+    }
+}
+
+#[cfg(all(feature = "smol", feature = "hyper"))]
+impl<T> hyper::rt::Executor<T> for SmolExecutor
+where
+    T: Future + Send + 'static,
+    T::Output: Send + 'static,
+{
+    fn execute(&self, work: T) {
+        smol::spawn(work).detach();
+    }
+}
+
+#[cfg(feature = "smol")]
+impl Spawner<'static> for SmolExecutor {
+    fn spawn<T>(&self, work: T)
+    where
+        T: core::future::Future<Output = ()> + Send + 'static,
+    {
+        smol::spawn(work).detach();
+    }
+}
+
+#[cfg(feature = "smol")]
+impl BlockingSpawner for SmolExecutor {
+    type Error = core::convert::Infallible;
+    type Future<R> = SmolBlockingFuture<R>;
+    fn spawn_blocking<T, R>(&self, work: T) -> Self::Future<R>
+    where
+        R: Send + 'static,
+        T: FnOnce() -> R + Send + 'static,
+    {
+        SmolBlockingFuture(smol::unblock(work))
+    }
+}
+
+#[cfg(feature = "smol")]
+#[derive(Debug)]
+pub struct SmolBlockingFuture<R>(smol::Task<R>);
+
+#[cfg(feature = "smol")]
+impl<R> core::future::Future for SmolBlockingFuture<R> {
+    type Output = Result<R, core::convert::Infallible>;
+    fn poll(
+        mut self: Pin<&mut Self>,
+        cx: &mut core::task::Context<'_>,
+    ) -> core::task::Poll<Self::Output> {
+        Pin::new(&mut self.0).poll(cx).map(Ok)
+    }
+}
+
+#[cfg(feature = "smol")]
+impl HasBlockingSpawner for SmolExecutor {
+    type Spawner = Self;
+    fn blocking_spawner(&self) -> &Self::Spawner {
+        self
+    }
+}
+
+#[cfg(feature = "smol")]
+impl HasSpawner<'static> for SmolExecutor {
+    type Spawner = Self;
+    fn spawner(&self) -> &Self::Spawner {
+        self
+    }
+}
+
 #[cfg(feature = "compio")]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct CompioExecutor;
