@@ -1,7 +1,7 @@
 use alloc::{boxed::Box, rc::Rc, sync::Arc};
 use core::any::Any;
 
-use crate::{BlockingSpawner, BoxFuture, LocalBoxFuture, LocalSpawner, Spawner};
+use crate::{BlockingSpawner, BoxError, BoxFuture, LocalBoxFuture, LocalSpawner, Spawner};
 
 /// Object-safe version of [`Spawner`].
 ///
@@ -137,7 +137,7 @@ pub trait DynBlockingSpawner {
     fn spawn_blocking_boxed(
         &self,
         work: Box<dyn FnOnce() -> DynResult + Send + 'static>,
-    ) -> BoxFuture<'static, Result<DynResult, ()>>;
+    ) -> BoxFuture<'static, Result<DynResult, BoxError>>;
 }
 
 /// Wraps any [`BlockingSpawner`] as a [`DynBlockingSpawner`].
@@ -158,7 +158,7 @@ impl BoxedBlockingSpawner {
     pub fn new<T>(inner: T) -> Self
     where
         T: BlockingSpawner + Send + Sync + 'static,
-        T::Error: core::fmt::Debug,
+        T::Error: Into<BoxError>,
         T::Future<DynResult>: Send,
     {
         BoxedBlockingSpawner {
@@ -168,8 +168,8 @@ impl BoxedBlockingSpawner {
 }
 
 impl BlockingSpawner for BoxedBlockingSpawner {
-    type Error = ();
-    type Future<R> = BoxFuture<'static, Result<R, ()>>;
+    type Error = BoxError;
+    type Future<R> = BoxFuture<'static, Result<R, BoxError>>;
 
     fn spawn_blocking<T, R>(&self, work: T) -> Self::Future<R>
     where
@@ -179,7 +179,14 @@ impl BlockingSpawner for BoxedBlockingSpawner {
         let handle = self
             .inner
             .spawn_blocking_boxed(Box::new(move || DynResult(Box::new(work()))));
-        Box::pin(async move { handle.await?.0.downcast::<R>().map(|v| *v).map_err(|_| ()) })
+        Box::pin(async move {
+            handle
+                .await?
+                .0
+                .downcast::<R>()
+                .map(|v| *v)
+                .map_err(|_| "Failed to downcast".into())
+        })
     }
 }
 
@@ -187,7 +194,7 @@ impl DynBlockingSpawner for BoxedBlockingSpawner {
     fn spawn_blocking_boxed(
         &self,
         work: Box<dyn FnOnce() -> DynResult + Send + 'static>,
-    ) -> BoxFuture<'static, Result<DynResult, ()>> {
+    ) -> BoxFuture<'static, Result<DynResult, BoxError>> {
         self.inner.spawn_blocking_boxed(work)
     }
 }
@@ -197,14 +204,14 @@ struct WrapBlockingSpawner<T>(T);
 impl<T> DynBlockingSpawner for WrapBlockingSpawner<T>
 where
     T: BlockingSpawner + Send + Sync + 'static,
-    T::Error: core::fmt::Debug,
+    T::Error: Into<BoxError>,
     T::Future<DynResult>: Send,
 {
     fn spawn_blocking_boxed(
         &self,
         work: Box<dyn FnOnce() -> DynResult + Send + 'static>,
-    ) -> BoxFuture<'static, Result<DynResult, ()>> {
+    ) -> BoxFuture<'static, Result<DynResult, BoxError>> {
         let handle: T::Future<DynResult> = self.0.spawn_blocking(work);
-        Box::pin(async move { handle.await.map_err(|_| ()) })
+        Box::pin(async move { handle.await.map_err(Into::into) })
     }
 }
