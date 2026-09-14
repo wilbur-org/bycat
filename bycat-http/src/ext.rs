@@ -15,7 +15,7 @@ pub trait HttpWorkExt<C, B>: Service<C, Request<B>> {
         FilterService::new(self, matcher)
     }
 
-    fn or<T2>(self, other: T2) -> Or<Self, T2>
+    fn or<T2>(self, other: T2) -> Or<Self, T2, B>
     where
         Self: Sized,
         T2: FilteredService<C, B>,
@@ -24,7 +24,7 @@ pub trait HttpWorkExt<C, B>: Service<C, Request<B>> {
         T2::Output: IntoResponse<B>,
         T2::Error: Into<Error>,
     {
-        Or(self, other)
+        Or::new(self, other)
     }
 }
 

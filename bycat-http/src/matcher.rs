@@ -1,6 +1,10 @@
-use bycat_futures::IntoResult;
+use alloc::boxed::Box;
 use bycat_service::{Matcher, Service};
-use core::task::{Poll, ready};
+use core::{
+    marker::PhantomData,
+    pin::Pin,
+    task::{Poll, ready},
+};
 use http::{Request, Response};
 use pin_project_lite::pin_project;
 
@@ -10,12 +14,13 @@ pub trait FilteredService<C, B>: Service<C, Request<B>> {
     type CanHandleFuture<'a>: Future<Output = bool>
     where
         Self: 'a,
-        C: 'a;
+        C: 'a,
+        B: 'a;
 
-    fn can_handle<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+    fn can_handle<'this: 'lifetime, 'ctx: 'lifetime, 'req: 'lifetime, 'lifetime>(
         &'this self,
         ctx: &'ctx C,
-        req: &Request<B>,
+        req: &'req Request<B>,
     ) -> Self::CanHandleFuture<'lifetime>;
 }
 
@@ -63,21 +68,28 @@ where
         = core::future::Ready<bool>
     where
         Self: 'a,
-        C: 'a;
+        C: 'a,
+        B: 'a;
 
-    fn can_handle<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+    fn can_handle<'this: 'lifetime, 'ctx: 'lifetime, 'req: 'lifetime, 'lifetime>(
         &'this self,
         _ctx: &'ctx C,
-        req: &Request<B>,
+        req: &'req Request<B>,
     ) -> Self::CanHandleFuture<'lifetime> {
         core::future::ready(self.filter.is_match(req))
     }
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct Or<T1, T2>(pub T1, pub T2);
+pub struct Or<T1, T2, B>(pub T1, pub T2, PhantomData<fn() -> B>);
 
-impl<T1, T2, C, B> Service<C, Request<B>> for Or<T1, T2>
+impl<T1, T2, B> Or<T1, T2, B> {
+    pub fn new(left: T1, right: T2) -> Self {
+        Self(left, right, PhantomData)
+    }
+}
+
+impl<T1, T2, C, B> Service<C, Request<B>> for Or<T1, T2, B>
 where
     T1: FilteredService<C, B>,
     T1::Output: IntoResponse<B>,
@@ -100,23 +112,34 @@ where
         ctx: &'ctx C,
         req: Request<B>,
     ) -> Self::Future<'lifetime> {
-        let future = self.0.can_handle(ctx, &req);
+        let req = Box::new(req);
+        // SAFETY: `req` is immediately moved into `OrFuture`, and the boxed
+        // allocation keeps the request at a stable address while the filter
+        // future is stored in `OrFutureState::CheckLeft`.
+        let future = self.0.can_handle(ctx, unsafe { request_ref(&req) });
 
         OrFuture {
             state: OrFutureState::CheckLeft {
                 left: &self.0,
                 right: &self.1,
                 ctx,
-                req: Some(req),
                 future,
             },
+            req: Some(req),
         }
     }
 }
 
+unsafe fn request_ref<'a, B>(req: &Request<B>) -> &'a Request<B> {
+    // SAFETY: The caller must ensure the referenced request remains alive and
+    // is not moved for `'a`, and that any future borrowing it is dropped before
+    // the request is moved or dropped.
+    unsafe { &*(req as *const Request<B>) }
+}
+
 pin_project! {
     #[project = OrFutureProj]
-    enum OrFutureState<'a, T1: 'a, T2: 'a, C: 'a, B>
+    enum OrFutureState<'a, T1: 'a, T2: 'a, C: 'a, B: 'a>
     where
         T1: FilteredService<C, B>,
         T2: FilteredService<C, B>,
@@ -125,14 +148,12 @@ pin_project! {
             left: &'a T1,
             right: &'a T2,
             ctx: &'a C,
-            req: Option<Request<B>>,
             #[pin]
             future: T1::CanHandleFuture<'a>,
         },
         CheckRight {
             right: &'a T2,
             ctx: &'a C,
-            req: Option<Request<B>>,
             #[pin]
             future: T2::CanHandleFuture<'a>,
         },
@@ -144,18 +165,21 @@ pin_project! {
             #[pin]
             future: T2::Future<'a>,
         },
-        NotFound
+        NotFound {
+            _body: PhantomData<fn() -> B>,
+        }
     }
 }
 
 pin_project! {
-    pub struct OrFuture<'a, T1: 'a, T2: 'a, C: 'a, B>
+    pub struct OrFuture<'a, T1: 'a, T2: 'a, C: 'a, B: 'a>
     where
         T1: FilteredService<C, B>,
         T2: FilteredService<C, B>,
     {
         #[pin]
         state: OrFutureState<'a, T1, T2, C, B>,
+        req: Option<Box<Request<B>>>,
     }
 }
 
@@ -168,13 +192,11 @@ where
     T2::Output: IntoResponse<B>,
     T2::Error: Into<Error>,
     C: 'a,
+    B: 'a,
 {
     type Output = Result<Response<B>, Error>;
 
-    fn poll(
-        mut self: core::pin::Pin<&mut Self>,
-        cx: &mut core::task::Context<'_>,
-    ) -> core::task::Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut core::task::Context<'_>) -> Poll<Self::Output> {
         loop {
             let mut this = self.as_mut().project();
 
@@ -183,62 +205,59 @@ where
                     left,
                     right,
                     ctx,
-                    req,
                     future,
                 } => {
                     let can_handle = ready!(future.poll(cx));
-                    let req = req.take().expect("request missing from OrFuture");
+                    let left = *left;
+                    let right = *right;
+                    let ctx = *ctx;
+
+                    this.state
+                        .set(OrFutureState::NotFound { _body: PhantomData });
 
                     if can_handle {
-                        let left = *left;
-                        let ctx = *ctx;
+                        let req = *this.req.take().expect("request missing from OrFuture");
                         let future = left.call(ctx, req);
                         this.state.set(OrFutureState::Left { future });
                     } else {
-                        let right = *right;
-                        let ctx = *ctx;
-                        let future = right.can_handle(ctx, &req);
-                        this.state.set(OrFutureState::CheckRight {
-                            right,
-                            ctx,
-                            req: Some(req),
-                            future,
-                        });
+                        let req = this.req.as_deref().expect("request missing from OrFuture");
+                        // SAFETY: the request is pinned behind a `Box` stored in
+                        // `this.req`; the current filter future was dropped by
+                        // setting `state` to `NotFound`, and the right filter
+                        // future is stored in the state before polling resumes.
+                        let future = right.can_handle(ctx, unsafe { request_ref(req) });
+                        this.state
+                            .set(OrFutureState::CheckRight { right, ctx, future });
                     }
                 }
-                OrFutureProj::CheckRight {
-                    right,
-                    ctx,
-                    req,
-                    future,
-                } => {
+                OrFutureProj::CheckRight { right, ctx, future } => {
                     let can_handle = ready!(future.poll(cx));
-                    let req = req.take().expect("request missing from OrFuture");
+                    let right = *right;
+                    let ctx = *ctx;
+
+                    this.state
+                        .set(OrFutureState::NotFound { _body: PhantomData });
 
                     if can_handle {
-                        let right = *right;
-                        let ctx = *ctx;
+                        let req = *this.req.take().expect("request missing from OrFuture");
                         let future = right.call(ctx, req);
                         this.state.set(OrFutureState::Right { future });
                     } else {
-                        this.state.set(OrFutureState::NotFound);
+                        this.req.take();
+                        return Poll::Ready(Err(Error::not_found()));
                     }
                 }
-                OrFutureProj::Left { future } => match ready!(future.poll(cx)).into_result() {
+                OrFutureProj::Left { future } => match ready!(future.poll(cx)) {
                     Ok(ret) => return Poll::Ready(Ok(ret.into_response())),
-                    Err(err) => {
-                        let err: Error = err.into();
-                        return Poll::Ready(Err(err));
-                    }
+                    Err(err) => return Poll::Ready(Err(err.into())),
                 },
-                OrFutureProj::Right { future } => match ready!(future.poll(cx)).into_result() {
+                OrFutureProj::Right { future } => match ready!(future.poll(cx)) {
                     Ok(ret) => return Poll::Ready(Ok(ret.into_response())),
-                    Err(err) => {
-                        let err: Error = err.into();
-                        return Poll::Ready(Err(err));
-                    }
+                    Err(err) => return Poll::Ready(Err(err.into())),
                 },
-                OrFutureProj::NotFound => return Poll::Ready(Err(Error::not_found())),
+                OrFutureProj::NotFound { .. } => {
+                    return Poll::Ready(Err(Error::not_found()));
+                }
             }
         }
     }
