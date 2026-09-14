@@ -1,29 +1,37 @@
-use alloc::{marker::PhantomData, task::Poll};
 use bycat_futures::IntoResult;
 use bycat_service::{Matcher, Service};
-use core::task::ready;
+use core::task::{Poll, ready};
 use http::{Request, Response};
 use pin_project_lite::pin_project;
 
 use crate::{Error, IntoResponse};
 
-pub trait FilteredWork<C, B>: Service<C, Request<B>> {
-    fn can_handle(&self, ctx: &C, req: &Request<B>) -> bool;
+pub trait FilteredService<C, B>: Service<C, Request<B>> {
+    type CanHandleFuture<'a>: Future<Output = bool>
+    where
+        Self: 'a,
+        C: 'a;
+
+    fn can_handle<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        ctx: &'ctx C,
+        req: &Request<B>,
+    ) -> Self::CanHandleFuture<'lifetime>;
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct FilterWork<T, M> {
+pub struct FilterService<T, M> {
     inner: T,
     filter: M,
 }
 
-impl<T, M> FilterWork<T, M> {
+impl<T, M> FilterService<T, M> {
     pub fn new(inner: T, filter: M) -> Self {
         Self { inner, filter }
     }
 }
 
-impl<T, M, C, B> Service<C, Request<B>> for FilterWork<T, M>
+impl<T, M, C, B> Service<C, Request<B>> for FilterService<T, M>
 where
     T: Service<C, Request<B>>,
     M: Matcher<Request<B>>,
@@ -46,13 +54,23 @@ where
     }
 }
 
-impl<T, M, C, B> FilteredWork<C, B> for FilterWork<T, M>
+impl<T, M, C, B> FilteredService<C, B> for FilterService<T, M>
 where
     T: Service<C, Request<B>>,
     M: Matcher<Request<B>>,
 {
-    fn can_handle(&self, _ctx: &C, req: &Request<B>) -> bool {
-        self.filter.is_match(req)
+    type CanHandleFuture<'a>
+        = core::future::Ready<bool>
+    where
+        Self: 'a,
+        C: 'a;
+
+    fn can_handle<'this: 'lifetime, 'ctx: 'lifetime, 'lifetime>(
+        &'this self,
+        _ctx: &'ctx C,
+        req: &Request<B>,
+    ) -> Self::CanHandleFuture<'lifetime> {
+        core::future::ready(self.filter.is_match(req))
     }
 }
 
@@ -61,10 +79,10 @@ pub struct Or<T1, T2>(pub T1, pub T2);
 
 impl<T1, T2, C, B> Service<C, Request<B>> for Or<T1, T2>
 where
-    T1: FilteredWork<C, B>,
+    T1: FilteredService<C, B>,
     T1::Output: IntoResponse<B>,
     T1::Error: Into<Error>,
-    T2: FilteredWork<C, B>,
+    T2: FilteredService<C, B>,
     T2::Output: IntoResponse<B>,
     T2::Error: Into<Error>,
 {
@@ -72,7 +90,7 @@ where
     type Error = Error;
 
     type Future<'a>
-        = OrFuture<T1::Future<'a>, T2::Future<'a>, B>
+        = OrFuture<'a, T1, T2, C, B>
     where
         Self: 'a,
         C: 'a;
@@ -82,82 +100,146 @@ where
         ctx: &'ctx C,
         req: Request<B>,
     ) -> Self::Future<'lifetime> {
-        let state = if self.0.can_handle(ctx, &req) {
-            OrFutureState::Left {
-                future: self.0.call(ctx, req),
-            }
-        } else if self.1.can_handle(ctx, &req) {
-            OrFutureState::Right {
-                future: self.1.call(ctx, req),
-            }
-        } else {
-            OrFutureState::NotFound
-        };
+        let future = self.0.can_handle(ctx, &req);
 
         OrFuture {
-            state: state,
-            body: PhantomData,
+            state: OrFutureState::CheckLeft {
+                left: &self.0,
+                right: &self.1,
+                ctx,
+                req: Some(req),
+                future,
+            },
         }
     }
 }
 
 pin_project! {
     #[project = OrFutureProj]
-    enum OrFutureState<T1, T2> {
+    enum OrFutureState<'a, T1: 'a, T2: 'a, C: 'a, B>
+    where
+        T1: FilteredService<C, B>,
+        T2: FilteredService<C, B>,
+    {
+        CheckLeft {
+            left: &'a T1,
+            right: &'a T2,
+            ctx: &'a C,
+            req: Option<Request<B>>,
+            #[pin]
+            future: T1::CanHandleFuture<'a>,
+        },
+        CheckRight {
+            right: &'a T2,
+            ctx: &'a C,
+            req: Option<Request<B>>,
+            #[pin]
+            future: T2::CanHandleFuture<'a>,
+        },
         Left {
             #[pin]
-            future: T1,
+            future: T1::Future<'a>,
         },
         Right {
             #[pin]
-            future: T2,
+            future: T2::Future<'a>,
         },
         NotFound
     }
 }
 
 pin_project! {
-    pub struct OrFuture<T1, T2, B> {
+    pub struct OrFuture<'a, T1: 'a, T2: 'a, C: 'a, B>
+    where
+        T1: FilteredService<C, B>,
+        T2: FilteredService<C, B>,
+    {
         #[pin]
-        state: OrFutureState<T1, T2>,
-        body: PhantomData<B>
+        state: OrFutureState<'a, T1, T2, C, B>,
     }
 }
 
-impl<T1, T2, B> Future for OrFuture<T1, T2, B>
+impl<'a, T1, T2, C, B> Future for OrFuture<'a, T1, T2, C, B>
 where
-    T1: Future,
-    T1::Output: IntoResult,
-    <T1::Output as IntoResult>::Output: IntoResponse<B>,
-    <T1::Output as IntoResult>::Error: Into<Error>,
-    T2: Future,
-    T2::Output: IntoResult,
-    <T2::Output as IntoResult>::Output: IntoResponse<B>,
-    <T2::Output as IntoResult>::Error: Into<Error>,
+    T1: FilteredService<C, B> + 'a,
+    T1::Output: IntoResponse<B>,
+    T1::Error: Into<Error>,
+    T2: FilteredService<C, B> + 'a,
+    T2::Output: IntoResponse<B>,
+    T2::Error: Into<Error>,
+    C: 'a,
 {
     type Output = Result<Response<B>, Error>;
 
     fn poll(
-        self: core::pin::Pin<&mut Self>,
+        mut self: core::pin::Pin<&mut Self>,
         cx: &mut core::task::Context<'_>,
     ) -> core::task::Poll<Self::Output> {
-        let this = self.project();
-        match this.state.project() {
-            OrFutureProj::Left { future } => match ready!(future.poll(cx)).into_result() {
-                Ok(ret) => Poll::Ready(Ok(ret.into_response())),
-                Err(err) => {
-                    let err: Error = err.into();
-                    Poll::Ready(Err(err))
+        loop {
+            let mut this = self.as_mut().project();
+
+            match this.state.as_mut().project() {
+                OrFutureProj::CheckLeft {
+                    left,
+                    right,
+                    ctx,
+                    req,
+                    future,
+                } => {
+                    let can_handle = ready!(future.poll(cx));
+                    let req = req.take().expect("request missing from OrFuture");
+
+                    if can_handle {
+                        let left = *left;
+                        let ctx = *ctx;
+                        let future = left.call(ctx, req);
+                        this.state.set(OrFutureState::Left { future });
+                    } else {
+                        let right = *right;
+                        let ctx = *ctx;
+                        let future = right.can_handle(ctx, &req);
+                        this.state.set(OrFutureState::CheckRight {
+                            right,
+                            ctx,
+                            req: Some(req),
+                            future,
+                        });
+                    }
                 }
-            },
-            OrFutureProj::Right { future } => match ready!(future.poll(cx)).into_result() {
-                Ok(ret) => Poll::Ready(Ok(ret.into_response())),
-                Err(err) => {
-                    let err: Error = err.into();
-                    Poll::Ready(Err(err))
+                OrFutureProj::CheckRight {
+                    right,
+                    ctx,
+                    req,
+                    future,
+                } => {
+                    let can_handle = ready!(future.poll(cx));
+                    let req = req.take().expect("request missing from OrFuture");
+
+                    if can_handle {
+                        let right = *right;
+                        let ctx = *ctx;
+                        let future = right.call(ctx, req);
+                        this.state.set(OrFutureState::Right { future });
+                    } else {
+                        this.state.set(OrFutureState::NotFound);
+                    }
                 }
-            },
-            OrFutureProj::NotFound => Poll::Ready(Err(Error::not_found())),
+                OrFutureProj::Left { future } => match ready!(future.poll(cx)).into_result() {
+                    Ok(ret) => return Poll::Ready(Ok(ret.into_response())),
+                    Err(err) => {
+                        let err: Error = err.into();
+                        return Poll::Ready(Err(err));
+                    }
+                },
+                OrFutureProj::Right { future } => match ready!(future.poll(cx)).into_result() {
+                    Ok(ret) => return Poll::Ready(Ok(ret.into_response())),
+                    Err(err) => {
+                        let err: Error = err.into();
+                        return Poll::Ready(Err(err));
+                    }
+                },
+                OrFutureProj::NotFound => return Poll::Ready(Err(Error::not_found())),
+            }
         }
     }
 }

@@ -3,22 +3,22 @@ use http::Request;
 
 use crate::{
     Error, IntoResponse,
-    matcher::{FilterWork, FilteredWork, Or},
+    matcher::{FilterService, FilteredService, Or},
 };
 
 pub trait HttpWorkExt<C, B>: Service<C, Request<B>> {
-    fn with_filter<M>(self, matcher: M) -> FilterWork<Self, M>
+    fn with_filter<M>(self, matcher: M) -> FilterService<Self, M>
     where
         Self: Sized,
         M: Matcher<Request<B>>,
     {
-        FilterWork::new(self, matcher)
+        FilterService::new(self, matcher)
     }
 
     fn or<T2>(self, other: T2) -> Or<Self, T2>
     where
         Self: Sized,
-        T2: FilteredWork<C, B>,
+        T2: FilteredService<C, B>,
         Self::Output: IntoResponse<B>,
         Self::Error: Into<Error>,
         T2::Output: IntoResponse<B>,
