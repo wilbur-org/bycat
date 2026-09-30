@@ -80,8 +80,34 @@ where
     }
 }
 
-#[derive(Debug, Clone, Copy)]
 pub struct Or<T1, T2, B>(pub T1, pub T2, PhantomData<fn() -> B>);
+
+impl<T1, T2, B> Clone for Or<T1, T2, B>
+where
+    T1: Clone,
+    T2: Clone,
+{
+    fn clone(&self) -> Self {
+        Self(self.0.clone(), self.1.clone(), PhantomData)
+    }
+}
+
+impl<T1, T2, B> Copy for Or<T1, T2, B>
+where
+    T1: Copy,
+    T2: Copy,
+{
+}
+
+impl<T1, T2, B> std::fmt::Debug for Or<T1, T2, B>
+where
+    T1: core::fmt::Debug,
+    T2: core::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("Or").field(&self.0).field(&self.1).finish()
+    }
+}
 
 impl<T1, T2, B> Or<T1, T2, B> {
     pub fn new(left: T1, right: T2) -> Self {
